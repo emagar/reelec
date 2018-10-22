@@ -1,0 +1,132 @@
+rm(list=ls())
+setwd("~/Desktop/MXelsCalendGovt/reelec/encItam/") #setwd("~")
+
+############################
+            #
+############################
+
+require(foreign)
+#require(plyr)
+require(dplyr)
+require(tidyverse)
+require(readstata13)
+require(reshape2)
+require(readxl)
+
+## out <- "/Users/carloscabellogutierrez/Downloads"
+## grf <- "/Users/carloscabellogutierrez/Downloads"
+out <- "data/"
+grf <- "graphs/"
+
+data <- read_xlsx(paste(out, "miniencuestaRespuestas.xlsx", sep="/"))
+
+names(data) <- tolower(names(data))
+
+names(data)[13] <- "partido"
+names(data)[14] <- "simpatizas"
+
+data <- data %>%
+        select(n, rep, edad, carrera, sexo, partido, simpatizas, w1, eva, carr)
+detach("package:plyr")
+
+View(data)
+data$con <- 1
+don <- group_by(data, n)
+don <- summarise(don, fre=sum(con))
+datos <- full_join(data, don, by="n")
+View(datos)
+
+# crear ponderador
+datos$pon <- round((1/datos$fre),1)
+
+datos$fre <- NULL
+
+datos <- spread(datos, eva, value=pon)
+datos[is.na(datos)] <- 0
+
+#1. frecuencia de conotación
+tempo <- datos  %>%  
+         summarise(ne=sum(neg), po=sum(pos), nu=sum(neu)) %>% 
+         mutate(tot=ne+po+nu) %>% 
+         mutate(positivo=round(po/tot*100, 0),
+                negativo=round(ne/tot*100, 0),
+                neutral=round(nu/tot*100, 0)) %>% 
+        select(positivo, negativo, neutral) %>% 
+        gather(cat, value=frecuencia, positivo:neutral)
+
+gr <- ggplot(tempo, aes(x=frecuencia, y=cat)) +
+  geom_point() +
+  labs(title="Palabras relacionadas con reelección", x="Porcentaje", y="Connotación")
+gr
+
+#2. relacion de porcentaje de cada una por partido
+tempo <- datos %>%
+         group_by(partido) %>%
+         summarise(ne=sum(neg), po=sum(pos), nu=sum(neu)) %>%
+         mutate(tot=ne+po+nu)
+
+tempo$pp <- round((tempo$po/tempo$tot)*100, 0)
+tempo$pn <- round((tempo$ne/tempo$tot)*100, 0)
+tempo$pu <- round((tempo$nu/tempo$tot)*100, 0)  
+tempo$prueba <- tempo$pp + tempo$pn +tempo$pu
+
+tempo <- select(tempo, partido, pp, pn, pu)
+tempo <- gather(tempo, cat, value=porcen, pp: pu)
+tempo <- tempo %>%
+  mutate(ca= ifelse(cat=="pn", "Negativa",
+                    ifelse(cat=="pu", "Neutral", "Positiva")))
+
+gr <- ggplot(tempo, aes(x = partido, y=porcen, color=ca)) + 
+  geom_point(size=4.3) +
+  labs(title="Connotación de palabras relacionadas con reelección por partido", x="Partido", y="Porcentaje")
+gr
+
+# mejor alternativa, creo (habrá que re-ordenar categorías para que abajo aparezca pp, en medio pu, arriba pn) 
+pdf(file = "graphs/partidosBar.pdf")
+ggplot(tempo, aes(x = partido, y=porcen, fill=cat)) +
+    geom_bar(stat = "identity") +
+    labs(title="Connotación de palabras relacionadas con reelección por partido", x="Partido", y="Porcentaje")
+dev.off()
+
+#3. relacion por sexo
+tempo <- group_by(datos, sexo)
+tempo <- summarise(tempo, ne=sum(neg), po=sum(pos), nu=sum(neu))
+tempo$tot <- tempo$ne + tempo$po +tempo$nu
+tempo$pp <- round((tempo$po/tempo$tot)*100, 0)
+tempo$pn <- round((tempo$ne/tempo$tot)*100, 0)
+tempo$pu <- round((tempo$nu/tempo$tot)*100, 0)  
+tempo$prueba <- tempo$pp + tempo$pn +tempo$pu
+
+tempo <- select(tempo, sexo, pp, pn, pu)
+tempo <- gather(tempo, cat, value=porcen, pp: pu)
+tempo <- tempo %>%
+  mutate(ca= ifelse(cat=="pn", "Negativa",
+                    ifelse(cat=="pu", "Neutral", "Positiva")))
+
+gr <- ggplot(tempo, aes(x = sexo, y=porcen, color=cat)) + 
+  geom_point(size=4.3) +
+  labs(title="Connotación de palabras relacionadas con reelección por sexo", x="Sexo", y="Porcentaje")
+
+
+#4. licenciatura por ciencia politica, humanidades (RRII/Eco), otras, derecho
+tempo <- group_by(datos, carr)
+tempo <- summarise(tempo, ne=sum(neg), po=sum(pos), nu=sum(neu))
+tempo$tot <- tempo$ne + tempo$po +tempo$nu
+tempo$pp <- round((tempo$po/tempo$tot)*100, 0)
+tempo$pn <- round((tempo$ne/tempo$tot)*100, 0)
+tempo$pu <- round((tempo$nu/tempo$tot)*100, 0)  
+tempo$prueba <- tempo$pp + tempo$pn +tempo$pu
+
+tempo <- select(tempo, carr, pp, pn, pu)
+tempo <- gather(tempo, cat, value=porcen, pp: pu)
+tempo <- tempo %>%
+  mutate(carrera= ifelse(carr==1, "Ciencia Politica", 
+                         ifelse(carr==2, "Economía/RRII", 
+                                ifelse(carr==3, "Otra",
+                                       ifelse(carr==4, "Derecho", NA)))))  %>%
+  mutate(ca= ifelse(cat=="pn", "Negativa",
+             ifelse(cat=="pu", "Neutral", "Positiva")))
+
+gr <- ggplot(tempo, aes(x = carrera, y=porcen, color=ca)) + 
+      geom_point(size=4.3) +
+      labs(title="Conotación de palabras relacionadas con reelección por carrera", x="Carrera", y="Porcentaje del total") 

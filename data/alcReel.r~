@@ -1,0 +1,25 @@
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
+setwd(wd)
+
+d <- read.csv("alcaldesReelectos2018.csv", stringsAsFactors = FALSE)
+
+sel <- which(d$reelecto=="no")
+d$dreel <- 1
+d$dreel[sel] <- 0
+
+nrow(d) 
+
+t <- table(d$reelecto)
+t
+round(t/nrow(d),2)
+
+sel <- which(d$mun=="Monterrey")
+d[sel,]
+
+table(d$edo, d$dreel)
+
+table(d$part2015, d$dreel)
+
+
+head(d)
+    

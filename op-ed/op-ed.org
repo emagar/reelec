@@ -1,58 +1,46 @@
-Título
+Saldos de la reelección municipal
 
-En política, un principio elemental de supervivencia consiste en bailar al son de quien controle tu carrera futura.
+por Eric Magar
 
-Con la reelección consecutiva, inaugurada el proceso electoral pasado, abrimos la posibilidad de que políticos ajenos a las cúpulas partidistas tocasen algunas coplas del son. No todas, sólo eventualmente y quizás ni siquiera las más importantes. Porque las cúpulas conservan instrumentos de diversa índole para promover o frenar carreras a discreción, incluida la todopoderosa potestad de negarle la renominación a cualquier aspirante a la reelección. La que adoptamos en 2014 es, de hecho, una versión muy pasteurizada de la reelección. 
+Para cualquier político, un principio elemental de supervivencia consiste en bailar al son de quien controlará tu carrera en el futuro.
 
-Porque las cúpulas conservan poderosos instrumentos para promover o frenar carreras. Como las llaves de las arcas partidistas. O el acceso a los medios de comunicación. Incluso, tras dos periodos consecutivos en el cargo, todo alcalde deberá retirarse. Y el partido retiene la potestad de negarle la renominación a cualquier aspirante a la reelección. 
+Con la reelección consecutiva, inaugurada en el proceso electoral pasado, se abrió la posibilidad a que políticos ajenos a las cúpulas partidistas tocasen algunas coplas del son. No todas, sólo en algunas ocasiones y quizás ni siquiera las más importantes, porque las cúpulas conservan otros instrumentos para promover o frenar carreras a discreción. El principal es la potestad de negarle la renominación a cualquier aspirante a reelegirse. La que adoptamos en 2014 es, de hecho, una versión muy pasteurizada de la reelección. 
 
-Ello no ha obstado para que senadores de Morena introdujeran, el 16 de octubre pasado, una iniciativa de reforma constitucional para regresarle la flauta a las cúpulas, eliminando la reelección consecutiva de alcaldes y legisladores de los estados. Como en la década de 1930, centralizar todos los instrumentos de control de carreras contribuirá a consolidar un nuevo partido con disciplina férrea. 
+Ello no ha obstado para que senadores de Morena introdujeran, el 16 de octubre pasado, una iniciativa de reforma constitucional para regresar el control absoluto a las cúpulas, eliminando la reelección consecutiva de alcaldes y legisladores de los estados. Como en la década de 1930, centralizar todos los instrumentos de control de carreras contribuirá a consolidar un nuevo partido con disciplina férrea. 
 
-Pero dicha reforma plantea un difícil dilema para los demás partidos. Por un lado, el éxito de la iniciativa beneficiaría también a sus cúpulas sobre sus huestes. Por el otro, sacrificarían un seguro contra desastres. Esto es, desastres electorales, como el del 1o de julio pasado. 
+La propuesta plantea un difícil dilema para los demás partidos, en particular para los históricamente anti-reelección (PRI y PRD), e incluso para los oportunistas (PANAL y PVEM). Por un lado, el éxito de la contrarreforma beneficiaría también a sus cúpulas sobre sus huestes. Por el otro, sacrificarían un seguro contra desastres. Me refiero a desastres electorales, como el del 1o de julio pasado. 
 
 #+CAPTION: Reelección consecutiva de alcaldes en 2018. No se contabilizan los municipios de usos y costumbres ni ocho elecciones anuladas. Se excluyen la CdMx y Puebla (aún sin reelección). /Fuentes/: preparado por el autor con información de los institutos estatales electorales y de páginas de internet de diversos diarios locales.
-|                |          (A) |            (B) |      (C) |       (D) |   (E) |        (F) |
-| Partido        |  Silla vacía |    Silla vacía | Ocupante |  Ocupante |       |  Número de |
-| saliente       | partido ganó | partido perdió | reelecto | derrotado | Total | municipios |
-|----------------+--------------+----------------+----------+-----------+-------+------------|
-| PRI/coal.      |           23 |             42 |       17 |        18 |   100 |        620 |
-| PAN/coal.      |           26 |             32 |       27 |        15 |   100 |        340 |
-| PRD/coal.      |           25 |             40 |       19 |        16 |   100 |        140 |
-| PVEM           |           20 |             55 |       11 |        14 |   100 |         81 |
-| MC             |           27 |             31 |       27 |        15 |   100 |         59 |
-| PT             |            9 |             48 |       23 |        20 |   100 |         35 |
-| PANAL          |            9 |             45 |       32 |        14 |   100 |         22 |
-| Morena         |           40 |             20 |       40 |         0 |   100 |         20 |
-| PES            |            0 |             60 |       40 |         0 |   100 |          5 |
-| Independientes |            0 |             22 |       33 |        44 |   100 |          9 |
-| Part. locales  |            5 |             67 |       10 |        18 |   100 |         40 |
-|----------------+--------------+----------------+----------+-----------+-------+------------|
-| Todos          |           22 |             41 |       20 |        17 |   100 |      1,371 |
+|                |            |             |             |             |       |            |
+|                |        (A) |         (B) |         (C) |         (D) |   (E) |        (F) |
+| Partido        |   Ocupante |    Ocupante | Silla vacía | Silla vacía |       |  Número de |
+| saliente       | reelecto % | derrotado % |    ganada % |   perdida % | Total | municipios |
+|----------------+------------+-------------+-------------+-------------+-------+------------|
+| PRI/coal.      |         17 |          18 |          23 |          42 |   100 |        620 |
+| PAN/coal.      |         27 |          15 |          26 |          32 |   100 |        340 |
+| PRD/coal.      |         19 |          16 |          25 |          40 |   100 |        140 |
+| PVEM           |         11 |          14 |          20 |          55 |   100 |         81 |
+| MC             |         27 |          15 |          27 |          31 |   100 |         59 |
+| PT             |         23 |          20 |           9 |          48 |   100 |         35 |
+| PANAL          |         32 |          14 |           9 |          45 |   100 |         22 |
+| Morena         |         40 |           0 |          40 |          20 |   100 |         20 |
+| PES            |         40 |           0 |           0 |          60 |   100 |          5 |
+| Independientes |         33 |          44 |           0 |          22 |   100 |          9 |
+| Part. locales  |         10 |          18 |           5 |          67 |   100 |         40 |
+|----------------+------------+-------------+-------------+-------------+-------+------------|
+| Todos          |         20 |          17 |          22 |          41 |   100 |      1,371 |
 
-# | PRI/coal.      |           23 |             42 |       17 |        18 |   100 |        582 |
-# | PAN/coal.      |           25 |             32 |       28 |        15 |   100 |        328 |
-# | PRD/coal.      |           25 |             38 |       17 |        20 |   100 |         94 |
-# | PVEM           |           20 |             58 |       10 |        12 |   100 |         76 |
-# | MC             |           29 |             29 |       29 |        13 |   100 |         55 |
-# | Morena         |           42 |             16 |       42 |         0 |   100 |         19 |
-# | PT             |            9 |             45 |       23 |        23 |   100 |         31 |
-# | PANAL          |            9 |             48 |       29 |        14 |   100 |         21 |
-# | PES            |            0 |             60 |       40 |         0 |   100 |          5 |
-# | Independientes |            0 |             25 |       37 |        38 |   100 |          8 |
-# | Part. locales  |            5 |             67 |       10 |        18 |   100 |         40 |
-# |----------------+--------------+----------------+----------+-----------+-------+------------|
-# | Todos          |           23 |             40 |       20 |        17 |   100 |      1,259 |
+Para apreciarlo, considere los datos de la tabla. La columna F reporta el número de municipios que renovaron sus ayuntamientos en 2018 en elecciones que permitieron la reelección consecutiva, 1,371 en veintitrés estados. Las columnas restantes reportan la distribución porcentual, en cuatro categorías, de esos municipios. Las categorías A y B contrastan triunfos y derrotas en municipios cuyo alcalde saliente (el o la "ocupante" de la silla en el Palacio Municipal) estaba en la boleta, intentando reelegirse para un segundo periodo. Las categorías C y D, en cambio, reportan triunfos y derrotas en municipios cuyo alcalde saliente se retiró o fue retirado por el partido --- "sillas vacías", por llamarlas de algún modo. Los porcentajes de cada renglón suman 100 por ciento. 
 
-Para apreciarlo, considere los datos de la tabla. 
+Subrayo primero que, en términos globales, se reeligió 20 por ciento de alcaldes, un total de 276 en todo el país. Aunque sea sólo uno de cada cinco, el dato no es nada despreciable para un primer ejercicio reeleccionista. También es muy notable que, en conjunto, los partidos perdieron casi dos de cada tres sillas vacías (41 por ciento derrotados vs 22 por ciento que ganaron), pero ganaron más alcaldías con ocupante en la boleta que las que perdieron (20 por ciento de ocupantes reelectos vs 17 por ciento derrotados).
 
+La tabla desglosa también municipios según el partido que ocupaba la presidencia municipal hasta la elección. El caso del PRI, que defendía en 2018 el mayor número de alcaldías (620 municipios que, en su momento, ganó solo o en coalición), es bastante parecido al agregado. Los priistas (solos o en coalición) perdieron casi dos sillas vacías por cada una que consiguieron ganar (42 vs 23 por ciento) --- un desastre electoral similar al de su candidato presidencial. Pero con ocupantes en la boleta, la relación de éxito y fracaso de priistas fue muy cercana a 50:50 --- una mejora considerable en comparación con sus sillas vacías. El otro partido con reservas históricas hacia la reelección consecutiva, el PRD, presenta un patrón muy similar.
 
-El caso del PRI es elocuente. Como indica la columna F, el PRI defendía el mayor número de alcaldías (que, en su momento, ganó solo o en coalición). Las columnas restantes reportan la distribución porcentual, en cuatro categorías, de esos 582 municipios priistas. Las categorías A y B contrastan triunfos y derrotas en municipios cuyo alcalde saliente se retiró o fue retirado por el partido --- "sillas vacías", por así decir. Las que el PRI ganó en 2018, solo o en coalición, representan 23 por ciento del total (columna A); las que perdió, 42 por ciento (columna B). O sea que el PRI perdió casi dos sillas vacías por cada una que consiguió ganar --- un desastre electoral similar al de su candidato presidencial. 
+El fenómeno se repite para todos los partidos sin distinción, grandes y chicos, viejos y nuevos, nacionales y locales, y hasta candidatos independientes. En ciertos casos, como el del PAN o MC, la relación triunfos/fracasos presenta diferencias aún más pronunciadas entre sillas vacías y ocupantes en la boleta. Vaya, incluso Morena, que defendía pocos municipios, se benefició de la reelección. Ninguno de sus ocupantes perdió la reelección, pero sí perdieron un puñado de sillas vacías. 
 
-Las categorías C y D reportan municipios cuyo alcalde saliente (el o la "ocupante") estaba en la boleta, intentando reelegirse por un segundo periodo. Los alcaldes priistas que lo consiguieron suman 17 por ciento del total, y 18 por ciento los que fracasaron. Lo notable es que, con ocupantes en la boleta, la relación de éxito y fracaso de priistas fue de alrededor 50:50 --- una mejora considerable comparado con sus sillas vacías. 
+La reelección fue un muy efectivo seguro contra desastres. Hay evidencia contundente de que los partidos fueron sustancialmente más capaces de evitar la zozobra ante la formidable ola morenista cuando el alcalde saliente buscó la reelección que cuando no lo hizo. 
 
-El fenómeno se repite para *todos* los partidos sin excepción. Y en ciertos casos, como el del PAN, la relación triunfos/fracasos presenta diferencias aún más agudas entre sillas vacías y ocupantes en la boleta. Vaya, incluso Morena se benefició de la reelección: ninguno de sus ocupantes perdió la reelección, pero sí perdieron un puñado de sillas vacías. 
+La lección que se desprende de todo esto es contundente. Todos los partidos tienen algo que perder si desaparece la reelección. Quizás importe menos a los partidos chicos, que en su alianza oportunista con Morena, juegan obviamente en otra cancha. Pero la contrarreforma dificultará enormemente que aquellos partidos que quisieran preservar sus máquinas municipales, a lo largo y ancho del territorio, lo consigan. 
 
-La reelección fue un muy efectivo seguro contra desastres. Hay evidencia contundente de que los partidos fueron sustancialmente más capaces de evitar la sosobra ante la formidable ola morenista cuando el alcalde saliente buscó la reelección que cuando no lo hizo. 
-
-Las primera reelección consecutiva de alcaldes podría también ser la última si Morena consigue modificar la constitución. El partido que los secunde en el Congreso estará tirando por la borda una póliza de seguro que acaba de demostrar su efectividad. Lo hará bajo su propio riesgo. 
+La primera reelección consecutiva de alcaldes podría también ser la última. Quien venda sus votos en el Congreso para una reforma constitucional estará quemando una póliza de seguro que acaba de demostrar su efectividad y cuya prima ya está pagada. Lo hará bajo su propio riesgo. 
 

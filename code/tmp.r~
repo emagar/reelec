@@ -1,0 +1,135 @@
+library(gtools)
+x <- c("León","Martín","Magar","Riquelme")
+permutations(n=4, r=4, v=x, repeats.allowed = FALSE) # n=num.elems r=num.times v=x
+
+
+# adapted from https://stackoverflow.com/questions/22894265/how-to-perform-approximate-fuzzy-name-matching-in-r
+# generate some random names
+names = c(
+  "John Smith", 
+  "Samir Henning",
+  "Everette Camille Arron",
+  "Erik Conor",
+  "Smith J",
+  "Smith John",
+  "John S",
+  "León Martín Magar Riquelme",
+  "John Sally"
+);
+
+# split those names and get all ways to write that name
+split_names = lapply(
+  X = names,
+  FUN = function(x){
+    print(x);
+    # split by a space
+    c_split = unlist(x = strsplit(x = x, split = " "));
+    # get all permutations of c_split to compensate for order
+    n <- r <- length(c_split)
+    c_splits <- list(permutations(n=n, r=r, v=c_split, repeats.allowed = FALSE))
+    # return c_splits
+    c_splits;
+  }
+)
+
+split_names
+
+# suppose we're looking for John Smith
+search_for = "John Smith";
+
+# split it by " " and then find all ways to write that name
+#search_for_split = unlist(x = strsplit(x = x, split = " "));
+search_for_split = unlist(x = strsplit(x = search_for, split = " "));
+#search_for_split = list(search_for_split, rev(x = search_for_split));
+search_for_split = list(permutations(n=length(search_for_split), r=length(search_for_split), v=search_for_split, repeats.allowed = FALSE))
+#    list(search_for_split, rev(x = search_for_split));
+
+# initialise a vector containing if search_for was matched in names
+match_statuses = c();
+
+# for each name that's been split
+for(i in 1:length(x = names)){
+
+  # the match status for the current name
+  match_status = FALSE;
+
+  # the current split name
+  c_split_name = split_names[[i]];
+
+  # for each element in search_for_split
+  for(j in 1:length(x = search_for_split)){
+
+    # the current combination of name
+    c_search_for_split_names = search_for_split[[j]];
+
+    # for each element in c_split_name
+    for(k in 1:length(x = c_split_name)){
+
+      # the current combination of current split name
+      c_c_split_name = c_split_name[[k]];
+
+      # if there's a match, or the length of grep (a pattern finding function is
+      # greater than zero)
+      if(
+        # is c_search_for_split_names first element in c_c_split_name first
+        # element
+        length(
+          x = grep(
+            pattern = c_search_for_split_names[1],
+            x = c_c_split_name[1]
+          )
+        ) > 0 &&
+        # is c_search_for_split_names second element in c_c_split_name second 
+        # element
+        length(
+          x = grep(
+            pattern = c_search_for_split_names[2],
+            x = c_c_split_name[2]
+          )
+        ) > 0 ||
+        # or, is c_c_split_name first element in c_search_for_split_names first 
+        # element
+        length(
+          x = grep(
+            pattern = c_c_split_name[1],
+            x = c_search_for_split_names[1]
+          )
+        ) > 0 &&
+        # is c_c_split_name second element in c_search_for_split_names second 
+        # element
+        length(
+          x = grep(
+            pattern = c_c_split_name[2],
+            x = c_search_for_split_names[2]
+          )
+        ) > 0
+      ){
+        # if this is the case, update match status to TRUE
+        match_status = TRUE;
+      } else {
+        # otherwise, don't update match status
+      }
+    }
+  }
+
+  # append match_status to the match_statuses list
+  match_statuses = c(match_statuses, match_status);
+}
+
+search_for;
+
+[1] "John Smith"
+
+cbind(names, match_statuses);
+
+     names             match_statuses
+[1,] "John Smith"      "TRUE"        
+[2,] "Wigberht Ernust" "FALSE"       
+[3,] "Samir Henning"   "FALSE"       
+[4,] "Everette Arron"  "FALSE"       
+[5,] "Erik Conor"      "FALSE"       
+[6,] "Smith J"         "TRUE"        
+[7,] "Smith John"      "TRUE"        
+[8,] "John S"          "TRUE"
+[9,] "John Sally"      "FALSE"   
+

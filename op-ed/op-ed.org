@@ -10,25 +10,25 @@ Ello no ha obstado para que senadores de Morena introdujeran, el 16 de octubre p
 
 La propuesta plantea un difícil dilema para los demás partidos, en particular para los históricamente anti-reelección (PRI y PRD), e incluso para los oportunistas (PANAL y PVEM). Por un lado, el éxito de la contrarreforma beneficiaría también a sus cúpulas sobre sus huestes. Por el otro, sacrificarían un seguro contra desastres. Me refiero a desastres electorales, como el del 1o de julio pasado. 
 
-#+CAPTION: Reelección consecutiva de alcaldes en 2018. No se contabilizan los municipios de usos y costumbres ni ocho elecciones anuladas. Se excluyen la CdMx y Puebla (aún sin reelección). /Fuentes/: preparado por el autor con información de los institutos estatales electorales y de páginas de internet de diversos diarios locales.
-|                |            |             |             |             |       |            |
-|                |        (A) |         (B) |         (C) |         (D) |   (E) |        (F) |
-| Partido        |   Ocupante |    Ocupante | Silla vacía | Silla vacía |       |  Número de |
-| saliente       | reelecto % | derrotado % |    ganada % |   perdida % | Total | municipios |
-|----------------+------------+-------------+-------------+-------------+-------+------------|
-| PRI/coal.      |         17 |          18 |          23 |          42 |   100 |        620 |
-| PAN/coal.      |         27 |          15 |          26 |          32 |   100 |        340 |
-| PRD/coal.      |         19 |          16 |          25 |          40 |   100 |        140 |
-| PVEM           |         11 |          14 |          20 |          55 |   100 |         81 |
-| MC             |         27 |          15 |          27 |          31 |   100 |         59 |
-| PT             |         23 |          20 |           9 |          48 |   100 |         35 |
-| PANAL          |         32 |          14 |           9 |          45 |   100 |         22 |
-| Morena         |         40 |           0 |          40 |          20 |   100 |         20 |
-| PES            |         40 |           0 |           0 |          60 |   100 |          5 |
-| Independientes |         33 |          44 |           0 |          22 |   100 |          9 |
-| Part. locales  |         10 |          18 |           5 |          67 |   100 |         40 |
-|----------------+------------+-------------+-------------+-------------+-------+------------|
-| Todos          |         20 |          17 |          22 |          41 |   100 |      1,371 |
+#+CAPTION: Reelección consecutiva de alcaldes en 2018. No se contabilizan los municipios de usos y costumbres ni ocho elecciones anuladas. Se excluyen la Ciudad de México y Puebla (aún sin reelección). Fuentes: preparado por el autor con información de los institutos estatales electorales y de páginas de internet de diversos diarios locales.
+|                |        A |         B |           C |           D |     E |          F |
+|                | Ocupante |  Ocupante | Silla vacía | Silla vacía |       |            |
+| Partido        | reelecto | derrotado |      ganada |     perdida | Total |  Número de |
+| saliente       |      (%) |       (%) |         (%) |         (%) |   (%) | municipios |
+|----------------+----------+-----------+-------------+-------------+-------+------------|
+| PRI/coal.      |       17 |        18 |          23 |          42 |   100 |        620 |
+| PAN/coal.      |       27 |        15 |          26 |          32 |   100 |        340 |
+| PRD/coal.      |       19 |        16 |          25 |          40 |   100 |        140 |
+| PVEM           |       11 |        14 |          20 |          55 |   100 |         81 |
+| MC             |       27 |        15 |          27 |          31 |   100 |         59 |
+| PT             |       23 |        20 |           9 |          48 |   100 |         35 |
+| PANAL          |       32 |        14 |           9 |          45 |   100 |         22 |
+| Morena         |       40 |         0 |          40 |          20 |   100 |         20 |
+| PES            |       40 |         0 |           0 |          60 |   100 |          5 |
+| Independientes |       33 |        44 |           0 |          22 |   100 |          9 |
+| Part. locales  |       10 |        18 |           5 |          67 |   100 |         40 |
+|----------------+----------+-----------+-------------+-------------+-------+------------|
+| Todos          |       20 |        17 |          22 |          41 |   100 |      1,371 |
 
 Para apreciarlo, considere los datos de la tabla. La columna F reporta el número de municipios que renovaron sus ayuntamientos en 2018 en elecciones que permitieron la reelección consecutiva, 1,371 en veintitrés estados. Las columnas restantes reportan la distribución porcentual, en cuatro categorías, de esos municipios. Las categorías A y B contrastan triunfos y derrotas en municipios cuyo alcalde saliente (el o la "ocupante" de la silla en el Palacio Municipal) estaba en la boleta, intentando reelegirse para un segundo periodo. Las categorías C y D, en cambio, reportan triunfos y derrotas en municipios cuyo alcalde saliente se retiró o fue retirado por el partido --- "sillas vacías", por llamarlas de algún modo. Los porcentajes de cada renglón suman 100 por ciento. 
 

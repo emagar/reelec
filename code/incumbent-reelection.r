@@ -4,47 +4,47 @@ dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(wd)
 
-options(width = 130)
+options(width = 145)
 
-# load incumbent data
-inc <- read.csv(paste(dd, "aymu1997-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
-# fix extraordinaria yrs
-sel <- which(inc$edon==5 & inc$yr==2010)
-inc$yr[sel] <- 2009
-sel <- which(inc$edon==8 & inc$yr==2002)
-inc$yr[sel] <- 2001
-sel <- which(inc$edon==13 & inc$yr==2009)
-inc$yr[sel] <- 2008
-sel <- which(inc$edon==13 & inc$yr==2012)
-inc$yr[sel] <- 2011
-sel <- which(inc$edon==14 & inc$yr==1998)
-inc$yr[sel] <- 1997
-sel <- which(inc$edon==14 & inc$yr==2004)
-inc$yr[sel] <- 2003
-sel <- which(inc$edon==14 & inc$yr==2007)
-inc$yr[sel] <- 2006
-sel <- which(inc$edon==16 & inc$yr==2008)
-inc$yr[sel] <- 2007
-sel <- which(inc$edon==16 & inc$yr==2012)
-inc$yr[sel] <- 2011
-sel <- which(inc$edon==20 & inc$yr==2005)
-inc$yr[sel] <- 2004
-sel <- which(inc$edon==20 & inc$yr==2017)
-inc$yr[sel] <- 2016
-sel <- which(inc$edon==21 & inc$yr==2005)
-inc$yr[sel] <- 2004
-sel <- which(inc$edon==21 & inc$yr==2014)
-inc$yr[sel] <- 2013
-sel <- which(inc$edon==23 & inc$yr==2009)
-inc$yr[sel] <- 2008
-sel <- which(inc$edon==26 & inc$yr==1998)
-inc$yr[sel] <- 1997
-sel <- which(inc$edon==27 & inc$yr==2016)
-inc$yr[sel] <- 2015
-sel <- which(inc$edon==29 & inc$yr==1999)
-inc$yr[sel] <- 1998
-sel <- which(inc$edon==29 & inc$yr==2002)
-inc$yr[sel] <- 2001
+# load incumbent data since 1989
+inc <- read.csv(paste(dd, "aymu1989-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
+## # fix extraordinaria yrs --- became redundant after switch to aymu1989-present.incumbents.csv from aymu1997-present.incumbents.csv
+## sel <- which(inc$edon==5 & inc$yr==2010)
+## inc$yr[sel] <- 2009
+## sel <- which(inc$edon==8 & inc$yr==2002)
+## inc$yr[sel] <- 2001
+## sel <- which(inc$edon==13 & inc$yr==2009)
+## inc$yr[sel] <- 2008
+## sel <- which(inc$edon==13 & inc$yr==2012)
+## inc$yr[sel] <- 2011
+## sel <- which(inc$edon==14 & inc$yr==1998)
+## inc$yr[sel] <- 1997
+## sel <- which(inc$edon==14 & inc$yr==2004)
+## inc$yr[sel] <- 2003
+## sel <- which(inc$edon==14 & inc$yr==2007)
+## inc$yr[sel] <- 2006
+## sel <- which(inc$edon==16 & inc$yr==2008)
+## inc$yr[sel] <- 2007
+## sel <- which(inc$edon==16 & inc$yr==2012)
+## inc$yr[sel] <- 2011
+## sel <- which(inc$edon==20 & inc$yr==2005)
+## inc$yr[sel] <- 2004
+## sel <- which(inc$edon==20 & inc$yr==2017)
+## inc$yr[sel] <- 2016
+## sel <- which(inc$edon==21 & inc$yr==2005)
+## inc$yr[sel] <- 2004
+## sel <- which(inc$edon==21 & inc$yr==2014)
+## inc$yr[sel] <- 2013
+## sel <- which(inc$edon==23 & inc$yr==2009)
+## inc$yr[sel] <- 2008
+## sel <- which(inc$edon==26 & inc$yr==1998)
+## inc$yr[sel] <- 1997
+## sel <- which(inc$edon==27 & inc$yr==2016)
+## inc$yr[sel] <- 2015
+## sel <- which(inc$edon==29 & inc$yr==1999)
+## inc$yr[sel] <- 1998
+## sel <- which(inc$edon==29 & inc$yr==2002)
+## inc$yr[sel] <- 2001
 # extract election yrs
 tmp <- inc[, c("edon","yr")]
 tmp$tmp <- paste(tmp$edon, tmp$yr, sep = "-")
@@ -101,13 +101,47 @@ for (i in 1:32){
     cal <- rbind(cal, tmp)
 }
 
+
+## # extract oax municipios to add more years
+## # NOT NEEDED AGAIN
+## tmp <- inc[inc$edon==20, c("inegi")]
+## tmp <- unique(tmp)
+## tmp <- as.character(tmp)
+## tmp <- sub("^20", "", tmp)
+## tmp1 <- paste("oax-07", tmp, sep=".")
+## tmp2 <- paste("oax-08", tmp, sep=".")
+## tmp3 <- paste("oax-09", tmp, sep=".")
+## tmp <- c(tmp1,tmp2,tmp3)
+## # get elec to subset oax cases
+## tmp2 <- read.csv(paste(dd, "aymu1997-present.coalAgg.csv", sep = ""), stringsAsFactors = FALSE)
+## tmp2 <- read.csv(paste(dd, "aymu1977-present.csv", sep = ""), stringsAsFactors = FALSE)
+## tmp2 <- tmp2[tmp2$edon==20,]
+## sel <- which(tmp2$emm %in% tmp)
+## tmp2 <- tmp2[sel,]
+## write.csv(tmp2, file = paste(dd, "tmp.csv", sep = ""))
+
+
 # clean names
 inc$incumbent <- gsub("  ", " ", inc$incumbent)  # drop double spaces
 inc$incumbent <- sub("^ | $", "", inc$incumbent) # drop trainling/heading spaces
-inc$incumbent <- gsub("[.]", "", inc$incumbent)  # drop periods
-inc$incumbent <- gsub("[(|)]", "", inc$incumbent)  # drop parentheses
+#inc$incumbent <- gsub("[.]", "", inc$incumbent)  # drop periods
+#inc$incumbent <- gsub("[(|)]", "", inc$incumbent)  # drop parentheses
+
+# recode some win labels
+table(inc$win)
+sel <- which(inc$win %in% c("eduardoquirogajimenez", "oscardanielcarrion", "indep1", "luisreneruelasortega"))
+inc$win[sel] <- "indep"
+sel <- which(inc$win %in% c("via_radical"))
+inc$win[sel] <- "vrad"
 
 
+# recode term-limit to pty-won or -lost
+table(inc$win)
+
+# more cleaning
+inc$drep <- ave(inc$incumbent, as.factor(inc$inegi), FUN=sum, na.rm=TRUE)
+
+    
 # load my name-searching function
 source("../code/search_names.r")
 
@@ -120,10 +154,63 @@ inc$drep <- NA # will receive dummy = 1 if name repeated in other obs
 # sorts by decreasing words to process mem-intensive cases 1st, then drop to speed loops
 inc <- inc[order(-inc$words),]
 
-# keep full version of inc in order to work w/o NAs (plug manipuation later)
-inc.full <- inc
-sel.full <- which(inc.full$incumbent!="" & inc.full$words>1)
-inc <- inc.full[sel.full,] # subset
+## # load incumbents from inafed data <-- NO LONGER NEEDED, aymu1989-present.incumbents.csv already has them in
+## inafed <- read.csv("../../municipiosInafed/alcaldes/alcaldes.csv", stringsAsFactors = FALSE)
+## inafed <- inafed[, c("edon","inegi","yr","incumb")] # select columns
+## #inafed$edon <- as.integer(inafed$inegi/1000)
+## inafed$incumb <- gsub("  ", " ", inafed$incumb) # drop double spaces
+## inafed$incumb <- sub("^ | $", "", inafed$incumb) # drop trainling/heading spaces
+## inafed$incumb <- gsub("[.]", "", inafed$incumb)  # drop periods
+## inafed$incumb <- gsub("[(|)]", "", inafed$incumb)  # drop parentheses
+## head(inafed)
+## #
+## # merge inafed names
+## inc <- merge(x = inc, y = inafed[, c("inegi","yr","incumb")], by = c("inegi","yr"), all = TRUE)
+## # how many words in names
+## inc$spc1 <- gsub(pattern = "[^ ]", replacement = "", inc$incumbent, perl = TRUE) # keep spaces only
+## inc$spc2 <- gsub(pattern = "[^ ]", replacement = "", inc$incumb, perl = TRUE) # keep spaces only
+## inc$spc1 <- sapply(inc$spc1, nchar) # count them
+## inc$spc2 <- sapply(inc$spc2, nchar) # count them
+## inc$spc1[is.na(inc$spc1)] <- 0
+## inc$spc2[is.na(inc$spc2)] <- 0
+## # will receive name difference info
+## inc$ddif <- NA
+## sel <- which(inc$spc1>1 & inc$spc2>1) # only those names with at least two words manipulated
+## tmp2 <- mapply(search_names, inc[sel, c("incumb")], inc[sel, c("incumbent")])
+## tmp3 <- rep(1, length(tmp2)); tmp3[tmp2==TRUE] <- 0
+## inc$ddif[sel] <- tmp3
+## # consolida nombres
+## table(is.na(inc$incumbent))
+## table(inc$incumbent=="")
+## table(is.na(inc$incumb))
+## sel <- which((inc$incumbent=="" | is.na(inc$incumbent)) & is.na(inc$incumb)==FALSE)
+## inc$incumbent[sel] <- inc$incumb[sel]
+## inc$spc1[sel] <- inc$spc2[sel]
+## inc$incumb <- inc$spc2 <- NULL
+## sel <- which(inc$yr==0)
+## inc <- inc[-sel,]
+## inc$race.after[inc$yr<2016] <- "Term-limited"
+## # add missing mun info
+## sel <- which(is.na(inc$edon)==TRUE)
+## inc$edon[sel] <- as.integer(inc$inegi[sel]/1000)
+## inc$munn[sel] <- inc$inegi[sel] - as.integer(inc$inegi[sel]/1000)*1000
+## # smthg wrong, check words
+## sel <- which(is.na(inc$words))
+## table(inc$words[-sel] - inc$spc1[-sel])
+
+
+# subset to explore name-searching performance
+sel <- which(inc$edon==14)
+inc.jal <- inc[sel,]
+inc.jal[1,]
+
+# keep full version of inc in order to work w/o NAs (plug manipulation later)
+inc.full <- inc # duplicate
+inc <- inc.jal
+sel.full <- which(inc$incumbent!="" & inc$words>1)
+inc <- inc[sel.full,] # subset
+
+
 
 # initialize for while
 work <- which(is.na(inc$drep)==TRUE) # will be updated to FALSE after a hit recorded
@@ -155,21 +242,20 @@ while (tmp > 1){
 getwd()
 save.image(file = "drep-cut1.RData")
 
+rm(list = ls())
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
+setwd(wd)
+load(file = "drep-cut1.RData")
+ls()
+options(width = 130)
+
+
+
 table(inc$drep)
 sel <- which(inc$drep==15)
 inc[sel,c("edon","mun","incumbent")]
 x
-
-
-# load incumbents from inafed data
-inafed <- read.csv("../../municipiosInafed/alcaldes/alcaldes.csv", stringsAsFactors = FALSE)
-head(inafed)
-inafed <- inafed[, c("edon","inegi","yrIn","incumb")] # select columns
-#inafed$edon <- as.integer(inafed$inegi/1000)
-inafed$incumb <- gsub("  ", " ", inafed$incumb) # drop double spaces
-inafed$incumb <- sub("^ | $", "", inafed$incumb) # drop trainling/heading spaces
-inafed$incumb <- gsub("[.]", "", inc$incumbent)  # drop periods
-
 
 
 inafed$spcs <- gsub(pattern = "[^ ]", replacement = "", inafed$incumb, perl = TRUE) # keep spaces only

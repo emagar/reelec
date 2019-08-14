@@ -1,14 +1,15 @@
 ######################################################################################################
 ## A function to match names in any order                                                           ##
 ##                                                                                                  ##
-## adapted 30-5-2019 by Eric Magar from                                                             ##
+## adapted 30-5-2019 from                                                                           ##
 ## https://stackoverflow.com/questions/22894265/how-to-perform-approximate-fuzzy-name-matching-in-r ##
+## by Eric Magar                                                                                    ##
 ######################################################################################################
 
-search_names <- function(find_name = NA,
-                         within_records = NA,
-                         include_records_in_output = FALSE,
-                         report_hit = FALSE){
+search_names <- function(find_name = NA,                    # TARGET, NAME TO LOOK FOR
+                         within_records = NA,               # VECTOR OF NAMES WHERE TARGET WILL BE SEARCHED
+                         include_records_in_output = FALSE, # WHETHER 
+                         report_hit = FALSE){               # WHETHER 
     require(gtools);
     names <- within_records;
     search_for <- find_name;
@@ -159,9 +160,16 @@ search_names <- function(find_name = NA,
 ##              report_hit = TRUE
 ##              )
  
-## Falta
-## 1. fuzzy matching agrep
-## 2. hit 2 de 3, 3 de 4, etc
+Falta
+1. para eficientar:
+            a) seleccionar sólo subconjunto de nombres de estado(s) de interés
+            b) hacer permutación de nombres, vectorizar
+            c) data frame con el vector b, el emm o inegi del municipio, una columna de hit completo, otra de N palabras,
+               N caracteres, N palabras completas, N palabras fuzzy, N caracteres comunes, y una columna excluir = 1 para NAs 0 demás
+            d) buscar nombre más largo primero, excluirlo = 1, si hit se excluye también ése
+            e) loop sobre subconjunto a menos exlcuidos
+1. fuzzy matching agrep
+2. hit 2 de 3, 3 de 4, etc
 
 
 ## ##########################################################################################################

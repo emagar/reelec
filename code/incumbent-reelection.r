@@ -121,12 +121,15 @@ for (i in 1:32){
 ## write.csv(tmp2, file = paste(dd, "tmp.csv", sep = ""))
 
 
-# recode term-limit to pty-won or -lost
+# party won/lost dummy
+# - was used to recode term-limit to pty-won or -lost but this is now redundant (race.after pasted to csv file 14aug2019)
+# - changes to race.after are now redundant in bloc below
+# - when more elections added, party greps may need manipulation (dhit verifies)
 library(DataCombine) # easy lags
 inc <- inc[order(inc$inegi, inc$yr),] # verify sorted before lags
 inc <- slide(inc, Var = "win", GroupVar = "inegi", slideBy = +1) # lead win by one period
 inc <- slide(inc, Var = "incumbent", GroupVar = "inegi", slideBy = +1) # lead win by one period
-
+#
 inc$dpwin <- NA
 sel <- which(inc$win=="0" | inc$win1=="0"); inc$dpwin[sel] <- 99   # will change to NAs when all is node
 # cherán ayutla before uyc
@@ -529,32 +532,43 @@ table(inc$dpwin, useNA = "always")
 sel <- which(inc$dpwin==99)
 inc$dpwin[sel] <- NA
 #
-# recode term limited
-sel <- which(inc$race.after=="Term-limited")
-sel1 <- which(inc$dpwin==1)
-inc$race.after[intersect(sel,sel1)] <- "Term-limited-p-won"
-sel1 <- which(inc$dpwin==0)
-inc$race.after[intersect(sel,sel1)] <- "Term-limited-p-lost"
+## # recode term limited
+## # redundant
+## sel <- which(inc$race.after=="Term-limited")
+## sel1 <- which(inc$dpwin==1)
+## inc$race.after[intersect(sel,sel1)] <- "Term-limited-p-won"
+## sel1 <- which(inc$dpwin==0)
+## inc$race.after[intersect(sel,sel1)] <- "Term-limited-p-lost"
 #
 # special cases
 sel <- which(inc$emm=="cps-16.120") ; inc$dpwin[sel] <- 0; inc$race.after[sel] <- "Term-limited-p-lost" # litigio coded as term limited 
 sel <- which(inc$emm=="dgo-16.035") ; inc$dpwin[sel] <- 1 # reran under pvem only and lost
 sel <- which(inc$emm=="oax-16.130") ; inc$dpwin[sel] <- 0 # conflicto postelectoral
 #
+## # pending cases
+## # redundant
+## sel <- which(inc$race.after=="Term-limited")
+## inc$race.after[sel] <- "Term-limited-pending"
+#
 # result
 table(inc$race.after, inc$dpwin, useNA = "always")
 #
 # check cases
+#sel1 <- which(inc$emm=="cps-17.064")
 sel1 <- which(inc$race.after=="Beaten" & inc$dpwin==1)
-sel1 <- which(inc$emm=="cps-17.064")
+inc[sel1,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
+sel1 <- which(inc$race.after=="Reelected" & inc$dpwin==0)
 inc[sel1,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
 #
 # clean
 inc$win1 <- inc$incumbent1 <- NULL
 head(inc)
+#
+## # export race.after column to paste it in csv file (done 14ago2019)
+## inc <- inc[order(inc$ord),] # sort
+## getwd()
+## write.csv(inc$race.after, file = "tmp-ra.csv", row.names = FALSE)
 
-toca pegar race.after en el csv
-conservar dpwin pero quitar el código redundante
 sigue codificar el/los partidos que pwin (para saber cuando dpwin=1 es por partido oportunista)
 
 # clean names

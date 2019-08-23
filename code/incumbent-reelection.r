@@ -560,6 +560,40 @@ inc[sel1,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
 sel1 <- which(inc$race.after=="Reelected" & inc$dpwin==0)
 inc[sel1,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
 #
+
+# change conve for mc to avoid false negatives
+sel <- grep("conve", inc$win)
+inc$win[sel] <- sub(pattern="conve", replacement="mc", inc$win[sel])
+sel <- grep("conve", inc$win1)
+inc$win1[sel] <- sub(pattern="conve", replacement="mc", inc$win1[sel])
+
+# which party/ies reelected
+inc$returned <- NA
+sel <- which(inc$dpwin==1)
+inc$returned[-sel] <- "none"
+#
+tmp0 <- inc$win[sel]
+tmp1 <- inc$win1[sel]
+for (i in 1:length(tmp0)){
+    message(sprintf("loop %s of %s", i, length(tmp0)))
+    #i <- 10 # debug
+    tmp00 <- unlist(x = strsplit(x = tmp0[i], split = "-")) # break obs i's coals t into vector
+    tmp11 <- unlist(x = strsplit(x = tmp1[i], split = "-")) # break obs i's coals t+1 into vector
+    index <- tmp00 %in% tmp11
+    common <- tmp00[index]
+    common <- paste(common, collapse = "-")
+    inc$returned[sel][i] <- common
+}
+
+table(inc$returned)
+
+sigue codificar el/los partidos que pwin (para saber cuando dpwin=1 es por partido oportunista)
+
+# check
+sel <- which(inc$returned=="")
+inc[sel,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
+x
+
 # clean
 inc$win1 <- inc$incumbent1 <- NULL
 head(inc)
@@ -569,7 +603,8 @@ head(inc)
 ## getwd()
 ## write.csv(inc$race.after, file = "tmp-ra.csv", row.names = FALSE)
 
-sigue codificar el/los partidos que pwin (para saber cuando dpwin=1 es por partido oportunista)
+
+
 
 # clean names
 inc$incumbent <- gsub("  ", " ", inc$incumbent)  # drop double spaces
@@ -598,10 +633,25 @@ colnames(inc)
 # more cleaning
 inc$drep <- ave(inc$incumbent, as.factor(inc$inegi), FUN=sum, na.rm=TRUE)
 
+
     
 # load my name-searching function
 source("../code/search_names.r")
 
+sel <- which(inc$edon==18)
+tmp2 <- search_names(#find_name = "J Smith",
+             within_records = inc$incumbent[sel],
+             ids = inc$emm[sel],
+             method = "grep"
+             )
+tmp2$n.hits[1,] - tmp1$n.hits[1,]
+tmp2$names[1]
+tmp2$id[2]
+
+tmp.rec = inc$incumbent[sel]
+tmp.ids = inc$emm[sel]
+
+x
 
 # count number of words in names
 inc$words <- gsub("[^ ]", "", inc$incumbent); inc$words <- nchar(inc$words) + 1

@@ -70,19 +70,14 @@ search_names <- function(#find_name = NA,                    # TARGET, NAME TO L
     S <- nrow(split_names) # for use in loop
     # init square matrix containing how many times c_split_name was matched in each split_names
     n.hits  <- matrix(NA, nrow = S, ncol = S)  # total
-    #sh.hits <- matrix(NA, nrow = N, ncol = N)  # share relative to words
-    # DROP ## n.hits.hi <- matrix()           # upper part will rbind cases processed 1-by-1
-    # DROP ## split string by " " into vector ###and then find all ways to write the search name
-    # DROP #search_for_split <- unlist(x = strsplit(x = search_for, split = " "));
-    # DROP ## permutations over search_for_split seem redundant
     #
-    split_names2 <- split_names; s.words2 <- s.words # duplicate (originals will be pruned at each loop)
+    # DROP #split_names2 <- split_names; s.words2 <- s.words # duplicate (originals will be pruned at each loop)
     for (s in 1:S){
         #s <- 1 # debug
         message(sprintf("loop %s of %s", s, S))
         # the current split name
-        c_split_name <- split_names[1,];
-        c_s.words <- s.words[1];
+        c_split_name <- split_names[s,];
+        c_s.words <- s.words[s];
         # init rectangular matrix for c_split_name matches=1 in split_names
         hits <- matrix(0, nrow = nrow(split_names), ncol = ncol(split_names))
         #
@@ -92,15 +87,13 @@ search_names <- function(#find_name = NA,                    # TARGET, NAME TO L
             # the current permutation of current split name
             c_word <- as.character(as.matrix(c_split_name[j])); # drops factor
             if (method=="exact"){
-                hits[which(split_names[,j]==c_word)] <- hits[which(split_names[,j]==c_word)] + 1  # record exact hits
+                # record exact hits
+                hits[which(split_names[,j]==c_word)] <- 1
             }
             if (method=="grep"){
-                ## # alternative: use regex
-                c_initial <- substr(c_word, start = 1, stop = 1) # initial only
-                c_initial <- paste("^", c_initial, sep = "")
-                sel1 <- grep(pattern=c_word, x=split_names[,j])
-                sel2 <- grep(pattern=c_initial, x=split_names[,j])
-                hits[union(sel1,sel2)] <- 1
+                ## # alternative: use regex (search matched initial)
+                if (nchar(c_word)==1) c_word <- paste("^", c_word, sep = "") # if initial only, search 1st character only
+                hits[grep(pattern=c_word, x=split_names[,j])] <- 1
             }
             if (method=="fuzzy"){
                 print("Sorry, method fuzzy under construction ):")
@@ -110,19 +103,9 @@ search_names <- function(#find_name = NA,                    # TARGET, NAME TO L
         }
         #
         # count total hits in each row of split_names and plug into n.hits
-        n.hits[s,s:S] <- rowSums(hits) # fill row leaving pre-processed items untouched
-        n.hits[s:S,s] <- rowSums(hits) # fill col leaving pre-processed items untouched
-        #sh.hits.lo[1,i:I] <- round(rowSums(hits.lo)/s.words, 1) # fill row
-        #sh.hits.lo[i:I,1] <- round(rowSums(hits.lo)/s.words, 1) # fill col
+        n.hits[,s] <- rowSums(hits) # fill sth col (hits of name s in whole column)
         #
-        # shave-off first obs after iteration s processed
-        split_names <- split_names[-1,];
-        s.words <- s.words[-1]
     }
-    #
-    split_names <- split_names2 # restore
-    s.words <- s.words2 # restore
-    rm(split_names2, s.words2)
     #
     n.words <- unlist(lapply(X = strsplit(names, split=" "), length))
     #

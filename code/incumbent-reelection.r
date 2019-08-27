@@ -638,18 +638,34 @@ inc$drep <- ave(inc$incumbent, as.factor(inc$inegi), FUN=sum, na.rm=TRUE)
 # load my name-searching function
 source("../code/search_names.r")
 
-sel <- which(inc$edon==18)
-tmp2 <- search_names(#find_name = "J Smith",
+sel <- which(inc$edon %in% 1:6)
+tmp1 <- search_names(#find_name = "J Smith",
              within_records = inc$incumbent[sel],
              ids = inc$emm[sel],
-             method = "grep"
+             method = "exact"
              )
 tmp2$n.hits[1,] - tmp1$n.hits[1,]
 tmp2$names[1]
-tmp2$id[2]
+head(tmp1$sh.hits)
 
-tmp.rec = inc$incumbent[sel]
-tmp.ids = inc$emm[sel]
+# list with hits' ids
+ids <- tmp1$ids
+n.hits <- tmp1$n.hits
+sh.hits <- tmp1$sh.hits
+
+i <- i+1
+sel <- which(sh.hits[,i]>=.8)
+ids[sel]
+names[sel]
+
+sel <- which(inc$edon %in% 21)
+length(sel)
+x
+ags-gue ~4600
+hgo-mic ~4300
+mor-pue ~4800
+que-tla ~4100
+ver-zac ~2900
 
 x
 

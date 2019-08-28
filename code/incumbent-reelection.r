@@ -636,11 +636,11 @@ inc$drep <- ave(inc$incumbent, as.factor(inc$inegi), FUN=sum, na.rm=TRUE)
 
     
 # load my name-searching function
-source("../code/search_names.r")
+source("../code/search.names.r")
 
 sel <- which(inc$edon %in% 1:6)
-tmp1 <- search_names(#find_name = "J Smith",
-             within_records = inc$incumbent[sel],
+tmp1 <- search.names(
+             within.records = inc$incumbent[sel],
              ids = inc$emm[sel],
              method = "exact"
              )
@@ -699,7 +699,7 @@ inc <- inc[order(-inc$words),]
 ## # will receive name difference info
 ## inc$ddif <- NA
 ## sel <- which(inc$spc1>1 & inc$spc2>1) # only those names with at least two words manipulated
-## tmp2 <- mapply(search_names, inc[sel, c("incumb")], inc[sel, c("incumbent")])
+## tmp2 <- mapply(search.names, inc[sel, c("incumb")], inc[sel, c("incumbent")])
 ## tmp3 <- rep(1, length(tmp2)); tmp3[tmp2==TRUE] <- 0
 ## inc$ddif[sel] <- tmp3
 ## # consolida nombres
@@ -744,7 +744,7 @@ tmp <- nrow(ss)
 
 while (tmp > 1){
     message(sprintf("%s loops, %s records left", i, tmp))
-    ss$hit[-1] <- search_names(find_name = ss$incumbent[1], within_records = ss$incumbent[-1])
+    ss$hit[-1] <- search.names(find_name = ss$incumbent[1], within.records = ss$incumbent[-1])
     sel <- which(ss$hit==TRUE)
     if (length(sel)>0) {
         ss$drep[1]   <- i # i allows finding where repeated name is

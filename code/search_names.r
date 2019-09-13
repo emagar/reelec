@@ -88,8 +88,10 @@ search.names <- function(within.records = NA,               # VECTOR OF NAMES WH
     #
     # DROP #split.names2 <- split.names; n.words2 <- n.words # duplicate (originals will be pruned at each loop)
     for (n in 1:N){ # loop over names
-        #n <- 1 # debug
+        #n <- 727 # debug
         message(sprintf("loop %s of %s", n, N))
+        # skip missing names 
+        if (is.na(names[n])==TRUE) next
         # the current name's permutations
         sel <- which(ids.perms==ids[n])
         c.name.perm <- names.perm[sel,]
@@ -118,9 +120,9 @@ search.names <- function(within.records = NA,               # VECTOR OF NAMES WH
                     hits[grep(pattern=c.word, x=split.names[,w]),w] <- 1
                 }
                 if (method=="fuzzy"){
-                    print("Sorry, method fuzzy under construction ):")
                     ## # alternative: use fuzzy search
-                    ## hits[agrep(pattern=c.word, x=split.names[,w])] # alternative: use fuzzy search
+                    if (nchar(c.word)==1) c.word <- paste("^", c.word, sep = "") # if initial only, search 1st character only
+                    hits[agrep(pattern=c.word, x=split.names[,w])] # alternative: use fuzzy search
                 }
             }
             #

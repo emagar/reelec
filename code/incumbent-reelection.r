@@ -4,7 +4,7 @@ dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(wd)
 
-options(width = 160)
+options(width = 75)
 
 # load incumbent data since 1989
 inc <- read.csv(paste(dd, "aymu1989-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
@@ -634,19 +634,130 @@ colnames(inc)
 inc$drep <- ave(inc$incumbent, as.factor(inc$inegi), FUN=sum, na.rm=TRUE)
 
 
-    
-# load my name-searching function
-source("../code/search.names.r")
+# get elected governors
+gob <- read.csv(paste(dd, "goed1985-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
+gob$yr <- gob$yr_el; gob$mo <- gob$mo_el; gob$dy <- gob$dy_el
+gob$win <- gob$part; gob$incumbent <- gob$gober
+gob$mun <- "gobernador"
+gob$race.after <- gob$note <- gob$fuente <- gob$returned <- ""
+gob$dpwin <- NA
+gob$inegi <- gob$ife <- gob$munn <- 0
+gob <- gob[,c("emm","yr","mun","ord","inegi","edon","munn","ife","mo","dy","win","incumbent","race.after","note","fuente","dpwin","returned")]
+## head(gob)
+## head(inc)
+# add dummy to drop gobernadores after names have been searched
+gob$dgob <- 1; inc$dgob <- 0
+# merge
+inc <- rbind(inc, gob) # paste governors into incumbents to search for their names too (eg. Monreal was zac governor)
+rm(gob)
+tail(inc)
 
-sel <- which(inc$edon %in% 1:6)
-tmp1 <- search.names(
-             within.records = inc$incumbent[sel],
-             ids = inc$emm[sel],
-             method = "exact"
-             )
-tmp2$n.hits[1,] - tmp1$n.hits[1,]
-tmp2$names[1]
+# get elected diputados federales
+dip <- read.csv(paste(dd, "dfdf2000-present-incumbents.csv", sep = ""), stringsAsFactors = FALSE)
+dip$mo <- dip$dy <- NA; dip$win <- dip$part; dip$incumbent <- dip$nom
+dip$mun <- "dipfed"
+dip$race.after <- dip$note <- dip$fuente <- dip$returned <- ""
+dip$dpwin <- NA
+dip$inegi <- dip$ife <- dip$munn <- dip$dgob <- 0
+dip <- dip[,c("emm","yr","mun","ord","inegi","edon","munn","ife","mo","dy","win","incumbent","race.after","note","fuente","dpwin","returned","dgob")]
+## head(dip)
+## head(inc)
+# add dummy to drop dipernadores after names have been searched
+dip$ddip <- 1; inc$ddip <- 0
+# merge
+inc <- rbind(inc, dip) # paste governors into incumbents to search for their names too (eg. Monreal was zac governor)
+rm(dip)
+tail(inc)
+
+
+
+# load my name-searching function
+source("../code/search_names.r")
+
+# will receive repeat names
+inc$drep <- 0
+
+# exact match within state only (+ govs)
+for (i in 1:32){
+    #i <- 30 # debug
+    sel1 <- which(inc$edon %in% i);
+    sel2 <- which(inc$ddip==1);
+    sel3 <- which(inc$dgob==1);
+    sel <- intersect(sel1, sel2); # state's diputados
+    sel <- union(sel, sel1);      # state's alcaldes+diputados
+    sel <- union(sel, sel3);      # plus all governors
+    tmp1 <- search.names(
+        within.records = inc$incumbent[sel],
+        ids = inc$emm[sel],
+        method = "exact"
+    )
+    ## hits <- data.frame(ids = tmp1$ids,
+    ##                    name = tmp1$names)
+    sh.hits <- tmp1$sh.hits
+    sh.hits <- sh.hits * (1-diag(nrow(sh.hits)))
+    exact.hits <- apply(X = sh.hits, 2, function(x) length(which(x==1)))
+    sel.col <- which(exact.hits>0)
+    sel.ids <- tmp1$ids[sel.col]
+    sel.names <- tmp1$names[sel.col]
+    sel.yrs <- inc$yr[sel][sel.col]
+    sh.hits <- tmp1$sh.hits # restore sh.hits
+    sh.hits.ss <- sh.hits[,sel.col]
+    # function to report indexes of exact hit elements
+    tmp <- function(x){
+        y <- which(x==1);
+        return(y);
+    }
+    #
+    tmp2 <- lapply(split(sh.hits.ss,seq(nrow(sh.hits.ss))),tmp)
+    tmp2 <- tmp2[lapply(tmp2, length)>0] # drop empty elements
+    names(tmp2) <- sel.ids
+    #
+    tmp.ids   <- Map(function(x) sel.ids[unlist(x)]  , tmp2)
+    #
+    tmp.names <- Map(function(x) sel.names[unlist(x)], tmp2)
+    #
+    tmp.yrs   <- Map(function(x) sel.yrs[unlist(x)]  , tmp2)
+    #
+    # identifies min(year)'s index
+    tmp.drop <- Map(function(x) which(x==min(x)), tmp.yrs)
+    # drops indices from id vectors 
+    tmp.ones <- Map(function(x, y) x[-y], tmp.ids, tmp.drop)
+    # turn into vector
+    tmp.ones <- unlist(tmp.ones)
+    #
+    sel4 <- which(inc$emm %in% tmp.ones)
+    inc$drep[sel4] <- 1
+}
+
+# parece que sí jala!
+tmp <- inc[sel,]
+write.csv(tmp, file = "tmp.csv")
+data.frame(tmp$emm, tmp$yr, tmp$incumbent, tmp$drep)
+
+
+1 select columns with 1 or more hits
+2 subset sh.hits
+3 in each column, report indexes with positive value
+4 vector with names, vector with ids (include original name/id)
+5 put into two lists, names=ids
+
+
+sel <- which(tmp1$sh.hits[,4]==1)
+
+tmp3$n.hits[664,] - tmp2$n.hits[664,]
+tmp1$names[664]
+data.frame(tmp1$names, tmp1$ids)
 head(tmp1$sh.hits)
+
+sel <- which(tmp2$sh.hits[,664]>.5)
+tmp2$names[sel]
+tmp2$sh.hits[sel,664]
+x
+
+# broke at iteration n = 716
+# traceback()
+# option(error = recover), ls()
+# debug(search.names), c = exit browser and move to next, f = finish loop, Q = quit, help = this info
 
 # list with hits' ids
 ids <- tmp1$ids

@@ -87,7 +87,7 @@ search.names <- function(within.records = NA,               # VECTOR OF NAMES WH
     #
     for (n in 1:N){ # loop over names
         #n <- 727 # debug
-        message(sprintf("loop %s of %s", n, N))
+        message(sprintf("loop %s of %s (id = %s)", n, N, ids[n]))
         # skip missing names 
         if (is.na(names[n])==TRUE) next
         # the current name's permutations

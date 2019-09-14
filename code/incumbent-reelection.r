@@ -669,17 +669,23 @@ inc$incumbent <- gsub("[.]", "", inc$incumbent)  # drop periods
 inc$incumbent <- gsub("[()]", "", inc$incumbent)  # drop parentheses
 inc$incumbent <- gsub("[,]", "", inc$incumbent)  # drop commas
 
-
-
-
-
+# simplify some words in names to save memory in name search function 
+## # debug
+## sel <- grep(" DE LOS ANGELES", inc$incumbent)
+## inc$incumbent[sel]
+## x
+inc$incumbent <- gsub(" DE LA ", " DELA ", inc$incumbent)
+inc$incumbent <- gsub(" DE LOS ", " DELOS ", inc$incumbent)
+inc$incumbent <- gsub(" MARTIN DEL CAMPO", " MARTINDELCAMPO", inc$incumbent)
+inc$incumbent <- gsub(" DE JESUS ", " DEJESUS ", inc$incumbent)
+inc$incumbent <- gsub(" DE LOS ANGELES", " DE LOS ANGELES", inc$incumbent)
 
 # load my name-searching function
 source("../code/search_names.r")
 
-# will receive repeat names
+# will receive exact repeat names
 inc$drep <- 0
-
+#
 # exact match within state alcaldes only (+ govs)
 for (i in 1:32){
     #i <- 21 # debug
@@ -730,7 +736,116 @@ for (i in 1:32){
     inc$drep[sel4] <- 1
 }
 
+# will receive grep repeat names
+inc$drepg <- 0
+#
+# exact match within state alcaldes only (+ govs)
+for (i in 1:32){
+    #i <- 14 # debug
+    message(sprintf("loop %s of %s", i, 32))
+    sel1 <- which(inc$edon %in% i);
+    sel2 <- which(inc$ddip==1);
+    sel3 <- which(inc$dgob==1);
+    sel <- intersect(sel1, sel2); # state's diputados
+    sel <- union(sel, sel1);      # state's alcaldes+diputados
+    sel <- union(sel, sel3);      # plus all governors
+    tmp1 <- search.names(
+        within.records = inc$incumbent[sel],
+        ids = inc$emm[sel],
+        method = "grep"
+    )
+    sh.hits <- tmp1$sh.hits # extract share hits matrix
+    sh.hits <- sh.hits * (1-diag(nrow(sh.hits))) # diag to 0
+    exact.hits <- apply(X = sh.hits, 2, function(x) length(which(x==1)))
+    sel.col <- which(exact.hits>0)
+    sel.ids <- tmp1$ids[sel.col]
+    sel.names <- tmp1$names[sel.col]
+    sel.yrs <- inc$yr[sel][sel.col]
+    sh.hits <- tmp1$sh.hits # restore sh.hits
+    sh.hits.ss <- sh.hits[,sel.col]
+    # function to report indexes of exact hit elements
+    tmp <- function(x){
+        y <- which(x==1);
+        return(y);
+    }
+    tmp2 <- lapply(split(sh.hits.ss, seq(nrow(sh.hits.ss))), tmp)
+    tmp2 <- tmp2[lapply(tmp2, length)>0] # drop empty elements
+    names(tmp2) <- sel.ids
+    #
+    tmp.ids   <- Map(function(x) sel.ids[unlist(x)]  , tmp2)
+    #
+    tmp.names <- Map(function(x) sel.names[unlist(x)], tmp2)
+    #
+    tmp.yrs   <- Map(function(x) sel.yrs[unlist(x)]  , tmp2)
+    #
+    # identifies min(year)'s index
+    tmp.drop <- Map(function(x) which(x==min(x)), tmp.yrs)
+    # drops indices from id vectors 
+    tmp.ones <- Map(function(x, y) x[-y], tmp.ids, tmp.drop)
+    # turn into vector
+    tmp.ones <- unlist(tmp.ones)
+    #
+    sel4 <- which(inc$emm %in% tmp.ones)
+    inc$drepg[sel4] <- 1
+}
+
+# will receive grep repeat names
+inc$drepf <- 0
+#
+# exact match within state alcaldes only (+ govs)
+for (i in 1:32){
+    #i <- 14 # debug
+    message(sprintf("loop %s of %s", i, 32))
+    sel1 <- which(inc$edon %in% i);
+    sel2 <- which(inc$ddip==1);
+    sel3 <- which(inc$dgob==1);
+    sel <- intersect(sel1, sel2); # state's diputados
+    sel <- union(sel, sel1);      # state's alcaldes+diputados
+    sel <- union(sel, sel3);      # plus all governors
+    tmp1 <- search.names(
+        within.records = inc$incumbent[sel],
+        ids = inc$emm[sel],
+        method = "fuzzy"
+    )
+    sh.hits <- tmp1$sh.hits # extract share hits matrix
+    sh.hits <- sh.hits * (1-diag(nrow(sh.hits))) # diag to 0
+    exact.hits <- apply(X = sh.hits, 2, function(x) length(which(x==1)))
+    sel.col <- which(exact.hits>0)
+    sel.ids <- tmp1$ids[sel.col]
+    sel.names <- tmp1$names[sel.col]
+    sel.yrs <- inc$yr[sel][sel.col]
+    sh.hits <- tmp1$sh.hits # restore sh.hits
+    sh.hits.ss <- sh.hits[,sel.col]
+    # function to report indexes of exact hit elements
+    tmp <- function(x){
+        y <- which(x==1);
+        return(y);
+    }
+    tmp2 <- lapply(split(sh.hits.ss, seq(nrow(sh.hits.ss))), tmp)
+    tmp2 <- tmp2[lapply(tmp2, length)>0] # drop empty elements
+    names(tmp2) <- sel.ids
+    #
+    tmp.ids   <- Map(function(x) sel.ids[unlist(x)]  , tmp2)
+    #
+    tmp.names <- Map(function(x) sel.names[unlist(x)], tmp2)
+    #
+    tmp.yrs   <- Map(function(x) sel.yrs[unlist(x)]  , tmp2)
+    #
+    # identifies min(year)'s index
+    tmp.drop <- Map(function(x) which(x==min(x)), tmp.yrs)
+    # drops indices from id vectors 
+    tmp.ones <- Map(function(x, y) x[-y], tmp.ids, tmp.drop)
+    # turn into vector
+    tmp.ones <- unlist(tmp.ones)
+    #
+    sel4 <- which(inc$emm %in% tmp.ones)
+    inc$drepf[sel4] <- 1
+}
+
 # parece que sí jala!
+table(inc$drep, inc$drepg)
+table(inc$drep, inc$drepf)
+
 tmp <- inc[sel,]
 write.csv(tmp, file = "tmp.csv")
 data.frame(tmp$emm, tmp$yr, tmp$incumbent, tmp$drep)

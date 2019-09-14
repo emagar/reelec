@@ -36,9 +36,8 @@ search.names <- function(within.records = NA,               # VECTOR OF NAMES WH
     #
     # split names and get all ways to write each name into a list of same length
     names.perm <- lapply(
-        X = gsub("[(|)]", "", names), # drop parentheses, if any
+        X = gsub("[(),]", "", names), # drop parentheses, commas if any
         FUN = function(x){
-            #print(x);
             # split by a space
             c.split = unlist(x = strsplit(x = x, split = " "));
             # get all permutations of c.split to compensate for order
@@ -60,7 +59,7 @@ search.names <- function(within.records = NA,               # VECTOR OF NAMES WH
     #
     # un-permuted version to search over
     split.names <- lapply(
-        X = gsub("[(|)]", "", names), # drop parentheses, if any
+        X = gsub("[(),]", "", names), # drop parentheses, commas if any
         FUN = function(x){
             #print(x);
             # split by a space
@@ -86,7 +85,6 @@ search.names <- function(within.records = NA,               # VECTOR OF NAMES WH
     # init square matrix containing how many times c.split.name was matched in each split.names
     n.hits  <- matrix(NA, nrow = N, ncol = N)  # will receive how many times each split name is matched
     #
-    # DROP #split.names2 <- split.names; n.words2 <- n.words # duplicate (originals will be pruned at each loop)
     for (n in 1:N){ # loop over names
         #n <- 727 # debug
         message(sprintf("loop %s of %s", n, N))
@@ -134,9 +132,6 @@ search.names <- function(within.records = NA,               # VECTOR OF NAMES WH
         n.hits[,n] <- apply(p.hits, 1, max) # fill nth col (hits of name s in whole column)
     }
     #   
-    ## # no longer needed
-    ## tmp1 <- n.hits * (1-diag(N)) # n.hits with diagonal set to zero (to exclude autohits from max)
-    ## tmp2 <- diag(N) * n.words  # will receive hits when all permutations of a name are consolidated
     sh.hits <- round(n.hits / n.words, 1)
     #
     ## # debug

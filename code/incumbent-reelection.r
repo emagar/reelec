@@ -606,13 +606,6 @@ head(inc)
 
 
 
-# clean names
-inc$incumbent <- gsub("  ", " ", inc$incumbent)  # drop double spaces
-inc$incumbent <- sub("^ | $", "", inc$incumbent) # drop trainling/heading spaces
-inc$incumbent <- gsub("[.]", "", inc$incumbent)  # drop periods
-inc$incumbent <- gsub("[(|)]", "", inc$incumbent)  # drop parentheses
-
-
 # change 0s to NAs
 sel <- which(inc$incumbent=="0")
 inc$incumbent[sel] <- NA
@@ -669,6 +662,16 @@ inc <- rbind(inc, dip) # paste governors into incumbents to search for their nam
 rm(dip)
 tail(inc)
 
+# clean names
+inc$incumbent <- gsub("  ", " ", inc$incumbent)  # drop double spaces
+inc$incumbent <- sub("^ | $", "", inc$incumbent) # drop trainling/heading spaces
+inc$incumbent <- gsub("[.]", "", inc$incumbent)  # drop periods
+inc$incumbent <- gsub("[()]", "", inc$incumbent)  # drop parentheses
+inc$incumbent <- gsub("[,]", "", inc$incumbent)  # drop commas
+
+
+
+
 
 
 # load my name-searching function
@@ -677,9 +680,10 @@ source("../code/search_names.r")
 # will receive repeat names
 inc$drep <- 0
 
-# exact match within state only (+ govs)
+# exact match within state alcaldes only (+ govs)
 for (i in 1:32){
-    #i <- 30 # debug
+    #i <- 21 # debug
+    message(sprintf("loop %s of %s", i, 32))
     sel1 <- which(inc$edon %in% i);
     sel2 <- which(inc$ddip==1);
     sel3 <- which(inc$dgob==1);
@@ -691,10 +695,8 @@ for (i in 1:32){
         ids = inc$emm[sel],
         method = "exact"
     )
-    ## hits <- data.frame(ids = tmp1$ids,
-    ##                    name = tmp1$names)
-    sh.hits <- tmp1$sh.hits
-    sh.hits <- sh.hits * (1-diag(nrow(sh.hits)))
+    sh.hits <- tmp1$sh.hits # extract share hits matrix
+    sh.hits <- sh.hits * (1-diag(nrow(sh.hits))) # diag to 0
     exact.hits <- apply(X = sh.hits, 2, function(x) length(which(x==1)))
     sel.col <- which(exact.hits>0)
     sel.ids <- tmp1$ids[sel.col]
@@ -707,8 +709,7 @@ for (i in 1:32){
         y <- which(x==1);
         return(y);
     }
-    #
-    tmp2 <- lapply(split(sh.hits.ss,seq(nrow(sh.hits.ss))),tmp)
+    tmp2 <- lapply(split(sh.hits.ss, seq(nrow(sh.hits.ss))), tmp)
     tmp2 <- tmp2[lapply(tmp2, length)>0] # drop empty elements
     names(tmp2) <- sel.ids
     #
@@ -735,39 +736,8 @@ write.csv(tmp, file = "tmp.csv")
 data.frame(tmp$emm, tmp$yr, tmp$incumbent, tmp$drep)
 
 
-1 select columns with 1 or more hits
-2 subset sh.hits
-3 in each column, report indexes with positive value
-4 vector with names, vector with ids (include original name/id)
-5 put into two lists, names=ids
 
 
-sel <- which(tmp1$sh.hits[,4]==1)
-
-tmp3$n.hits[664,] - tmp2$n.hits[664,]
-tmp1$names[664]
-data.frame(tmp1$names, tmp1$ids)
-head(tmp1$sh.hits)
-
-sel <- which(tmp2$sh.hits[,664]>.5)
-tmp2$names[sel]
-tmp2$sh.hits[sel,664]
-x
-
-# broke at iteration n = 716
-# traceback()
-# option(error = recover), ls()
-# debug(search.names), c = exit browser and move to next, f = finish loop, Q = quit, help = this info
-
-# list with hits' ids
-ids <- tmp1$ids
-n.hits <- tmp1$n.hits
-sh.hits <- tmp1$sh.hits
-
-i <- i+1
-sel <- which(sh.hits[,i]>=.8)
-ids[sel]
-names[sel]
 
 sel <- which(inc$edon %in% 21)
 length(sel)

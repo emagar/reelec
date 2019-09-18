@@ -620,13 +620,6 @@ inc$win[sel] <- "vrad"
 
 
 
-
-
-colnames(inc)
-# more cleaning
-inc$drep <- ave(inc$incumbent, as.factor(inc$inegi), FUN=sum, na.rm=TRUE)
-
-
 # get elected governors
 gob <- read.csv(paste(dd, "goed1985-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
 gob$yr <- gob$yr_el; gob$mo <- gob$mo_el; gob$dy <- gob$dy_el
@@ -736,12 +729,14 @@ for (i in 1:32){
     inc$drep[sel4] <- 1
 }
 
-# will receive grep repeat names
-inc$drepg <- 0
+# will receive repeated names with whatever method chosen
+inc$drep <- 0
+who.was.hit <- as.list(rep(NA,32)) # useful to cotrast exact and grep/fuzzy
+meth <- c("exact","grep","fuzzy")[2] # pick 1 2 or 3
 #
-# exact match within state alcaldes only (+ govs)
+# grep match within state alcaldes only (+ govs)
 for (i in 1:32){
-    #i <- 14 # debug
+    #i <- 32 # debug
     message(sprintf("loop %s of %s", i, 32))
     sel1 <- which(inc$edon %in% i);
     sel2 <- which(inc$ddip==1);
@@ -752,10 +747,11 @@ for (i in 1:32){
     tmp1 <- search.names(
         within.records = inc$incumbent[sel],
         ids = inc$emm[sel],
-        method = "grep"
+        method = meth
     )
     sh.hits <- tmp1$sh.hits # extract share hits matrix
     sh.hits <- sh.hits * (1-diag(nrow(sh.hits))) # diag to 0
+    #sh.hits <- matrix(c(1,1,0,.5,0,0,1,0,0), nrow = 3, ncol = 3) # debug
     exact.hits <- apply(X = sh.hits, 2, function(x) length(which(x==1)))
     sel.col <- which(exact.hits>0)
     sel.ids <- tmp1$ids[sel.col]
@@ -764,35 +760,64 @@ for (i in 1:32){
     sh.hits <- tmp1$sh.hits # restore sh.hits
     sh.hits.ss <- sh.hits[,sel.col]
     # function to report indexes of exact hit elements
-    tmp <- function(x){
-        y <- which(x==1);
-        return(y);
-    }
-    tmp2 <- lapply(split(sh.hits.ss, seq(nrow(sh.hits.ss))), tmp)
-    tmp2 <- tmp2[lapply(tmp2, length)>0] # drop empty elements
+    sh.hits.ss <- t(sh.hits.ss) # needed because lapply operates on rows and we need hits in each column
+    tmp2 <- Map(function(x){y <- which(x==1); return(y)}, split(sh.hits.ss, seq(nrow(sh.hits.ss))))
+    # DROP #tmp2 <- tmp2[lapply(tmp2, length)>0] # drop empty elements
     names(tmp2) <- sel.ids
     #
-    tmp.ids   <- Map(function(x) sel.ids[unlist(x)]  , tmp2)
+    tmp.ids   <- Map(function(x) tmp1$ids[unlist(x)]  , tmp2)
     #
-    tmp.names <- Map(function(x) sel.names[unlist(x)], tmp2)
+    tmp.names <- Map(function(x) tmp1$names[unlist(x)], tmp2)
     #
-    tmp.yrs   <- Map(function(x) sel.yrs[unlist(x)]  , tmp2)
+    tmp.yrs   <- Map(function(x) inc$yr[sel][unlist(x)]  , tmp2)
     #
     # identifies min(year)'s index
     tmp.drop <- Map(function(x) which(x==min(x)), tmp.yrs)
-    # drops indices from id vectors 
+    # drops indices of early years from id vectors 
     tmp.ones <- Map(function(x, y) x[-y], tmp.ids, tmp.drop)
     # turn into vector
     tmp.ones <- unlist(tmp.ones)
     #
+    # record hits in data
     sel4 <- which(inc$emm %in% tmp.ones)
-    inc$drepg[sel4] <- 1
+    inc$drep[sel4] <- 1
+    # save hit ids
+    #tmp.ids <- Map(function(x,y) x[-which(x==y)], tmp.ids, names(tmp.ids)) # drop case's own id
+    tmp3 <- rep(NA, nrow(sh.hits))
+    tmp3[sel.col] <- unlist(Map(function(x) paste(unlist(x), collapse = " "), tmp.ids))
+    who.was.hit[[i]] <- tmp3
 }
+# fill-in the appropriate
+if (meth=="exact") inc$drepe <- inc$drep
+if (meth=="grep")  inc$drepg <- inc$drep
+if (meth=="fuzzy") inc$drepf <- inc$drep
+inc$drep <- NULL
 
-# will receive grep repeat names
+inc[1,]
+
+# parece que sí jala!
+table(inc$drepe, inc$drepg)
+table(inc$drepe, inc$drepf) # fuzzy doesn't work
+
+sel <- which(inc$drep==0 & inc$drepg==1)
+inc$emm[sel]
+
+tmp6 <- unlist(Map(function(x) unlist(x), who.was.hit))
+tmp6 <- data.frame(wwh = tmp6)
+
+tmp <- inc[,c("ord","drepg")]
+tmp <- cbind(tmp, tmp6)
+head(tmp)
+
+write.csv(tmp, file = "tmp.csv")
+data.frame(tmp$emm, tmp$yr, tmp$incumbent, tmp$drep)
+
+
+
+# will receive fuzzy repeat names
 inc$drepf <- 0
 #
-# exact match within state alcaldes only (+ govs)
+# fuzzy match within state alcaldes only (+ govs)
 for (i in 1:32){
     #i <- 14 # debug
     message(sprintf("loop %s of %s", i, 32))
@@ -838,17 +863,11 @@ for (i in 1:32){
     # turn into vector
     tmp.ones <- unlist(tmp.ones)
     #
+    # record hits in data
     sel4 <- which(inc$emm %in% tmp.ones)
     inc$drepf[sel4] <- 1
 }
 
-# parece que sí jala!
-table(inc$drep, inc$drepg)
-table(inc$drep, inc$drepf)
-
-tmp <- inc[sel,]
-write.csv(tmp, file = "tmp.csv")
-data.frame(tmp$emm, tmp$yr, tmp$incumbent, tmp$drep)
 
 
 

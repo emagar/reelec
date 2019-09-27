@@ -85,9 +85,10 @@ search.names <- function(within.records = NA,               # VECTOR OF NAMES WH
     # init square matrix containing how many times c.split.name was matched in each split.names
     n.hits  <- matrix(NA, nrow = N, ncol = N)  # will receive how many times each split name is matched
     #
+    pb <- txtProgressBar(min = 0, max = N, style = 3) # set progress bar (see https://ryouready.wordpress.com/2009/03/16/r-monitor-function-progress-with-a-progress-bar/)
     for (n in 1:N){ # loop over names
         #n <- 727 # debug
-        message(sprintf("loop %s of %s (id = %s)", n, N, ids[n]))
+        #message(sprintf("loop %s of %s (id = %s)", n, N, ids[n]))
         # skip missing names 
         if (is.na(names[n])==TRUE) next
         # the current name's permutations
@@ -126,7 +127,9 @@ search.names <- function(within.records = NA,               # VECTOR OF NAMES WH
             #
             # count total hits or permutation in each row of split.names and plug into n.hits
             p.hits[,p] <- rowSums(hits) # fill sth col (hits of name's permutation in whole column)
+            setTxtProgressBar(pb, n) # add one tick to progress bar
         }
+        close(pb) # shut progress bar
         #
         # count total hits or permutation in each row of split.names and plug into n.hits
         n.hits[,n] <- apply(p.hits, 1, max) # fill nth col (hits of name s in whole column)

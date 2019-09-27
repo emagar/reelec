@@ -585,17 +585,20 @@ for (i in 1:length(tmp0)){
     inc$returned[sel][i] <- common
 }
 
-table(inc$returned)
 
-sigue codificar el/los partidos que pwin (para saber cuando dpwin=1 es por partido oportunista)
 
 # check
 sel <- which(inc$returned=="")
 inc[sel,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
-x
+
+# did a major party return (or none/opportunist only)
+sel <- grep("pan|pri|prd|morena", inc$returned)
+inc$dmajret <- 0; inc$dmajret[sel] <- 1
+table(inc$returned[inc$dmajret==0], useNA = "ifany")
 
 # clean
 inc$win1 <- inc$incumbent1 <- NULL
+rm(tmp,tmp0,tmp00,tmp1,tmp11,i,sel,sel1,sel2)
 head(inc)
 #
 ## # export race.after column to paste it in csv file (done 14ago2019)
@@ -613,47 +616,47 @@ inc$incumbent[sel] <- NA
 
 # recode some win labels
 table(inc$win)
-sel <- which(inc$win %in% c("eduardoquirogajimenez", "oscardanielcarrion", "indep1", "luisreneruelasortega"))
-inc$win[sel] <- "indep"
 sel <- which(inc$win %in% c("via_radical"))
 inc$win[sel] <- "vrad"
 
 
 
-# get elected governors
-gob <- read.csv(paste(dd, "goed1985-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
-gob$yr <- gob$yr_el; gob$mo <- gob$mo_el; gob$dy <- gob$dy_el
-gob$win <- gob$part; gob$incumbent <- gob$gober
-gob$mun <- "gobernador"
-gob$race.after <- gob$note <- gob$fuente <- gob$returned <- ""
-gob$dpwin <- NA
-gob$inegi <- gob$ife <- gob$munn <- 0
-gob <- gob[,c("emm","yr","mun","ord","inegi","edon","munn","ife","mo","dy","win","incumbent","race.after","note","fuente","dpwin","returned")]
-## head(gob)
-## head(inc)
-# add dummy to drop gobernadores after names have been searched
-gob$dgob <- 1; inc$dgob <- 0
-# merge
-inc <- rbind(inc, gob) # paste governors into incumbents to search for their names too (eg. Monreal was zac governor)
-rm(gob)
-tail(inc)
+## # get elected governors
+## gob <- read.csv(paste(dd, "goed1985-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
+## gob$yr <- gob$yr_el; gob$mo <- gob$mo_el; gob$dy <- gob$dy_el
+## gob$win <- gob$part; gob$incumbent <- gob$gober
+## gob$mun <- "gobernador"
+## gob$race.after <- gob$note <- gob$fuente <- gob$returned <- ""
+## gob$dpwin <- NA
+## gob$inegi <- gob$ife <- gob$munn <- 0
+## gob <- gob[,c("emm","yr","mun","ord","inegi","edon","munn","ife","mo","dy","win","incumbent","race.after","note","fuente","dpwin","returned")]
+## ## head(gob)
+## ## head(inc)
+## # add dummy to drop gobernadores after names have been searched
+## gob$dgob <- 1; inc$dgob <- 0
+## # merge
+## inc <- rbind(inc, gob) # paste governors into incumbents to search for their names too (eg. Monreal was zac governor)
+## rm(gob)
+## tail(inc)
 
-# get elected diputados federales
-dip <- read.csv(paste(dd, "dfdf2000-present-incumbents.csv", sep = ""), stringsAsFactors = FALSE)
-dip$mo <- dip$dy <- NA; dip$win <- dip$part; dip$incumbent <- dip$nom
-dip$mun <- "dipfed"
-dip$race.after <- dip$note <- dip$fuente <- dip$returned <- ""
-dip$dpwin <- NA
-dip$inegi <- dip$ife <- dip$munn <- dip$dgob <- 0
-dip <- dip[,c("emm","yr","mun","ord","inegi","edon","munn","ife","mo","dy","win","incumbent","race.after","note","fuente","dpwin","returned","dgob")]
-## head(dip)
-## head(inc)
-# add dummy to drop dipernadores after names have been searched
-dip$ddip <- 1; inc$ddip <- 0
-# merge
-inc <- rbind(inc, dip) # paste governors into incumbents to search for their names too (eg. Monreal was zac governor)
-rm(dip)
-tail(inc)
+## # get elected diputados federales
+## dip <- read.csv(paste(dd, "dfdf2000-present-incumbents.csv", sep = ""), stringsAsFactors = FALSE)
+## dip$mo <- dip$dy <- NA; dip$win <- dip$part; dip$incumbent <- dip$nom
+## dip$mun <- "dipfed"
+## dip$race.after <- dip$note <- dip$fuente <- dip$returned <- ""
+## dip$dpwin <- NA
+## dip$inegi <- dip$ife <- dip$munn <- dip$dgob <- 0
+## dip <- dip[,c("emm","yr","mun","ord","inegi","edon","munn","ife","mo","dy","win","incumbent","race.after","note","fuente","dpwin","returned","dgob")]
+## ## head(dip)
+## ## head(inc)
+## # add dummy to drop dipernadores after names have been searched
+## dip$ddip <- 1; inc$ddip <- 0
+## # merge
+## inc <- rbind(inc, dip) # paste governors into incumbents to search for their names too (eg. Monreal was zac governor)
+## rm(dip)
+## tail(inc)
+
+## # get senadores --- under construction
 
 # clean names
 inc$incumbent <- gsub("  ", " ", inc$incumbent)  # drop double spaces
@@ -698,12 +701,13 @@ source("../code/search_names.r")
 
 # will receive repeated names with whatever method chosen
 inc$drep <- 0
-who.was.hit <- as.list(rep(NA,32)) # useful to cotrast exact and grep/fuzzy
+# DROP#who.was.hit <- as.list(rep(NA,32))
+inc$who <- NA # useful to contrast exact and grep/fuzzy
 meth <- c("exact","grep","fuzzy")[1] # pick 1 2 or 3
 #
 # grep match within state alcaldes only (+ govs)
 for (i in 1:32){
-    #i <- 1 # debug
+    #i <- 5 # debug
     #message(sprintf("loop %s of %s", i, 32))
     sel1 <- which(inc$edon %in% i);
     sel2 <- which(inc$ddip==1);
@@ -724,15 +728,18 @@ for (i in 1:32){
     sel.ids <- tmp1$ids[sel.col]
     sel.names <- tmp1$names[sel.col]
     sel.yrs <- inc$yr[sel][sel.col]
-    # get ids of the hits only
-    tmp2 <- Map(function(x){
-        y <- which(x==1);
-        return(y);
-    }, split(t(sh.hits), seq(nrow(sh.hits))))
+    #
+    # get ids of the hits only to debug
+    tmp2 <- Map(function(x){y <- which(x==1); return(y);}, split(t(sh.hits), seq(nrow(sh.hits))))
     hits.ids <- unlist(tmp2)
     hits.ids <- tmp1$ids[hits.ids]
     hits.ids <- relist(hits.ids, tmp2)
-    who.was.hit[[i]] <- hits.ids
+    tmp.ss <- hits.ids[which(lapply(hits.ids, length)>1)]
+    tmp.ss <- sapply(tmp.ss, paste, collapse = " ", simplify = FALSE) # collapse multiple hits into single string
+    hits.ids[which(lapply(hits.ids, length)>1)] <- tmp.ss
+    hits.ids[which(lapply(hits.ids, length)==0)] <- "0" # fill empty with 0
+    #DROP#who.was.hit[[i]] <- hits.ids
+    inc$who[sel] <- unlist(hits.ids)
     #
     sh.hits <- tmp1$sh.hits # restore sh.hits
     sh.hits.ss <- sh.hits[,sel.col]
@@ -742,16 +749,11 @@ for (i in 1:32){
     # DROP #tmp2 <- tmp2[lapply(tmp2, length)>0] # drop empty elements
     names(tmp3) <- sel.ids
     #
-    tmp.ids   <- Map(function(x) tmp1$ids[unlist(x)]  , tmp2)
-
-    tmp.ids[10]
-    hits.ids[10]
-    x
-    
+    tmp.ids  <- Map(function(x) tmp1$ids[unlist(x)]   , tmp3)
     #
-    tmp.names <- Map(function(x) tmp1$names[unlist(x)], tmp2)
+    tmp.names<- Map(function(x) tmp1$names[unlist(x)] , tmp3)
     #
-    tmp.yrs   <- Map(function(x) inc$yr[sel][unlist(x)]  , tmp2)
+    tmp.yrs  <- Map(function(x) inc$yr[sel][unlist(x)], tmp3)
     #
     # identifies min(year)'s index
     tmp.drop <- Map(function(x) which(x==min(x)), tmp.yrs)
@@ -764,17 +766,23 @@ for (i in 1:32){
     sel4 <- which(inc$emm %in% tmp.ones)
     inc$drep[sel4] <- 1
 }
+# fix special cases by hand
+sel <- which(inc$emm=="mex-09.086")
+inc$drep[sel] <- 0 # homónimo en tenango del valle 1990
+sel <- which(inc$emm=="mex-16.083")
+inc$drep[sel] <- 0 # homónimo en chapa de mota
+sel <- which(inc$emm=="mex-14.119")
+inc$drep[sel] <- 0 # homónimo en sn felipe progreso
+sel <- which(inc$emm=="mex-14.051")
+inc$drep[sel] <- 0 # homónimo en tenango del valle 1990
+sel <- which(inc$emm=="mex-14.082")
+inc$drep[sel] <- 0 # homónimo grep en chicoloapan
 # fills-in the appropriate
 if (meth=="exact") inc$drepe <- inc$drep
 if (meth=="grep")  inc$drepg <- inc$drep
 if (meth=="fuzzy") inc$drepf <- inc$drep
 inc$drep <- NULL
 
-inc[1,]
-which(tmp1$ids=="cps-11.041")
-sh.hits[430,which(tmp1$ids=="cps-15.009")]
-inc$incumbent[sel][430]
-inc$incumbent[sel][97]
 
 # parece que sí jala!
 table(inc$drepe, inc$drepg)
@@ -783,15 +791,11 @@ table(inc$drepe, inc$drepf) # fuzzy doesn't work
 sel <- which(inc$drepe==0 & inc$drepg==1)
 inc$emm[sel]
 
-tmp6 <- unlist(Map(function(x) unlist(x), who.was.hit))
-tmp6 <- data.frame(wwh = tmp6)
-
-tmp <- inc[,c("ord","drepg")]
-tmp <- cbind(tmp, tmp6)
+tmp <- inc[,c("ord","drepe","drepg", "who")]
 head(tmp)
+tmp$who
 
 write.csv(tmp, file = "tmp.csv")
-data.frame(tmp$emm, tmp$yr, tmp$incumbent, tmp$drep)
 
 
 

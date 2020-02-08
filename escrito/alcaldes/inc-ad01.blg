@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2015/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: inc-ad01.aux
+The style file: apsr.bst
+Database file #1: /home/eric/Dropbox/mydocs/magar.bib
+You've used 3 entries,
+            2874 wiz_defined-function locations,
+            725 strings with 6432 characters,
+and the built_in function-call counts, 9918 in all, are:
+= -- 1580
+> -- 131
+< -- 0
++ -- 729
+- -- 48
+* -- 805
+:= -- 2048
+add.period$ -- 13
+call.type$ -- 3
+change.case$ -- 39
+chr.to.int$ -- 3
+cite$ -- 3
+duplicate$ -- 51
+empty$ -- 104
+format.name$ -- 52
+if$ -- 1779
+int.to.chr$ -- 5
+int.to.str$ -- 0
+missing$ -- 3
+newline$ -- 17
+num.names$ -- 35
+pop$ -- 22
+preamble$ -- 1
+purify$ -- 45
+quote$ -- 0
+skip$ -- 42
+stack$ -- 0
+substring$ -- 2180
+swap$ -- 9
+text.length$ -- 42
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 10
+warning$ -- 0
+while$ -- 70
+width$ -- 0
+write$ -- 49

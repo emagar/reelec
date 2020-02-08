@@ -1,0 +1,113 @@
+\documentclass[letter,12pt]{article}
+\usepackage[letterpaper,right=1in,left=1in,top=1in,bottom=1in]{geometry}
+\usepackage{setspace}
+
+\usepackage[utf8]{inputenc}   % allows input of special characters from keyboard (input encoding)
+\usepackage[T1]{fontenc}      % what fonts to use when printing characters       (output encoding)
+\usepackage{amsmath}          % facilitates writing math formulas and improves the typographical quality of their output
+\usepackage[hyphens]{url}     % adds line breaks to long urls
+\usepackage[pdftex]{graphicx} % enhanced support for graphics
+\usepackage{tikz}             % Easier syntax to draw pgf files (invokes pgf automatically)
+\usetikzlibrary{arrows}
+
+\usepackage{mathptmx}           % set font type to Times
+\usepackage[scaled=.90]{helvet} % set font type to Times (Helvetica for some special characters)
+\usepackage{courier}            % set font type to Times (Courier for other special characters)
+
+\usepackage[longnamesfirst, sort]{natbib}\bibpunct[]{(}{)}{,}{a}{}{;} % handles biblio and references 
+
+\usepackage{rotating}         % sideway tables and figures that take a full page
+\usepackage{caption}          % allows multipage figures and tables with same caption (\ContinuedFloat)
+
+\usepackage{dcolumn}          % needed for apsrtable and stargazer tables from R to compile
+\usepackage{arydshln}         % dashed lines in tables (hdashline, cdashline{3-4}, 
+                              %see http://tex.stackexchange.com/questions/20140/can-a-table-include-a-horizontal-dashed-line)
+                              % must be loaded AFTER dcolumn, 
+                              %see http://tex.stackexchange.com/questions/12672/which-tabular-packages-do-which-tasks-and-which-packages-conflict
+
+
+\newcommand{\mc}{\multicolumn}
+
+%% TO ADD NOTES IN TEXT, PUT % BEFORE THE ONE YOU WANT DISABLED
+\usepackage[disable]{todonotes}                            % no show
+%\usepackage[colorinlistoftodos, textsize=small]{todonotes} % show notes
+\newcommand{\emm}[1]{\todo[color=red!15, inline]{\textbf{Eric:} #1}}
+\newcommand{\vp}[1]{\todo[color=green!15, inline]{\textbf{Vale:} #1}}
+\newcommand{\ges}[1]{\todo[color=blue!15, inline]{\textbf{Ges:} #1}}
+
+%% \usepackage{xr} % allows cross-ref to other file
+%% \externaldocument{urge15appendix}
+
+%% %for submission: sends figs, tables, and footnotes to last pages
+%% \RequirePackage[nomarkers,nolists]{endfloat}     % sends tables and figures to the end
+%% \RequirePackage{endnotes}                        % turns fn into endnotes; place \listofendnotes where you want 
+%%                                                  %the endnotes to appear (it must be after the last endnote).
+%% \let\footnote=\endnote
+%% \newcommand{\listofendnotes}{
+%%    \begingroup
+%%    \parindent 0pt
+%%    \parskip 2ex
+%%    \def\enotesize{\normalsize}
+%%    \theendnotes
+%%    \endgroup
+%% }
+
+%% % for submission: drop page numbers when producing title page
+%% \pagenumbering{gobble} % Remove page numbers (and reset to 1)
+%% \pagenumbering{arabic}% Arabic page numbers (and reset to 1)
+
+
+\setcitestyle{citesep={;}}
+
+\begin{document}
+
+\title{Incumbency advantage in Mexican municipal elections\thanks{I acknowledge financial support from the Asociaci\'on Mexicana de Cultura \textsc{a.c.}\ and \textsc{conacyt}'s Sistema Nacional de Investigadores. I am responsible for mistakes and omissions in the paper.}}
+\author{Eric Magar \\ ITAM}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+  \noindent Mexico removed single-term limits for municipal governments in 2018. A landslide against major parties in the concurrent presidential election offers a chance to study how well municipal incumbents resisted a formidably unfavorable tide. Frequencies suggest they performed better: with incumbents on the ballot, the largest parties experienced 50-50 (PRI) and 2-to-1 (PAN) chances of winning; among open seats that they controlled, performance plunged to 2-to-1 and 55-45 chances of losing, respectively. Controlling for municipal characteristics, the electoral history, and candidate characteristics---including original data on candidate quality---will offer a first glimpse at incumbency advantage during the introduction of consecutive reelection.
+  \newline \newline
+\textbf{Keywords}: Term-limits; reelection; incumbency; municipalities; Mexico
+\end{abstract}
+
+\section{Parties insulated from society}
+
+\citep{magarInstReel.2017}
+
+\citep{magar.2007ref.2015}
+
+\citep{cain.etal.1987}
+
+\section{Reform}
+
+\section{Ambitious alcaldes}
+
+\section{Reelection rates}
+
+\section{Discussion}
+
+\begin{tabular}{lrrcrrrr}
+          & \multicolumn{2}{c}{incumbent} && \multicolumn{2}{c}{open} & & \\ 
+          & \multicolumn{2}{c}{re-ran}    && \multicolumn{2}{c}{seat} & & \\ \cline{2-3} \cline{5-6}
+Party     & won & lost && won & lost & total & N   \\ \hline
+PRI/coal. & 17  & 18   && 23  & 42   & 100   & 620 \\
+PAN/coal. & 27  & 15   && 26  & 32   & 100   & 340 \\
+PRD/coal. & 19  & 16   && 25  & 40   & 100   & 140 \\
+PVEM      & 11  & 14   && 20  & 55   & 100   & 81  \\
+MC        & 27  & 15   && 27  & 31   & 100   & 59  \\
+PT        & 23  & 20   && 9   & 48   & 100   & 35  \\
+PANAL     & 32  & 14   && 9   & 45   & 100   & 22  \\
+Morena    & 40  & 0    && 40  & 20   & 100   & 20  \\
+PES       & 40  & 0    && 0   & 60   & 100   & 5   \\
+Indep     & 33  & 44   && 0   & 22   & 100   & 9   \\
+Local pty & 10  & 18   && 5   & 67   & 100   & 40  \\ \hline
+Overall   & 20  & 17   && 22  & 41   & 100   & 1,371  \\ 
+\end{tabular}
+
+\bibliographystyle{apsr}
+
+\bibliography{/home/eric/Dropbox/mydocs/magar}
+
+\end{document}

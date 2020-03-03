@@ -1,31 +1,72 @@
 rm(list = ls())
 
 dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data"
+gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
 setwd("/home/eric/Desktop/MXelsCalendGovt/reelec/data/")
 
 options(width = 100)
 
 # load incumbent data since 1989
 inc <- read.csv(paste(dd, "aymu1989-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
+# drop before 1997
+sel <- which(inc$yr<1997)
+inc <- inc[-sel,]
 
 # load municipal votes
-vot <- read.csv(paste(dd, "aymu1997-present.coalAgg.csv", sep = ""), stringsAsFactors = FALSE)
-vot$fuente <- vot$notas <- vot$tot <- vot$nr <- vot$nul <- NULL
+vot <- read.csv(paste(dd, "aymu1989-present.coalAgg.csv", sep = ""), stringsAsFactors = FALSE)
+vot[1,]
+vot$fuente <- vot$notas <- vot$tot <- vot$nr <- vot$nulos <- NULL
+# drop before 1997
+sel <- which(vot$yr<1997)
+vot <- vot[-sel,]
 
-# drop runoffs in san luis potosí, keeping winner
-sel.r1 <- grep("san-[0-9]+b", vot$emm) # these are first round races that led to runoff
-# tmp is emm without the "b"
-tmp <- vot$emm[sel.r1]
-tmp <- sub(pattern = "(san-[0-9]+)b([.][0-9]+)", replacement = "\\1\\2", tmp)
-sel.r2 <- which(vot$emm %in% tmp) # second round cases
-##data.frame(vot$emm[sel.r1], vot$emm[sel.r2]) # verify match
-# replace first-round vote keeping winner
-vot$win[sel.r1] <- vot$win[sel.r2]
-vot$emm[sel.r1] <- tmp
-# drop runoffs
-vot <- vot[-sel.r2,]
-rm(sel.r1, sel.r2)
+# keep runoffs only in cases where first round was help in san luis potosí
+sel <- grep("san-[0-9]+b", vot$emm) # these are first round races that led to runoff
+vot <- vot[-sel,]
+
+## # drop runoffs in san luis potosí, keeping winner
+## sel.r1 <- grep("san-[0-9]+b", vot$emm) # these are first round races that led to runoff
+## # tmp is emm without the "b"
+## tmp <- vot$emm[sel.r1]
+## tmp <- sub(pattern = "(san-[0-9]+)b([.][0-9]+)", replacement = "\\1\\2", tmp)
+## sel.r2 <- which(vot$emm %in% tmp) # second round cases
+## ##data.frame(vot$emm[sel.r1], vot$emm[sel.r2]) # verify match
+## # replace first-round vote keeping winner
+## vot$win[sel.r1] <- vot$win[sel.r2]
+## vot$emm[sel.r1] <- tmp
+## # drop runoffs
+## vot <- vot[-sel.r2,]
+## rm(sel.r1, sel.r2)
+
+vot[1,]
+
+# drop cases that became usos y costumbres
+tmp <- c(1, 3, 8, 11, 12, 15, 17:20, 22, 24, 27, 29, 31, 33, 35:38, 42, 45:48,
+         50, 51, 54, 58, 60:65, 69, 71, 72, 74, 76:78, 83:87, 91:93, 94:98,
+         99:101, 104:111, 113:115, 117:123, 125:129, 131:133, 135, 137, 138:140,
+         142, 144:149, 151:156, 158, 159, 161:165, 167, 170, 172:176, 178, 179, 183, 186,
+         189:197, 200:224, 226:231, 233:236, 238:244, 246:253, 255:258, 260, 262:276, 279:281,
+         282:284, 286:289, 291:293, 296, 297, 299, 301, 303, 304,
+         306, 311, 313, 314:318, 320:323, 325, 326, 328:333, 335:337, 340:344, 346, 347, 349:359,
+         361:363, 365, 366, 368:374, 376, 378:380, 382:384, 386, 388, 389, 391:396, 398, 399,
+         401, 403:412, 416, 419, 420, 422:426, 428:430, 432, 433, 435, 437, 438, 440, 442:446,
+         448:454, 457, 458, 460, 461, 463:466, 468, 470, 471, 473, 475:481, 487, 488, 490:504,
+         506, 509:512, 514, 516:519, 521:524, 526:536, 538, 541:544, 546:548, 550, 552:554,
+         556, 560:564, 566, 568, 569, 16, 82, 310, 348, 367, 400)
+# ojo: 88 returned from uyc in 2013
+sel <- which(vot$edon==20 & vot$munn %in% tmp)
+## tmp <- vot$emm[sel]
+## tmp[order(tmp)]
+if (length(sel)>0) vot <- vot[-sel,]
+
+# drop hidalgo 2020, not yet here
+sel <- grep("hgo-16", vot$emm)
+vot <- vot[-sel,]
+
+# drop void elections
+sel <- grep("[0-9]+a[.]", vot$emm) # anuladas
+#vot$emm[sel]
+vot <- vot[-sel,]
 
 # re-compute efec
 sel <- grep("v[0-9]+", colnames(vot))
@@ -38,27 +79,385 @@ v <- v/rowSums(v)
 vot[,sel] <- v
 rm(v)
 
-# win matches does not match l01 in san luis runoff cases dropped above, therefore l01 and win should be retained
-sel <- which(vot$win != vot$l01)
-vot$emm[sel] # must be zero
+## # win matches does not match l01 in san luis runoff cases if those were dropped above, therefore l01 and win should be retained
+## sel <- which(vot$win != vot$l01)
+## vot$emm[sel] # all should be san luis potosi
+
+## # lo usé para detectar casos en aymu.incumbents con info que no correspondía con aymu.coalAgg
+## sel <- c("emm", "edon", "mun", "munn", "ife", "inegi", "yr", "dy", "mo", "win")
+## i <- merge(x = inc, y = vot[,sel],
+##            by = c("emm", "edon", "mun", "munn", "ife", "inegi", "yr", "mo", "dy", "win"),
+##            all = TRUE)
+## write.csv(i, file = paste(dd, "tmp.csv", sep = ""), row.names = FALSE)
+
+# prepare object with pan pri left morena oth votes
+v5 <- vot
+v5$ord <- v5$mun <- v5$munn <- v5$inegi <- v5$ife <- v5$status <- v5$dy <- v5$mo <- v5$ncand <- v5$dcoal <- v5$ncoal <- v5$win <- v5$efec <- v5$lisnom <- NULL # remove unneeded cols
+v5$status <- NA
+# narrow v01..v14 into long vector
+v5$n <- 1:nrow(v5)
+v5$r <- 1
+v5$v <- v5$v01
+v5$l <- v5$l01
+#
+tmp.orig <- v5 # duplicate
+tmp <- tmp.orig
+tmp$r <- 2
+tmp$v <- tmp$v02; tmp$l <- tmp$l02;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 3
+tmp$v <- tmp$v03; tmp$l <- tmp$l03;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 4
+tmp$v <- tmp$v04; tmp$l <- tmp$l04;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 5
+tmp$v <- tmp$v05; tmp$l <- tmp$l05;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 6
+tmp$v <- tmp$v06; tmp$l <- tmp$l06;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 7
+tmp$v <- tmp$v07; tmp$l <- tmp$l07;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 8
+tmp$v <- tmp$v08; tmp$l <- tmp$l08;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 9
+tmp$v <- tmp$v09; tmp$l <- tmp$l09;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 10
+tmp$v <- tmp$v10; tmp$l <- tmp$l10;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 11
+tmp$v <- tmp$v11; tmp$l <- tmp$l11;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 12
+tmp$v <- tmp$v12; tmp$l <- tmp$l12;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 13
+tmp$v <- tmp$v13; tmp$l <- tmp$l13;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 14
+tmp$v <- tmp$v14; tmp$l <- tmp$l14;
+v5 <- rbind(v5,tmp)
+#
+v5$v01 <- v5$v02 <- v5$v03 <- v5$v04 <- v5$v05 <- v5$v06 <- v5$v07 <- v5$v08 <- v5$v09 <- v5$v10 <- v5$v11 <- v5$v12 <- v5$v13 <- v5$v14 <- NULL
+v5$l01 <- v5$l02 <- v5$l03 <- v5$l04 <- v5$l05 <- v5$l06 <- v5$l07 <- v5$l08 <- v5$l09 <- v5$l10 <- v5$l11 <- v5$l12 <- v5$l13 <- v5$l14 <- NULL
+#
+v5$oth <- v5$morena <- v5$prd <- v5$pri <- v5$pan <- 0
+v5$dmajcoal <- 0 # will indicate major party coalitions
+#
+rm(tmp, tmp.orig)
+#
+# deal with major-party coalition below
+sel <- grep("(?=.*pan)(?=.*prd)", v5$l, perl = TRUE)
+v5$status[sel] <- "majors"
+sel <- grep("(?=.*pan)(?=.*pri)", v5$l, perl = TRUE)
+v5$status[sel] <- "majors"
+sel <- grep("(?=.*pri)(?=.*prd)", v5$l, perl = TRUE)
+v5$status[sel] <- "majors"
+#
+sel1 <- which(is.na(v5$status))
+sel <- grep("pan-|-pan|^pan$", v5$l[sel1])
+v5$pan[sel1][sel] <- v5$v[sel1][sel]
+v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+sel1 <- which(is.na(v5$status))
+sel <- grep("pri-|-pri|^pri$", v5$l[sel1])
+v5$pri[sel1][sel] <- v5$v[sel1][sel]
+v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+sel1 <- which(is.na(v5$status))
+sel <- grep("prd-|-prd|^prd$", v5$l[sel1])
+v5$prd[sel1][sel] <- v5$v[sel1][sel]
+v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+sel1 <- which(is.na(v5$status))
+sel <- grep("morena-|-morena|^morena$", v5$l[sel1])
+v5$morena[sel1][sel] <- v5$v[sel1][sel]
+v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+# rest are other
+sel1 <- which(is.na(v5$status)) 
+v5$oth[sel1] <- v5$v[sel1]
+v5$v[sel1] <- 0; v5$l[sel1] <- "0"; v5$status[sel1] <- "done"
+#
+# 3-majors coalition in mun split in thirds
+sel <- which(v5$status=="majors") 
+sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", v5$l[sel], perl = TRUE) # 
+v5$pan[sel][sel1] <- v5$v[sel][sel1] / 3; v5$pri[sel][sel1] <- v5$v[sel][sel1] / 3; v5$prd[sel][sel1] <- v5$v[sel][sel1] / 3; v5$v[sel][sel1] <- 0; v5$l[sel][sel1] <- "0"; v5$status[sel][sel1] <- "done"
+v5$dmajcoal[sel][sel1] <- 1
+#
+# pan-pri to pri (19 cases in mic07 mic11 mic15)
+sel <- which(v5$status=="majors" & v5$edon==16) 
+sel1 <- grep("(?=.*pan)(?=.*pri)", v5$l[sel], perl = TRUE) # 
+v5$pri[sel][sel1] <- v5$v[sel][sel1]; v5$v[sel][sel1] <- 0; v5$l[sel][sel1] <- "0"; v5$status[sel][sel1] <- "done"
+v5$dmajcoal[sel][sel1] <- 1
+#
+# pri-prd to pri (chihuahua and guanajuato)
+sel <- which(v5$status=="majors") 
+sel1 <- grep("(?=.*pri)(?=.*prd)", v5$l[sel], perl = TRUE) # 
+v5$pri[sel][sel1] <- v5$v[sel][sel1]; v5$v[sel][sel1] <- 0; v5$l[sel][sel1] <- "0"; v5$status[sel][sel1] <- "done"
+v5$dmajcoal[sel][sel1] <- 1
+#
+# rest are pan-prd
+#
+# pan-prd to pan (bc coa2009 coa col00 col18 cua dgo jal que san sin son tam yuc)
+sel <- which(v5$status=="majors" & (v5$edon==2 | v5$edon==5 | v5$edon==6 | v5$edon==8 | v5$edon==10 | v5$edon==14 | v5$edon==22 | v5$edon==24 | v5$edon==25 | v5$edon==26 | v5$edon==28  | v5$edon==31)) 
+v5$pan[sel] <- v5$v[sel]; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+# pan-prd in 2018 to pan (bcs cps df gue mex mic oax pue qui tab zac)
+sel <- which(v5$status=="majors" & v5$yr==2018) 
+v5$pan[sel] <- v5$v[sel]; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel][sel1] <- 1
+#
+# pan-prd to prd (cps2004, cps2010)
+sel <- which(v5$status=="majors" & v5$edon==7 & v5$yr<=2010) 
+v5$prd[sel] <- v5$v[sel]; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+# pan-prd to pan (nay1999 nay2017 ver2000 ver2017)
+sel <- which(v5$status=="majors" & (v5$edon==18 | v5$edon==30) & (v5$yr==1999 | v5$yr==2000 | v5$yr==2017)) 
+v5$pan[sel] <- v5$v[sel]; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+# pan-prd split halfway (qui2016)
+sel <- which(v5$status=="majors" & v5$edon==23 & v5$yr==2016)
+v5$pan[sel] <- v5$v[sel] / 2; 
+v5$prd[sel] <- v5$v[sel] / 2; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+# pan-prd split halfway (pue20 pue23 qui23 qui20)
+sel <- which(v5$status=="majors" & (v5$edon==21 | v5$edon==23))
+v5$pan[sel] <- v5$v[sel]; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+# pan-prd split halfway (gue2015 hgo2011 mic2015 oax2010 oax2013 oax2016 zac2013, zac2016)
+sel <- which(v5$status=="majors" & (v5$edon==12 | v5$edon==13 | v5$edon==16 | v5$edon==20 | v5$edon==32) & v5$yr<2018) 
+v5$pan[sel] <- v5$v[sel] / 2; 
+v5$prd[sel] <- v5$v[sel] / 2; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+# pan-prd split halfway (mex2006)
+sel <- which(v5$status=="majors" & v5$edon==15 & v5$yr==2006) 
+v5$pan[sel] <- v5$v[sel] / 2; 
+v5$prd[sel] <- v5$v[sel] / 2; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+## # used to check by hand
+## sel <- which(v5$status=="majors") 
+## sel1 <- grep("(?=.*pan)(?=.*prd)", v5$l[sel], perl = TRUE) # 
+## table(v5$edon[sel])
+## table(v5$yr[sel])
+## table(v5$emm[sel][sel1], v5$l[sel][sel1])
+## table(v5$emm[sel][sel1], v5$yr[sel][sel1])
+## x
+#
+# consolidate
+tmp <- v5[v5$r==1,] # will receive consolidated data
+dim(tmp)
+
+for (i in 1:max(v5$n)){
+    #i <- 1 # debug
+    message(sprintf("loop %s of %s", i, max(v5$n)))
+    tmp2 <- v5[v5$n==i, c("pan","pri","prd","morena","oth","dmajcoal")]
+    tmp2 <- colSums(tmp2)
+    tmp[tmp$n==i, c("pan","pri","prd","morena","oth","dmajcoal")] <- tmp2 # plug colsolidated data
+}
+v5 <- tmp
+v5$n <- v5$r <- v5$v <- v5$l <- v5$status <- NULL
+rm(tmp,tmp2)
+# return to vot
+vot <- cbind(vot, v5[,c("pan","pri","prd","morena","oth","dmajcoal")])
+# keep 123 places, drop rest
+#vot$v01 <- vot$v02 <- vot$v03 <-
+vot$v04 <- vot$v05 <- vot$v06 <- vot$v07 <- vot$v08 <- vot$v09 <- vot$v10 <- vot$v11 <- vot$v12 <- vot$v13 <- vot$v14 <- NULL
+#vot$l01 <- vot$l02 <- vot$l03 <-
+vot$l04 <- vot$l05 <- vot$l06 <- vot$l07 <- vot$l08 <- vot$l09 <- vot$l10 <- vot$l11 <- vot$l12 <- vot$l13 <- vot$l14 <- NULL
+
+## # debug
+## save.image(file = "tmp.RData")
+## #
+## rm(list = ls()) # clean
+## dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+## gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
+## setwd("/home/eric/Desktop/MXelsCalendGovt/reelec/data/")
+## load(file = "tmp.RData")
+
+# get electoral histories
+vot$vhat.pan <- vot$vhat.pri  <- vot$vhat.left <- vot$alpha.pan  <- vot$alpha.pri <- vot$alpha.left <- NA # open slots
+# 2006
+his <- read.csv(paste(gd, "dipfed-municipio-vhat-2006.csv", sep = ""), stringsAsFactors = FALSE)
+# drop unneeded columns
+sel <- which(colnames(his) %in%
+             c("edon","pan", "pri", "left", "efec",
+               "d.pan", "d.pri", "d.left",
+               "bhat.pan", "bhat.left",
+               "betahat.pan", "betahat.left"))
+his <- his[,-sel]
+colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
+#
+sel <- which(vot$yr==2005 | vot$yr==2006 | vot$yr==2007)
+tmp <- vot[sel,]
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
+tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
+vot[sel,] <- tmp # return to data
+#
+# 2009
+his <- read.csv(paste(gd, "dipfed-municipio-vhat-2009.csv", sep = ""), stringsAsFactors = FALSE)
+# drop unneeded columns
+sel <- which(colnames(his) %in%
+             c("edon","pan", "pri", "left", "efec",
+               "d.pan", "d.pri", "d.left",
+               "bhat.pan", "bhat.left",
+               "betahat.pan", "betahat.left"))
+his <- his[,-sel]
+colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
+#
+sel <- which(vot$yr==2008 | vot$yr==2009 | vot$yr==2010)
+tmp <- vot[sel,]
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
+tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
+vot[sel,] <- tmp # return to data
+#
+# 2012
+his <- read.csv(paste(gd, "dipfed-municipio-vhat-2012.csv", sep = ""), stringsAsFactors = FALSE)
+# drop unneeded columns
+sel <- which(colnames(his) %in%
+             c("edon","pan", "pri", "left", "efec",
+               "d.pan", "d.pri", "d.left",
+               "bhat.pan", "bhat.left",
+               "betahat.pan", "betahat.left"))
+his <- his[,-sel]
+colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
+#
+sel <- which(vot$yr==2011 | vot$yr==2012 | vot$yr==2013)
+tmp <- vot[sel,]
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
+tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
+vot[sel,] <- tmp # return to data
+#
+# 2015
+his <- read.csv(paste(gd, "dipfed-municipio-vhat-2015.csv", sep = ""), stringsAsFactors = FALSE)
+# drop unneeded columns
+sel <- which(colnames(his) %in%
+             c("edon","pan", "pri", "left", "efec",
+               "d.pan", "d.pri", "d.left",
+               "bhat.pan", "bhat.left",
+               "betahat.pan", "betahat.left"))
+his <- his[,-sel]
+colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
+#
+sel <- which(vot$yr==2014 | vot$yr==2015 | vot$yr==2016)
+tmp <- vot[sel,]
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
+tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
+vot[sel,] <- tmp # return to data
+#
+# 2018
+his <- read.csv(paste(gd, "dipfed-municipio-vhat-2018.csv", sep = ""), stringsAsFactors = FALSE)
+# drop unneeded columns
+sel <- which(colnames(his) %in%
+             c("edon","pan", "pri", "left", "efec",
+               "d.pan", "d.pri", "d.left",
+               "bhat.pan", "bhat.left",
+               "betahat.pan", "betahat.left"))
+his <- his[,-sel]
+colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
+#
+sel <- which(vot$yr==2017 | vot$yr==2018 | vot$yr==2019)
+tmp <- vot[sel,]
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
+tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
+vot[sel,] <- tmp # return to data
+#
+# clean
+rm(tmp,i,sel,sel1,v5,his)
+
+# left residuals: use prd-vhat.left and morena-vhat.left (pan-prd went to pan in 2017 and 2018)
+vot$res.pan <- vot$pan - vot$vhat.pan
+vot$res.pri <- vot$pri - vot$vhat.pri
+vot$res.prd <- vot$prd - vot$vhat.left
+vot$res.morena <- vot$morena - vot$vhat.left
+sel <- which(vot$yr<2015)
+vot$res.morena[sel] <- NA
+
+next adapt morena and prd to left
+ls()
+vot[33:34,]
+vot$yr[1:100]
+inc[33:34,]
+x
+
+## # computing v.hat with municipal vote returns would require fixing coalitions... leave for later
+## # last round by state (circa 2018)
+## round <- c(17, 17, 16, 17, 16, 17, 17, 17, 17, 17, 17, 16, 16, 17, 16, 16, 17, 16, 17, 17, 16, 17, 17, 17, 17, 17, 17, 17, 16, 16, 17, 17)
+## # need previous (circa 2015)
+## round <- round - 1
+## # data prep for regressions
+## tmp.dat <- data.frame()
+## for (e in 1:32){
+##     tmp <- vot[which(vot$edon==3),]; # keep state obs only
+##     sel <- grep(pattern = paste("[a-z]+-", round[e], sep = ""), tmp$emm)
+##     tmp <- tmp[sel,]; # keep round only
+##     tmp.dat <- rbind(tmp.dat, tmp)
+## }
+## # separate pan, pri, left, oth
+## # then select/paste round-1, round-2, ...
+
+
+which(
+grep(pattern = )
+
+
+
+x 
+
+edos <- c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic", "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac")
+
 
 
 # vote data to plug into incumbent data
-sel <- c("emm", "dy", "mo", "yr", "win", "v01", "l01", "l02")
+#sel <- c("emm", "dy", "mo", "yr", "win", "v01", "l01", "l02", "l03")
+sel <- c("emm", "v01", "l01", "l02", "l03")
 v <- vot[,sel]
 v$mg <- vot$v01 - vot$v02
 v$sf <- round(vot$v03 / vot$v02, 2)
 
 # merge votes into incumbent data
 i <- merge(x = inc, y = v, by = "emm", all = TRUE)
+# i should have same obs as inc (extras would be election obs not in incumbents) 
+nrow(i)==nrow(inc) # must be true
+write.csv(i, file = paste(dd, "tmp.csv", sep = ""), row.names = FALSE)
+
+i[1,]
 
 sel <- which(i$emm %in% inc$emm)
-i$emm[-sel]
+i$yr.y[-sel]
 
 dim(v)
 
 head(inc)
-head(v)
+head(i)
 
 # get electoral history
 hist <- read.csv(paste(gd, "dipfed-municipio-vhat-2006.csv", sep = ""), stringsAsFactors = FALSE)

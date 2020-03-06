@@ -4,7 +4,7 @@ dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
 setwd("/home/eric/Desktop/MXelsCalendGovt/reelec/data/")
 
-options(width = 100)
+options(width = 130)
 
 # load incumbent data since 1989
 inc <- read.csv(paste(dd, "aymu1989-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
@@ -401,11 +401,73 @@ vot$res.morena <- vot$morena - vot$vhat.left
 sel <- which(vot$yr<2015)
 vot$res.morena[sel] <- NA
 
-next adapt morena and prd to left
+# plug incumbent data
+# was there an incumbent on the ballot? did party reelect?
+inc$race.current <- inc$race.after
+inc$round <- sub(pattern = "[\\w\\D-]+([0-9]{2})[.][0-9]{3}", replacement = "\\1", inc$emm, perl = TRUE)
+inc$round <- as.numeric(inc$round)
+#table(inc$round)
+# lag race after
+inc <- inc[order(inc$emm),] # sort
+inc$tmp <- as.numeric(sub(pattern = "[\\w\\D-]+[0-9]{2}[.]([0-9]{3})", replacement = "\\1", inc$emm, perl = TRUE)) # munn from emm
+for (e in 1:32){
+    #e <- 1 # debug
+    message(sprintf("loop %s of %s", e, 32))
+    sel  <- which(inc$edon==e)
+    for (i in unique(inc$tmp[sel])){
+        #i <- 10 # debug
+        sel1 <- which(inc$tmp[sel]==i)
+        last <- length(sel1)
+        inc$race.current[sel][sel1][1]  <- NA
+        inc$race.current[sel][sel1][-1] <- inc$race.after[sel][sel1][-last]
+    }
+}
+inc <- inc[order(inc$edon, inc$tmp, inc$round),] # re-sort
+inc$tmp <- NULL
+#
+inc$dopenseat <- 1
+inc$dptyreel <- 0
+inc$dtermlim <- 1
+table(inc$race.current)
+sel <- grep("Beaten|Reelected", inc$race.current)
+inc$dopenseat[sel] <- 0
+sel <- grep("Reelected|won", inc$race.current)
+inc$dptyreel[sel] <- 1
+sel <- grep("^(?!Term-lim).*$", inc$race.current, perl = TRUE)
+inc$dtermlim[sel] <- 0
+
+# paste incumbent data into vot
+vot <- merge(x = vot, y = inc[,c("emm","race.current","dopenseat","dptyreel","dtermlim")], by = "emm", all.x = TRUE, all.y = FALSE)
+
+# clean
+rm(e,i,last,sel,sel1,sel2,tmp)
+
+# debug
+save.image(file = "tmp.RData")
+#
+rm(list = ls()) # clean
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
+setwd("/home/eric/Desktop/MXelsCalendGovt/reelec/data/")
+load(file = "tmp.RData")
+
+# compute winner's margin
+vot$mg <- round(vot$v01 - vot$v02, 4)
+
+# pan incumbent
+sel <- grep("pan", vot$win)
+vot$dpan <- 0; vot$dpan[sel] <- 1
+table(vot$dpan)
+vot$dpan <- vot$dpan * (1 - vot$dopenseat)
+x
+
+summary(lm(dptyreel ~ dopenseat + , data = vot))
+vot[85,]
+
 ls()
 vot[33:34,]
 vot$yr[1:100]
-inc[33:34,]
+inc[29:33,]
 x
 
 ## # computing v.hat with municipal vote returns would require fixing coalitions... leave for later

@@ -20,7 +20,7 @@ vot$fuente <- vot$notas <- vot$tot <- vot$nr <- vot$nulos <- NULL
 sel <- which(vot$yr<1997)
 vot <- vot[-sel,]
 
-# keep runoffs only in cases where first round was help in san luis potosí
+# keep runoffs only in cases where first round was held in san luis potosí
 sel <- grep("san-[0-9]+b", vot$emm) # these are first round races that led to runoff
 vot <- vot[-sel,]
 
@@ -241,7 +241,7 @@ v5$pan[sel] <- v5$v[sel] / 2;
 v5$prd[sel] <- v5$v[sel] / 2; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
 v5$dmajcoal[sel] <- 1
 #
-# pan-prd split halfway (pue20 pue23 qui23 qui20)
+# pan-prd split halfway (pue2010 pue2013 qui2013 qui2010)
 sel <- which(v5$status=="majors" & (v5$edon==21 | v5$edon==23))
 v5$pan[sel] <- v5$v[sel]; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
 v5$dmajcoal[sel] <- 1
@@ -453,15 +453,30 @@ load(file = "tmp.RData")
 
 # compute winner's margin
 vot$mg <- round(vot$v01 - vot$v02, 4)
+vot$round <- sub(pattern = "[\\w\\D-]+([0-9]{2})[.][0-9]{3}", replacement = "\\1", vot$emm, perl = TRUE)
+vot$round <- as.numeric(vot$round)
 
-# pan incumbent
-sel <- grep("pan", vot$win)
-vot$dpan <- 0; vot$dpan[sel] <- 1
-table(vot$dpan)
-vot$dpan <- vot$dpan * (1 - vot$dopenseat)
-x
 
-summary(lm(dptyreel ~ dopenseat + , data = vot))
+# duplicate for pan analysis
+tmp <- vot
+
+# pan or oth incumbent --- complement is open seat
+sel <- grep("pan", tmp$win)
+tmp$dpan <- 0; tmp$dpan[sel] <- 1
+table(tmp$dpan)
+tmp$dpaninc  <-      tmp$dpan  * (1 - tmp$dopenseat)
+tmp$dothinc  <- (1 - tmp$dpan) * (1 - tmp$dopenseat)
+tmp$dpanopen <-      tmp$dpan  *      tmp$dopenseat
+
+# subset yr >= 2018
+sel <- which(tmp$yr >= 2018)
+tmp <- tmp[sel,]
+
+
+summary(lm(pan ~ dpaninc + dothinc, data = tmp))
+
+
+
 vot[85,]
 
 ls()

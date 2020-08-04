@@ -91,6 +91,7 @@ rm(v)
 ## write.csv(i, file = paste(dd, "tmp.csv", sep = ""), row.names = FALSE)
 
 # prepare object with pan pri left morena oth votes
+# 4ago2020: add pvem?
 v5 <- vot
 v5$ord <- v5$mun <- v5$munn <- v5$inegi <- v5$ife <- v5$status <- v5$dy <- v5$mo <- v5$ncand <- v5$dcoal <- v5$ncoal <- v5$win <- v5$efec <- v5$lisnom <- NULL # remove unneeded cols
 v5$status <- NA

@@ -5,9 +5,12 @@
 ## ################################################################ ##
 ######################################################################
 
+options(width = 125)
+
 rm(list = ls())
-wd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-setwd(wd)
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
+setwd(dd)
 
 # read alcaldes
 inc <- read.csv(file = "aymu1989-present.incumbents.csv", stringsAsFactors = FALSE)
@@ -178,18 +181,21 @@ tmp$race.prior[intersect(sel1,sel2)] <- "Term-limited-p-won"
 sel1 <- grep("prd", tmp$win.prior)
 sel2 <- grep("prd", tmp$win)
 tmp$race.prior[intersect(sel1,sel2)] <- "Term-limited-p-won"
+sel1 <- grep("pvem", tmp$win.prior)
+sel2 <- grep("pvem", tmp$win)
+tmp$race.prior[intersect(sel1,sel2)] <- "Term-limited-p-won"
 inc[sel,] <- tmp  # return to data after manipulation
 # repeat subset for defeats (easier debugging)
 sel <- which(is.na(inc$race.prior)==TRUE & inc$yr>1993)
 tmp <- inc[sel,] # subset data for manipulation
+#table(tmp$win, tmp$win.prior, useNA = "always")
 #data.frame(tmp$win.prior, tmp$win, tmp$race.prior) # check that all remaining are defeats
 tmp$race.prior <- "Term-limited-p-lost"
 inc[sel,] <- tmp  # return to data after manipulation
 # check coding
 sel <- which(inc$yr>1993)
 table(inc$race.prior[sel], useNA = "always")
-
-AQUI ME QUEDE
+# rename categories
 sel <- which(inc$race.prior=="Reelected")
 inc$race.prior[sel] <- "Incumb-remained"
 sel <- which(inc$race.prior=="Beaten")
@@ -200,8 +206,9 @@ sel <- grep("p-lost", inc$race.prior, ignore.case = TRUE)
 inc$race.prior[sel] <- "Open-dif-pty"
 sel <- grep("pending|out-p-[?]", inc$race.prior, ignore.case = TRUE) 
 inc$race.prior[sel] <- "pending"
-table(inc$race.prior)
-
+sel <- which(inc$yr>1993)
+table(inc$race.prior[sel], useNA = "always")
+table(inc$race.prior, useNA = "always")
 
 #############################################
 # subset: cases allowing reelection in 2018 #
@@ -220,13 +227,12 @@ table(              inc.sub$race.prior)
 nrow(inc.sub)
 round(table(inc.sub$race.prior) / nrow(inc.sub),2)
 
-table(inc.sub$win2, inc.sub$race.prior) # by incumbent party
-tab <- table(inc.sub$win.prior2, inc.sub$race.prior)
+table(inc.sub$win, inc.sub$race.prior) # by incumbent party
+tab <- table(inc.sub$win.prior, inc.sub$race.prior)
 rowSums(tab)
 sum(rowSums(tab))
-round(table(inc.sub$win.prior2, inc.sub$race.prior) *100 / rowSums(tab), 1)
+round(table(inc.sub$win.prior, inc.sub$race.prior) *100 / rowSums(tab), 1)
 round(colSums(tab) *100 / sum(rowSums(tab)), 1)
-
 
 # subset: cases NOT allowing reelection in 2018
 sel <- which(inc$yr==2018 & (inc$edon==9 | inc$edon==21))
@@ -237,13 +243,17 @@ table(              inc.sub$race.prior)
 nrow(inc.sub)
 round(table(inc.sub$race.prior) / nrow(inc.sub),2)
 
-table(inc.sub$win2, inc.sub$race.prior) # by incumbent party
-tab <- table(inc.sub$win.prior2, inc.sub$race.prior)
+table(inc.sub$win, inc.sub$race.prior) # by incumbent party
+tab <- table(inc.sub$win.prior, inc.sub$race.prior)
 rowSums(tab)
-round(table(inc.sub$win.prior2, inc.sub$race.prior) *100 / rowSums(tab), 0)
+round(table(inc.sub$win.prior, inc.sub$race.prior) *100 / rowSums(tab), 0)
 
 sel <- which(inc$yr==2018 & inc$edon!=16)
 inc.sub <- inc[sel,]
+
+####################
+## end blog nexos ##
+####################
 
 ## 1ago2020: THIS APPEARS DEPRECATED, CLASSIF IS DONE IN RACE.AFTER
 ## ###############################################################
@@ -520,14 +530,7 @@ inc.sub <- inc[sel,]
 ################################################
 
 
-dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
-setwd(wd)
-
-options(width = 125)
-
-# load incumbent data since 1989
-inc <- read.csv(paste(dd, "aymu1989-present.incumbents.csv", sep = ""), stringsAsFactors = FALSE)
+# ORDINARY ELECTION YEARS FOR ALL STATES --- INAFED HAS YRIN INSTEAD OF YR
 # extract election yrs
 tmp <- inc[, c("edon","yr")]
 tmp$tmp <- paste(tmp$edon, tmp$yr, sep = "-")
@@ -537,9 +540,6 @@ tmp$dinc <- 1 # identify original obs
 tmp$tmp <- tmp$tmp2 <- NULL
 el.yrs <- tmp # rename
 
-
-# ORDINARY ELECTION YEARS FOR ALL STATES --- INAFED HAS YRIN INSTEAD OF YR
-#
 ## # done by hand (no longer needed, now feed from calenariosReeleccion)
 ## calendar <- list(
 ##     ags=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,          2019),

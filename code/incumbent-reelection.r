@@ -56,7 +56,14 @@ inc$win2[sel] <- "loc/oth"
 #
 inc$win <- inc$win2; inc$win2 <- NULL # keep manipulated version only
 
-# lag race.after & win to generate race.prior & win.prior
+#############################################################
+## lag race.after & win to generate race.prior & win.prior ##
+#############################################################
+# this function does the job easier
+# library(DataCombine) # easy lags with slide
+# example
+# inc <- inc[order(inc$inegi, inc$yr),] # verify sorted before lags
+# inc <- slide(inc, Var = "win", GroupVar = "ife", slideBy = +1) # lead win by one period
 inc <- inc[order(inc$emm),] # sort munn-chrono
 # open slots for lagged variables
 inc$race.prior <- NA
@@ -529,18 +536,24 @@ inc.sub <- inc[sel,]
 ## ########################################## ##
 ################################################
 
+# HOUSECLEANING
+rm(e,inc.e,inc.m,inc.sub,m,M,mm,sel,sel1,sel2,sel.e,sel.m,tab,tmp)
+
 
 # ORDINARY ELECTION YEARS FOR ALL STATES --- INAFED HAS YRIN INSTEAD OF YR
+# 4ago2020: PROBABLY REDUNDANT SINCE emm NOW IDENTIFIES CYCLE REGARDLESS OF YEAR
 # extract election yrs
-tmp <- inc[, c("edon","yr")]
+tmp <- inc[, c("edon","yr","dextra")]
+tmp <- tmp[tmp$dextra==0,] # drop extraordinaria years
+tmp$dextra <- NULL
 tmp$tmp <- paste(tmp$edon, tmp$yr, sep = "-")
 tmp$tmp2 <- duplicated(tmp$tmp)
 tmp <- tmp[tmp$tmp2==FALSE,]
 tmp$dinc <- 1 # identify original obs
 tmp$tmp <- tmp$tmp2 <- NULL
 el.yrs <- tmp # rename
-
-## # done by hand (no longer needed, now feed from calenariosReeleccion)
+#
+## # done by hand (1ago2020: no longer needed, now feeds from calenariosReeleccion)
 ## calendar <- list(
 ##     ags=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,          2019),
 ##     bc= c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,          2019),
@@ -605,472 +618,477 @@ for (i in 1:32){
     tmp$edon <- i
     cal <- rbind(cal, tmp)
 }
+calendar <- cal # keep data frame only
+rm(cal)
+
+# can be dropped ### # extract oax municipios to add more years
+# can be dropped ### # NOT NEEDED AGAIN
+# can be dropped ### tmp <- inc[inc$edon==20, c("inegi")]
+# can be dropped ### tmp <- unique(tmp)
+# can be dropped ### tmp <- as.character(tmp)
+# can be dropped ### tmp <- sub("^20", "", tmp)
+# can be dropped ### tmp1 <- paste("oax-07", tmp, sep=".")
+# can be dropped ### tmp2 <- paste("oax-08", tmp, sep=".")
+# can be dropped ### tmp3 <- paste("oax-09", tmp, sep=".")
+# can be dropped ### tmp <- c(tmp1,tmp2,tmp3)
+# can be dropped ### # get elec to subset oax cases
+# can be dropped ### tmp2 <- read.csv(paste(dd, "aymu1997-present.coalAgg.csv", sep = ""), stringsAsFactors = FALSE)
+# can be dropped ### tmp2 <- read.csv(paste(dd, "aymu1977-present.csv", sep = ""), stringsAsFactors = FALSE)
+# can be dropped ### tmp2 <- tmp2[tmp2$edon==20,]
+# can be dropped ### sel <- which(tmp2$emm %in% tmp)
+# can be dropped ### tmp2 <- tmp2[sel,]
+# can be dropped ### write.csv(tmp2, file = paste(dd, "tmp.csv", sep = ""))
 
 
-## # extract oax municipios to add more years
-## # NOT NEEDED AGAIN
-## tmp <- inc[inc$edon==20, c("inegi")]
-## tmp <- unique(tmp)
-## tmp <- as.character(tmp)
-## tmp <- sub("^20", "", tmp)
-## tmp1 <- paste("oax-07", tmp, sep=".")
-## tmp2 <- paste("oax-08", tmp, sep=".")
-## tmp3 <- paste("oax-09", tmp, sep=".")
-## tmp <- c(tmp1,tmp2,tmp3)
-## # get elec to subset oax cases
-## tmp2 <- read.csv(paste(dd, "aymu1997-present.coalAgg.csv", sep = ""), stringsAsFactors = FALSE)
-## tmp2 <- read.csv(paste(dd, "aymu1977-present.csv", sep = ""), stringsAsFactors = FALSE)
-## tmp2 <- tmp2[tmp2$edon==20,]
-## sel <- which(tmp2$emm %in% tmp)
-## tmp2 <- tmp2[sel,]
-## write.csv(tmp2, file = paste(dd, "tmp.csv", sep = ""))
 
-# party won/lost dummy
-# - was used to recode term-limit to pty-won or -lost but this is now redundant (race.after pasted to csv file 14aug2019)
-# - changes to race.after are now redundant in bloc below
-# - when more elections added, party greps may need manipulation (dhit verifies)
-library(DataCombine) # easy lags
-inc <- inc[order(inc$inegi, inc$yr),] # verify sorted before lags
-inc <- slide(inc, Var = "win", GroupVar = "inegi", slideBy = +1) # lead win by one period
-inc <- slide(inc, Var = "incumbent", GroupVar = "inegi", slideBy = +1) # lead win by one period
-#
-inc$dpwin <- NA
-sel <- which(inc$win=="0" | inc$win1=="0"); inc$dpwin[sel] <- 99   # will change to NAs when all is node
-# cherán ayutla before uyc
-sel <- grep("mic-13.024|gue-15.012", inc$emm); inc$win1[sel] <- "uyc"; inc$race.after[sel] <- "uyc"
-sel <- which(inc$win=="uyc");  inc$dpwin[sel] <- 0 # current usos coded as party not reelecting
-sel <- which(inc$win1=="uyc"); inc$dpwin[sel] <- 0 # future usos coded as party not reelecting
-# last cycle still NA
-sel <- which(is.na(inc$win1) & is.na(inc$dpwin)); inc$dpwin[sel] <- 99 # will change to NAs when all is node
-# independents
-sel <- which(is.na(inc$dpwin) & inc$win=="indep")
-inc$dpwin[sel][inc$incumbent[sel]==inc$incumbent1[sel]] <- 1
-inc$dpwin[sel][inc$incumbent[sel]!=inc$incumbent1[sel]] <- 0
-sel <- which(is.na(inc$dpwin) & inc$win1=="indep") # if indep won next in cases remaining, then party lost
-inc$dpwin[sel] <- 0
-#
-# checked for false positives  
-sel <- which(inc$win==inc$win1 & is.na(inc$dpwin))
-#table(inc$win[sel]) # check for false positives  
-inc$dpwin[sel] <- 1
-# pri
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pri", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pri", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pan
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pan", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pan", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# prd
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("prd", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("prd", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pvem
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pvem", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pvem", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# morena
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("morena", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("morena", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pt
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pt1", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pt1", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# mc
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("^mc$|-mc|mc-|conve", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("^mc$|-mc|mc-|conve", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pna
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pna", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pna", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pps
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pps", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pps", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# ave
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("ave", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("ave", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pfcrn
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pfcrn", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pfcrn", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# parm
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("parm", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("parm", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# prt
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("prt", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("prt", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# prs
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("prs", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("prs", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# psd pasd
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("psd|pasd", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("psd|pasd", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pmch
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pmch", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pmch", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pchu
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pchu", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pchu", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# prv
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("prv", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("prv", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pup
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pup", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pup", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pcp
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pcp", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pcp", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# psi
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("psi", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("psi", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# psn
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("psn", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("psn", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# ps1
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("ps1", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("ps1", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pes
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pes", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pes", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pver
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pver", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pver", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pcd1
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pcd1", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pcd1", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pdm
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pdm", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pdm", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pcdt
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pcdt", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pcdt", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# npp
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("npp", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("npp", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# fc1
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("fc1", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("fc1", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pac1
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pac1", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pac1", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pcm2
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pcm2", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pcm2", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pd1
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pd1", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pd1", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pec
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pec", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pec", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pjs
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pjs", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pjs", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pmp
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pmp", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pmp", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pmt
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pmt", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pmt", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# poc
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("poc", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("poc", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# ppt
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("ppt", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("ppt", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# ppg
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("ppg", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("ppg", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# ph
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("ph", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("ph", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# via radical
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("via_radical", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("via_radical", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# pmr
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("pmr", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("pmr", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# mas
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("mas", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("mas", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-# paz
-sel <- which(is.na(inc$dpwin))  # subset uncoded cases
-sel1 <- grep("paz", inc$win[sel])
-#table(inc$win[sel][sel1]) # check false positives
-sel2 <- grep("paz", inc$win1[sel])
-#drop#inc$dpwin[sel][sel1] <- 0
-inc$dpwin[sel][intersect(sel1, sel2)] <- 1
-#
-# verify
-inc$dhit <- 0
-sel <- which(inc$win=="uyc"); inc$dhit[sel] <- 1
-sel <- which(inc$win=="0"); inc$dhit[sel] <- 1
-sel <- which(inc$emm=="mic-13.024|gue-15.012"); inc$dhit[sel] <- 1
-sel <- which(is.na(inc$win1) & is.na(inc$dpwin)); inc$dhit[sel] <- 1
-sel <- which(inc$win=="indep"); inc$dhit[sel] <- 1
-#sel <- which(is.na(inc$dpwin) & inc$win1=="indep") # if indep won next in cases remaining, then party lost
-sel <- which(inc$win==inc$win1); inc$dhit[sel] <- 1
-sel <- grep("pri", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pan", inc$win); inc$dhit[sel] <- 1
-sel <- grep("prd", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pvem", inc$win); inc$dhit[sel] <- 1
-sel <- grep("morena", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pt1?", inc$win); inc$dhit[sel] <- 1
-sel <- grep("^mc$|-mc|mc-|conve", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pna", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pps", inc$win); inc$dhit[sel] <- 1
-sel <- grep("ave", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pfcrn", inc$win); inc$dhit[sel] <- 1
-sel <- grep("parm", inc$win); inc$dhit[sel] <- 1
-sel <- grep("prt", inc$win); inc$dhit[sel] <- 1
-sel <- grep("prs", inc$win); inc$dhit[sel] <- 1
-sel <- grep("psd|pasd", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pmch", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pchu", inc$win); inc$dhit[sel] <- 1
-sel <- grep("prv", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pup", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pcp", inc$win); inc$dhit[sel] <- 1
-sel <- grep("psi", inc$win); inc$dhit[sel] <- 1
-sel <- grep("psn", inc$win); inc$dhit[sel] <- 1
-sel <- grep("ps1", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pes", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pver", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pcd1", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pdm", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pcdt", inc$win); inc$dhit[sel] <- 1
-sel <- grep("npp", inc$win); inc$dhit[sel] <- 1
-sel <- grep("fc1", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pac1", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pcm2", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pd1", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pec", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pjs", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pmp", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pmt", inc$win); inc$dhit[sel] <- 1
-sel <- grep("poc", inc$win); inc$dhit[sel] <- 1
-sel <- grep("ppt", inc$win); inc$dhit[sel] <- 1
-sel <- grep("ppg", inc$win); inc$dhit[sel] <- 1
-sel <- grep("ph", inc$win); inc$dhit[sel] <- 1
-sel <- grep("via_radical", inc$win); inc$dhit[sel] <- 1
-sel <- grep("pmr", inc$win); inc$dhit[sel] <- 1
-sel <- grep("mas", inc$win); inc$dhit[sel] <- 1
-sel <- grep("paz", inc$win); inc$dhit[sel] <- 1
-table(inc$dhit, useNA = "always") # all must be 1
-sel <- which(inc$dhit==0)
-inc[sel,]
-inc$dhit <- NULL # clean
+## #########################################################################################################################
+## ## TODO ESTE BLOQUE CODIFICA WIN-NEXT PARA CODIFICAR REELECCION DE PARTIDOS (PROSPECTIVA EN VEZ DE RETROSPECTIVAMENTE) ##
+## ## LO VOY A QUITAR. ADEMAS DE GENERAR ERRORES VARIOS, LA NUEVA CODIFICACION CON *-p-won/lost ETC YA INCLUYE ESA INFO   ##
+## #########################################################################################################################
+## # party won/lost dummy
+## # - was used to recode term-limit to pty-won or -lost but this is now redundant (race.after pasted to csv file 14aug2019)
+## # - changes to race.after are now redundant in bloc below
+## # - when more elections added, party greps may need manipulation (dhit verifies)
+## library(DataCombine) # easy lags with slide
+## inc <- inc[order(inc$inegi, inc$yr),] # verify sorted before lags
+## inc <- slide(inc, Var = "win", GroupVar = "ife", slideBy = +1) # lead win by one period
+## inc <- slide(inc, Var = "incumbent", GroupVar = "ife", slideBy = +1) # lead incumbent by one period
+## #
+## inc$dpwin <- NA
+## sel <- which(inc$win=="0" | inc$win1=="0"); inc$dpwin[sel] <- 99   # will change to NAs when all is node
+## # cherán ayutla before uyc
+## sel <- grep("mic-13.024|gue-15.012", inc$emm); inc$win1[sel] <- "uyc"; inc$race.after[sel] <- "uyc"
+## sel <- which(inc$win=="uyc");  inc$dpwin[sel] <- 0 # current usos coded as party not reelecting
+## sel <- which(inc$win1=="uyc"); inc$dpwin[sel] <- 0 # future usos coded as party not reelecting
+## # last cycle still NA
+## sel <- which(is.na(inc$win1) & is.na(inc$dpwin)); inc$dpwin[sel] <- 99 # will change to NAs when all is node
+## # independents
+## sel <- which(is.na(inc$dpwin) & inc$win=="indep")
+## inc$dpwin[sel][inc$incumbent[sel]==inc$incumbent1[sel]] <- 1
+## inc$dpwin[sel][inc$incumbent[sel]!=inc$incumbent1[sel]] <- 0
+## sel <- which(is.na(inc$dpwin) & inc$win1=="indep") # if indep won next in cases remaining, then party lost
+## inc$dpwin[sel] <- 0
+## #
+## # checked for false positives  
+## sel <- which(inc$win==inc$win1 & is.na(inc$dpwin))
+## #table(inc$win[sel]) # check for false positives  
+## inc$dpwin[sel] <- 1
+## # pri
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pri", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pri", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pan
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pan", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pan", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # prd
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("prd", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("prd", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pvem
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pvem", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pvem", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # morena
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("morena", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("morena", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pt
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pt1", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pt1", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # mc
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("^mc$|-mc|mc-|conve", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("^mc$|-mc|mc-|conve", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pna
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pna", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pna", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pps
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pps", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pps", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # ave
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("ave", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("ave", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pfcrn
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pfcrn", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pfcrn", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # parm
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("parm", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("parm", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # prt
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("prt", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("prt", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # prs
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("prs", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("prs", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # psd pasd
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("psd|pasd", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("psd|pasd", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pmch
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pmch", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pmch", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pchu
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pchu", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pchu", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # prv
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("prv", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("prv", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pup
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pup", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pup", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pcp
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pcp", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pcp", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # psi
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("psi", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("psi", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # psn
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("psn", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("psn", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # ps1
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("ps1", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("ps1", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pes
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pes", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pes", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pver
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pver", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pver", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pcd1
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pcd1", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pcd1", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pdm
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pdm", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pdm", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pcdt
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pcdt", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pcdt", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # npp
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("npp", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("npp", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # fc1
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("fc1", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("fc1", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pac1
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pac1", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pac1", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pcm2
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pcm2", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pcm2", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pd1
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pd1", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pd1", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pec
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pec", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pec", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pjs
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pjs", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pjs", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pmp
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pmp", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pmp", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pmt
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pmt", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pmt", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # poc
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("poc", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("poc", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # ppt
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("ppt", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("ppt", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # ppg
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("ppg", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("ppg", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # ph
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("ph", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("ph", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # via radical
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("via_radical", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("via_radical", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # pmr
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("pmr", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("pmr", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # mas
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("mas", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("mas", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## # paz
+## sel <- which(is.na(inc$dpwin))  # subset uncoded cases
+## sel1 <- grep("paz", inc$win[sel])
+## #table(inc$win[sel][sel1]) # check false positives
+## sel2 <- grep("paz", inc$win1[sel])
+## #drop#inc$dpwin[sel][sel1] <- 0
+## inc$dpwin[sel][intersect(sel1, sel2)] <- 1
+## #
+## # verify
+## inc$dhit <- 0
+## sel <- which(inc$win=="uyc"); inc$dhit[sel] <- 1
+## sel <- which(inc$win=="0"); inc$dhit[sel] <- 1
+## sel <- which(inc$emm=="mic-13.024|gue-15.012"); inc$dhit[sel] <- 1
+## sel <- which(is.na(inc$win1) & is.na(inc$dpwin)); inc$dhit[sel] <- 1
+## sel <- which(inc$win=="indep"); inc$dhit[sel] <- 1
+## #sel <- which(is.na(inc$dpwin) & inc$win1=="indep") # if indep won next in cases remaining, then party lost
+## sel <- which(inc$win==inc$win1); inc$dhit[sel] <- 1
+## sel <- grep("pri", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pan", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("prd", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pvem", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("morena", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pt1?", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("^mc$|-mc|mc-|conve", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pna", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pps", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("ave", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pfcrn", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("parm", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("prt", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("prs", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("psd|pasd", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pmch", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pchu", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("prv", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pup", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pcp", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("psi", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("psn", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("ps1", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pes", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pver", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pcd1", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pdm", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pcdt", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("npp", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("fc1", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pac1", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pcm2", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pd1", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pec", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pjs", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pmp", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pmt", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("poc", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("ppt", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("ppg", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("ph", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("via_radical", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("pmr", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("mas", inc$win); inc$dhit[sel] <- 1
+## sel <- grep("paz", inc$win); inc$dhit[sel] <- 1
+## table(inc$dhit, useNA = "always") # all must be 1
+## sel <- which(inc$dhit==0)
+## inc$dhit <- NULL # clean
+##
+## # all others must therefore be dpwin=0
+## sel <- which(is.na(inc$dpwin)); inc$dpwin[sel] <- 0
+## #
+## print("NA must be zero")
+## table(inc$dpwin, useNA = "always")
+## # recode 99s to NAs
+## sel <- which(inc$dpwin==99)
+## inc$dpwin[sel] <- NA
+## #
+## ## # recode term limited
+## ## # redundant
+## ## sel <- which(inc$race.after=="Term-limited")
+## ## sel1 <- which(inc$dpwin==1)
+## ## inc$race.after[intersect(sel,sel1)] <- "Term-limited-p-won"
+## ## sel1 <- which(inc$dpwin==0)
+## ## inc$race.after[intersect(sel,sel1)] <- "Term-limited-p-lost"
+##
+## ## # special cases
+## ## sel <- which(inc$emm=="cps-16.120") ; inc$dpwin[sel] <- 0; inc$race.after[sel] <- "Term-limited-p-lost" # litigio coded as term limited 
+## ## sel <- which(inc$emm=="dgo-16.035") ; inc$dpwin[sel] <- 1 # reran under pvem only and lost
+## ## sel <- which(inc$emm=="oax-16.130") ; inc$dpwin[sel] <- 0 # conflicto postelectoral
+## #
+## # result
+## table(inc$race.after, inc$dpwin, useNA = "always")
+## #
+## # check cases
+## #sel1 <- which(inc$emm=="cps-17.064")
+## sel1 <- which(inc$race.after=="Beaten" & inc$dpwin==1)
+## inc[sel1,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
+## sel1 <- which(inc$race.after=="Reelected" & inc$dpwin==0)
+## inc[sel1,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
+## #
+## #########################
+## ## BLOQUE TERMINA AQUI ##
+## #########################
 
-# all others must therefore be dpwin=0
-sel <- which(is.na(inc$dpwin)); inc$dpwin[sel] <- 0
-#
-print("NA must be zero")
-table(inc$dpwin, useNA = "always")
-# recode 99s to NAs
-sel <- which(inc$dpwin==99)
-inc$dpwin[sel] <- NA
-#
-## # recode term limited
-## # redundant
-## sel <- which(inc$race.after=="Term-limited")
-## sel1 <- which(inc$dpwin==1)
-## inc$race.after[intersect(sel,sel1)] <- "Term-limited-p-won"
-## sel1 <- which(inc$dpwin==0)
-## inc$race.after[intersect(sel,sel1)] <- "Term-limited-p-lost"
-#
-# special cases
-sel <- which(inc$emm=="cps-16.120") ; inc$dpwin[sel] <- 0; inc$race.after[sel] <- "Term-limited-p-lost" # litigio coded as term limited 
-sel <- which(inc$emm=="dgo-16.035") ; inc$dpwin[sel] <- 1 # reran under pvem only and lost
-sel <- which(inc$emm=="oax-16.130") ; inc$dpwin[sel] <- 0 # conflicto postelectoral
-#
-## # pending cases
-## # redundant
-## sel <- which(inc$race.after=="Term-limited")
-## inc$race.after[sel] <- "Term-limited-pending"
-#
-# result
-table(inc$race.after, inc$dpwin, useNA = "always")
-#
-# check cases
-#sel1 <- which(inc$emm=="cps-17.064")
-sel1 <- which(inc$race.after=="Beaten" & inc$dpwin==1)
-inc[sel1,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
-sel1 <- which(inc$race.after=="Reelected" & inc$dpwin==0)
-inc[sel1,c("emm","yr","win","incumbent","win1","race.after","note","dpwin")]
-#
 
-# change conve for mc to avoid false negatives
-sel <- grep("conve", inc$win)
-inc$win[sel] <- sub(pattern="conve", replacement="mc", inc$win[sel])
-sel <- grep("conve", inc$win1)
-inc$win1[sel] <- sub(pattern="conve", replacement="mc", inc$win1[sel])
+# can be dropped ## change conve for mc to avoid false negatives
+# can be dropped #sel <- grep("conve", inc$win)
+# can be dropped #inc$win[sel] <- sub(pattern="conve", replacement="mc", inc$win[sel])
+# can be dropped #sel <- grep("conve", inc$win1)
+# can be dropped #inc$win1[sel] <- sub(pattern="conve", replacement="mc", inc$win1[sel])
 
 # which party/ies reelected
 inc$returned <- NA

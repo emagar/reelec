@@ -12,6 +12,14 @@ dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
 
+###########################################
+## ##################################### ##
+## ##                                 ## ##
+## ## INCUMBENT DATA PREP STARTS HERE ## ##
+## ##                                 ## ##
+## ##################################### ##
+###########################################
+
 # read alcaldes
 inc <- read.csv(file = "aymu1989-present.incumbents.csv", stringsAsFactors = FALSE)
 colnames(inc)
@@ -1451,145 +1459,169 @@ head(inc)
 ## ## REPEATED NAME SEARCH ENDS HERE ##
 ## ####################################
 
+#########################################
+## ################################### ##
+## ##                               ## ##
+## ## INCUMBENT DATA PREP ENDS HERE ## ##
+## ##                               ## ##
+## ################################### ##
+#########################################
 
 
 
-#############################################################################################
-## get lisnom from federal els (taken from naylum code)                                    ##
-## ignores vote code bec aggregating multi-district munics w partial coals not straightfwd ##
-#############################################################################################
-### get seccion equivalencias to fill missing municipio names
-pth <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/equivSecc/tablaEquivalenciasSeccionalesDesde1994.csv"
-eq <- read.csv(pth, stringsAsFactors = FALSE)
-eq <- eq[,c("edon","seccion","ife","inegi","mun")]
-### 2006 president has lisnom 
-pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/pre2006.csv"
-tmp <- read.csv(pth, stringsAsFactors = FALSE)
-tmp <- tmp[-which(tmp$seccion==0),] # drop voto extranjero
-tmp$lisnom[is.na(tmp$lisnom)] <- 0 # make NAs zeroes because ave() somehow not ignoring them
-tmp$lisnom <- ave(tmp$lisnom, as.factor(tmp$edon*10000+tmp$seccion), FUN=sum, na.rm=TRUE) # aggregate secciones
-tmp <- tmp[duplicated(tmp$edon*10000+tmp$seccion)==FALSE,] # drop reduntant obs --- keep seccion structure to merge to 09
-tmp$lisnom <- ave(tmp$lisnom, as.factor(tmp$munn), FUN=sum, na.rm=TRUE) # aggregate municipios
-tmp <- tmp[duplicated(tmp$munn)==FALSE,] # drop reduntant obs --- keep seccion structure to merge to 09
-tmp$lisnom.06 <- tmp$lisnom
-ln <- tmp[, c("edon","munn","lisnom.06")]
-#
-# 2009 has mun only, merge to eq for all munn (slight mistakes likely due to remunicipalización)
-pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/dip2009.csv"
-tmp <- read.csv(pth, stringsAsFactors = FALSE)
-tmp$lisnom[is.na(tmp$lisnom)] <- 0 # make NAs zeroes because ave() somehow not ignoring them
-tmp$lisnom.09 <- tmp$lisnom # rename
-tmp$mun <- tmp$munn # wrong name
-tmp <- tmp[,c("edon","mun","seccion","lisnom.09")] # data has no munn
-tmp$lisnom.09 <- ave(tmp$lisnom.09, as.factor(tmp$edon*10000+tmp$seccion), FUN=sum, na.rm=TRUE) # aggregate secciones
-tmp <- tmp[duplicated(tmp$edon*10000+tmp$seccion)==FALSE,] # drop reduntant obs
-tmp$lisnom.09 <- ave(tmp$lisnom.09, as.factor(paste(tmp$edon, tmp$mun, sep = ".")), FUN=sum, na.rm=TRUE) # aggregate municipios
-tmp <- merge(x = tmp, y = eq, by = c("edon","seccion"), all.x = TRUE, all.y = FALSE) # merge to have munn
-tmp <- tmp[duplicated(as.factor(paste(tmp$edon, tmp$mun.x, sep = ".")))==FALSE,]
-tmp$munn <- tmp$ife
-tmp$mun <- tmp$mun.y
-tmp <- tmp[,c("edon","munn","inegi","mun","lisnom.09")]
-#
-ln <- merge(x = ln, y = tmp, by = c("edon","munn"), all = TRUE)
-#
-# 2012 presid
-pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/pre2012.csv"
-tmp <- read.csv(pth, stringsAsFactors = FALSE)
-tmp <- tmp[, c("edon","seccion","mun","lisnom")]
-tmp <- tmp[-which(tmp$seccion==0),] # drop voto extranjero
-tmp[tmp=="-"] <- 0 # remove "-"
-# agrega secciones
-tmp$lisnom   <- ave(tmp$lisnom,   as.factor(tmp$edon*10000+tmp$seccion), FUN=sum, na.rm=TRUE)
-tmp <- tmp[duplicated(tmp$edon*10000+tmp$seccion)==FALSE,] # drop reduntant obs
-tmp$lisnom.12 <- tmp$lisnom; tmp$lisnom <- NULL
-# add munn
-tmp <- merge(x = tmp, y = eq, by = c("edon","seccion"), all.x = TRUE, all.y = FALSE) 
-tmp$munn <- tmp$ife; tmp$ife <- NULL # rename
-# aggregate municipios
-tmp$lisnom.12   <- ave(tmp$lisnom.12,   as.factor(paste(tmp$edon, tmp$mun.x)), FUN=sum, na.rm=TRUE)
-tmp <- tmp[duplicated(as.factor(paste(tmp$edon, tmp$mun.x)))==FALSE,] # drop reduntant obs
-tmp$mun <- tmp$mun.y; tmp$mun.x <- tmp$mun.y <- NULL
-tmp <- tmp[,c("edon","munn","inegi","mun","lisnom.12")]
-#
-ln <- merge(x = ln, y = tmp, by = c("edon","munn"), all = TRUE)
-# plug mun.y when mun.x is missing
-sel <- which(is.na(ln$mun.x))
-ln$mun.x[sel] <- ln$mun.y[sel]
-sel <- which(is.na(ln$inegi.x))
-ln$inegi.x[sel] <- ln$inegi.y[sel]
-ln$mun <- ln$mun.x; ln$mun.x <- ln$mun.y <- NULL
-ln$inegi <- ln$inegi.x; ln$inegi.x <- ln$inegi.y <- NULL
-#
-# 2015 dip fed
-pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/dip2015.csv"
-tmp <- read.csv(pth, stringsAsFactors = FALSE)
-#tmp <- tmp[-which(tmp$seccion==0),] # drop voto extranjero
-tmp$ord <- tmp$OBSERVACIONES <- tmp$ID_CASILLA <- tmp$TIPO_CASILLA <- tmp$EXT_CONTIGUA <- tmp$nr <- tmp$nul <- tmp$tot <- NULL # clean
-tmp$lisnom[is.na(tmp$lisnom)] <- 0
-tmp$lisnom.15 <- tmp$lisnom
-tmp <- tmp[,c("edon","seccion","lisnom.15")]
-# agrega secciones
-tmp$lisnom.15   <- ave(tmp$lisnom.15,   as.factor(paste(tmp$edon, tmp$seccion, sep = ".")), FUN=sum, na.rm=TRUE)
-tmp <- tmp[duplicated(as.factor(paste(tmp$edon, tmp$seccion, sep = ".")))==FALSE,] # drop reduntant obs
-tmp <- merge(x = tmp, y = eq, by = c("edon","seccion"), all.x = TRUE, all.y = FALSE) # add munn
-tmp$munn <- tmp$ife; tmp$ife <- NULL # rename
-tmp$lisnom.15   <- ave(tmp$lisnom.15,   as.factor(tmp$munn), FUN=sum, na.rm=TRUE)
-tmp <- tmp[duplicated(tmp$munn)==FALSE,] # drop reduntant obs
-tmp <- tmp[,c("edon","munn","mun","lisnom.15")]
-#
-ln <- merge(x = ln, y = tmp, by = c("edon","munn"), all = TRUE)
-# plug mun.y when mun.x is missing
-sel <- which(is.na(ln$mun.x))
-ln$mun.x[sel] <- ln$mun.y[sel]
-ln$mun <- ln$mun.x; ln$mun.x <- ln$mun.y <- NULL
-#
-# 2018 presid
-pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/pre2018.csv"
-tmp <- read.csv(pth, stringsAsFactors = FALSE)
-tmp <- tmp[-which(tmp$seccion==0),] # drop voto extranjero
-tmp[tmp=="-"] <- 0 # remove "-"
-tmp <- tmp[, c("edon","seccion","lisnom")]
-# agrega secciones
-tmp$lisnom   <- ave(tmp$lisnom,   as.factor(tmp$edon*10000+tmp$seccion), FUN=sum, na.rm=TRUE)
-tmp <- tmp[duplicated(tmp$edon*10000+tmp$seccion)==FALSE,] # drop reduntant obs
-tmp$lisnom.18 <- tmp$lisnom; tmp$lisnom <- NULL
-# add munn
-tmp <- merge(x = tmp, y = eq, by = c("edon","seccion"), all.x = TRUE, all.y = FALSE) 
-tmp$munn <- tmp$ife; tmp$ife <- NULL # rename
-sel <- which(is.na(tmp$munn)) # reseccionamiento, drop handful of secciones not in equiv secciones
-tmp <- tmp[-sel,]
-# aggregate municipios
-tmp$lisnom.18   <- ave(tmp$lisnom.18,   as.factor(tmp$munn), FUN=sum, na.rm=TRUE)
-tmp <- tmp[duplicated(tmp$munn)==FALSE,] # drop reduntant obs
-tmp <- tmp[,c("edon","munn","mun","lisnom.18")]
-#
-ln <- merge(x = ln, y = tmp, by = c("edon","munn"), all = TRUE)
-ln$mun <- ln$mun.x; ln$mun.x <- ln$mun.y <- NULL
-#
-# sort
-ln <- ln[order(ln$edon, ln$munn), c("edon","munn","inegi","mun","lisnom.06","lisnom.09","lisnom.12","lisnom.15","lisnom.18")]
-rm(eq,tmp)
 
-# will need to project lisnom from fed elecs (cf naylum), too many missings here
-head(ln)
-with(inc, table(is.na(mg)))
-with(inc, table(is.na(lisnom)))
-ls()
+########################################
+## ################################## ##
+## ##                              ## ##
+## ## VOTING DATA PREP STARTS HERE ## ##
+## ##                              ## ##
+## ################################## ##
+########################################
 
-# adds object cen.yr (and mpv, unneeded) with yearly census projections
-load(file="/home/eric/Desktop/naylum/data/electoral/nay2002-on.RData") 
-rm(vpm)
+######################################
+## ################################ ##
+## ##                            ## ##
+## ## VOTING DATA PREP ENDS HERE ## ##
+## ##                            ## ##
+## ################################ ##
+######################################
 
 
-unique(sub("[.][0-9]{2}", "", colnames(cen.yr))) # names omitting yrs
-cen.yr$lisnom.12
-
-
-# lag margin (measure of candidate quality)
-library(DataCombine) # easy lags
-inc$tmp <- sub("([a-z]+)[-][0-9]{2}([.][0-9]{3})", "\\1\\2", inc$emm) # drop elec cycle from emm
-inc <- slide(data = inc, TimeVar = "yr", GroupVar = "tmp", Var = "mg", NewVar = "mg.lag",    slideBy = -1)
-inc <- inc[order(inc$ord),] # sort
-inc$tmp <- inc$suplente <- NULL
+## #############################################################################################
+## ## MOVE THIS BLOCK TO AFTER READING/MANIPULATING ELECTORAL DATA                            ##
+## ## get lisnom from federal els (taken from naylum code)                                    ##
+## ## ignores vote code bec aggregating multi-district munics w partial coals not straightfwd ##
+## #############################################################################################
+## ### get seccion equivalencias to fill missing municipio names
+## pth <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/equivSecc/tablaEquivalenciasSeccionalesDesde1994.csv"
+## eq <- read.csv(pth, stringsAsFactors = FALSE)
+## eq <- eq[,c("edon","seccion","ife","inegi","mun")]
+## ### 2006 president has lisnom 
+## pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/pre2006.csv"
+## tmp <- read.csv(pth, stringsAsFactors = FALSE)
+## tmp <- tmp[-which(tmp$seccion==0),] # drop voto extranjero
+## tmp$lisnom[is.na(tmp$lisnom)] <- 0 # make NAs zeroes because ave() somehow not ignoring them
+## tmp$lisnom <- ave(tmp$lisnom, as.factor(tmp$edon*10000+tmp$seccion), FUN=sum, na.rm=TRUE) # aggregate secciones
+## tmp <- tmp[duplicated(tmp$edon*10000+tmp$seccion)==FALSE,] # drop reduntant obs --- keep seccion structure to merge to 09
+## tmp$lisnom <- ave(tmp$lisnom, as.factor(tmp$munn), FUN=sum, na.rm=TRUE) # aggregate municipios
+## tmp <- tmp[duplicated(tmp$munn)==FALSE,] # drop reduntant obs --- keep seccion structure to merge to 09
+## tmp$lisnom.06 <- tmp$lisnom
+## ln <- tmp[, c("edon","munn","lisnom.06")]
+## #
+## # 2009 has mun only, merge to eq for all munn (slight mistakes likely due to remunicipalización)
+## pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/dip2009.csv"
+## tmp <- read.csv(pth, stringsAsFactors = FALSE)
+## tmp$lisnom[is.na(tmp$lisnom)] <- 0 # make NAs zeroes because ave() somehow not ignoring them
+## tmp$lisnom.09 <- tmp$lisnom # rename
+## tmp$mun <- tmp$munn # wrong name
+## tmp <- tmp[,c("edon","mun","seccion","lisnom.09")] # data has no munn
+## tmp$lisnom.09 <- ave(tmp$lisnom.09, as.factor(tmp$edon*10000+tmp$seccion), FUN=sum, na.rm=TRUE) # aggregate secciones
+## tmp <- tmp[duplicated(tmp$edon*10000+tmp$seccion)==FALSE,] # drop reduntant obs
+## tmp$lisnom.09 <- ave(tmp$lisnom.09, as.factor(paste(tmp$edon, tmp$mun, sep = ".")), FUN=sum, na.rm=TRUE) # aggregate municipios
+## tmp <- merge(x = tmp, y = eq, by = c("edon","seccion"), all.x = TRUE, all.y = FALSE) # merge to have munn
+## tmp <- tmp[duplicated(as.factor(paste(tmp$edon, tmp$mun.x, sep = ".")))==FALSE,]
+## tmp$munn <- tmp$ife
+## tmp$mun <- tmp$mun.y
+## tmp <- tmp[,c("edon","munn","inegi","mun","lisnom.09")]
+## #
+## ln <- merge(x = ln, y = tmp, by = c("edon","munn"), all = TRUE)
+## #
+## # 2012 presid
+## pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/pre2012.csv"
+## tmp <- read.csv(pth, stringsAsFactors = FALSE)
+## tmp <- tmp[, c("edon","seccion","mun","lisnom")]
+## tmp <- tmp[-which(tmp$seccion==0),] # drop voto extranjero
+## tmp[tmp=="-"] <- 0 # remove "-"
+## # agrega secciones
+## tmp$lisnom   <- ave(tmp$lisnom,   as.factor(tmp$edon*10000+tmp$seccion), FUN=sum, na.rm=TRUE)
+## tmp <- tmp[duplicated(tmp$edon*10000+tmp$seccion)==FALSE,] # drop reduntant obs
+## tmp$lisnom.12 <- tmp$lisnom; tmp$lisnom <- NULL
+## # add munn
+## tmp <- merge(x = tmp, y = eq, by = c("edon","seccion"), all.x = TRUE, all.y = FALSE) 
+## tmp$munn <- tmp$ife; tmp$ife <- NULL # rename
+## # aggregate municipios
+## tmp$lisnom.12   <- ave(tmp$lisnom.12,   as.factor(paste(tmp$edon, tmp$mun.x)), FUN=sum, na.rm=TRUE)
+## tmp <- tmp[duplicated(as.factor(paste(tmp$edon, tmp$mun.x)))==FALSE,] # drop reduntant obs
+## tmp$mun <- tmp$mun.y; tmp$mun.x <- tmp$mun.y <- NULL
+## tmp <- tmp[,c("edon","munn","inegi","mun","lisnom.12")]
+## #
+## ln <- merge(x = ln, y = tmp, by = c("edon","munn"), all = TRUE)
+## # plug mun.y when mun.x is missing
+## sel <- which(is.na(ln$mun.x))
+## ln$mun.x[sel] <- ln$mun.y[sel]
+## sel <- which(is.na(ln$inegi.x))
+## ln$inegi.x[sel] <- ln$inegi.y[sel]
+## ln$mun <- ln$mun.x; ln$mun.x <- ln$mun.y <- NULL
+## ln$inegi <- ln$inegi.x; ln$inegi.x <- ln$inegi.y <- NULL
+## #
+## # 2015 dip fed
+## pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/dip2015.csv"
+## tmp <- read.csv(pth, stringsAsFactors = FALSE)
+## #tmp <- tmp[-which(tmp$seccion==0),] # drop voto extranjero
+## tmp$ord <- tmp$OBSERVACIONES <- tmp$ID_CASILLA <- tmp$TIPO_CASILLA <- tmp$EXT_CONTIGUA <- tmp$nr <- tmp$nul <- tmp$tot <- NULL # clean
+## tmp$lisnom[is.na(tmp$lisnom)] <- 0
+## tmp$lisnom.15 <- tmp$lisnom
+## tmp <- tmp[,c("edon","seccion","lisnom.15")]
+## # agrega secciones
+## tmp$lisnom.15   <- ave(tmp$lisnom.15,   as.factor(paste(tmp$edon, tmp$seccion, sep = ".")), FUN=sum, na.rm=TRUE)
+## tmp <- tmp[duplicated(as.factor(paste(tmp$edon, tmp$seccion, sep = ".")))==FALSE,] # drop reduntant obs
+## tmp <- merge(x = tmp, y = eq, by = c("edon","seccion"), all.x = TRUE, all.y = FALSE) # add munn
+## tmp$munn <- tmp$ife; tmp$ife <- NULL # rename
+## tmp$lisnom.15   <- ave(tmp$lisnom.15,   as.factor(tmp$munn), FUN=sum, na.rm=TRUE)
+## tmp <- tmp[duplicated(tmp$munn)==FALSE,] # drop reduntant obs
+## tmp <- tmp[,c("edon","munn","mun","lisnom.15")]
+## #
+## ln <- merge(x = ln, y = tmp, by = c("edon","munn"), all = TRUE)
+## # plug mun.y when mun.x is missing
+## sel <- which(is.na(ln$mun.x))
+## ln$mun.x[sel] <- ln$mun.y[sel]
+## ln$mun <- ln$mun.x; ln$mun.x <- ln$mun.y <- NULL
+## #
+## # 2018 presid
+## pth <- "/home/eric/Dropbox/data/elecs/MXelsCalendGovt/elecReturns/data/casillas/pre2018.csv"
+## tmp <- read.csv(pth, stringsAsFactors = FALSE)
+## tmp <- tmp[-which(tmp$seccion==0),] # drop voto extranjero
+## tmp[tmp=="-"] <- 0 # remove "-"
+## tmp <- tmp[, c("edon","seccion","lisnom")]
+## # agrega secciones
+## tmp$lisnom   <- ave(tmp$lisnom,   as.factor(tmp$edon*10000+tmp$seccion), FUN=sum, na.rm=TRUE)
+## tmp <- tmp[duplicated(tmp$edon*10000+tmp$seccion)==FALSE,] # drop reduntant obs
+## tmp$lisnom.18 <- tmp$lisnom; tmp$lisnom <- NULL
+## # add munn
+## tmp <- merge(x = tmp, y = eq, by = c("edon","seccion"), all.x = TRUE, all.y = FALSE) 
+## tmp$munn <- tmp$ife; tmp$ife <- NULL # rename
+## sel <- which(is.na(tmp$munn)) # reseccionamiento, drop handful of secciones not in equiv secciones
+## tmp <- tmp[-sel,]
+## # aggregate municipios
+## tmp$lisnom.18   <- ave(tmp$lisnom.18,   as.factor(tmp$munn), FUN=sum, na.rm=TRUE)
+## tmp <- tmp[duplicated(tmp$munn)==FALSE,] # drop reduntant obs
+## tmp <- tmp[,c("edon","munn","mun","lisnom.18")]
+## #
+## ln <- merge(x = ln, y = tmp, by = c("edon","munn"), all = TRUE)
+## ln$mun <- ln$mun.x; ln$mun.x <- ln$mun.y <- NULL
+## #
+## # sort
+## ln <- ln[order(ln$edon, ln$munn), c("edon","munn","inegi","mun","lisnom.06","lisnom.09","lisnom.12","lisnom.15","lisnom.18")]
+## rm(eq,tmp)
+## 
+## # will need to project lisnom from fed elecs (cf naylum), too many missings here
+## head(ln)
+## with(inc, table(is.na(mg)))
+## with(inc, table(is.na(lisnom)))
+## ls()
+## 
+## # adds object cen.yr (and mpv, unneeded) with yearly census projections
+## load(file="/home/eric/Desktop/naylum/data/electoral/nay2002-on.RData") 
+## rm(vpm)
+## 
+## unique(sub("[.][0-9]{2}", "", colnames(cen.yr))) # names omitting yrs
+## cen.yr$lisnom.12
+## 
+## # lag margin (measure of candidate quality)
+## library(DataCombine) # easy lags
+## inc$tmp <- sub("([a-z]+)[-][0-9]{2}([.][0-9]{3})", "\\1\\2", inc$emm) # drop elec cycle from emm
+## inc <- slide(data = inc, TimeVar = "yr", GroupVar = "tmp", Var = "mg", NewVar = "mg.lag",    slideBy = -1)
+## inc <- inc[order(inc$ord),] # sort
+## inc$tmp <- inc$suplente <- NULL
 
 

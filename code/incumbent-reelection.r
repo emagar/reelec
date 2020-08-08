@@ -72,11 +72,18 @@ inc$win <- inc$win2; inc$win2 <- NULL # keep manipulated version only
 #############################################################
 ## lag race.after & win to generate race.prior & win.prior ##
 #############################################################
-# this function does the job easier
-# library(DataCombine) # easy lags with slide
-# example
-# inc <- inc[order(inc$inegi, inc$yr),] # verify sorted before lags
-# inc <- slide(inc, Var = "win", GroupVar = "ife", slideBy = +1) # lead win by one period
+# check that no cycles are missing in any municipio
+tmp <- data.frame(emm=inc$emm, cycle=NA)
+tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.][0-9]+", "\\1", tmp$emm))
+tmp$id <- sub("^(.+)-[0-9]{2}[.]([0-9]+)", "\\1\\2", tmp$emm)
+library(DataCombine) # easy lags with slide
+tmp <- tmp[order(tmp$emm),] # check sorted for lags
+tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "id", Var = "cycle", NewVar = "cycle.lag",    slideBy = -1) # lag by one period
+tmp$dif <- tmp$cycle - tmp$cycle.lag - 1 # zeroes indicate time series ok
+tmp$dif[is.na(tmp$dif)] <- 0
+tmp$suma <- ave(tmp$dif, as.factor(tmp$id), FUN=sum, na.rm=TRUE)
+table(tmp$suma) # all zeroes implies no gaps
+#
 inc <- inc[order(inc$emm),] # sort munn-chrono
 # open slots for lagged variables
 inc$race.prior <- NA
@@ -570,42 +577,6 @@ tmp <- tmp[tmp$tmp2==FALSE,]
 tmp$dinc <- 1 # identify original obs
 tmp$tmp <- tmp$tmp2 <- NULL
 el.yrs <- tmp # rename
-#
-## # done by hand (1ago2020: no longer needed, now feeds from calenariosReeleccion)
-## calendar <- list(
-##     ags=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,          2019),
-##     bc= c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,          2019),
-##     bcs=c(     1990,          1993,          1996,          1999,          2002,          2005,          2008,          2011,               2015,          2018),
-##     cam=c(          1991,          1994,          1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     coa=c(     1990,          1993,          1996,          1999,          2002,          2005,               2009,               2013,               2017,2018),
-##     col=c(          1991,          1994,          1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     cps=c(          1991,               1995,          1998,          2001,          2004,          2007,          2010,     2012,          2015,          2018),
-##     cua=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,     2018),
-##     df= c(                                                       2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     dgo=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,           2019),
-##     gua=c(          1991,          1994,          1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     gue=c(1989,               1993,          1996,          1999,          2002,          2005,          2008,               2012,          2015,          2018),
-##     hgo=c(     1990,          1993,          1996,          1999,          2002,          2005,          2008,          2011,                    2016),
-##     jal=c(               1992,          1995,     1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     mex=c(     1990,          1993,          1996,               2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     mic=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,               2011,               2015,          2018),
-##     mor=c(          1991,          1994,          1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     nay=c(     1990,          1993,          1996,          1999,          2002,          2005,          2008,          2011,          2014,          2017),
-##     nl= c(          1991,          1994,          1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     oax=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,     2018),
-##     pue=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,                    2018),
-##     que=c(          1991,          1994,          1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     qui=c(     1990,          1993,          1996,          1999,          2002,          2005,          2008,     2010,          2013,          2016,     2018),
-##     san=c(          1991,          1994,          1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     sin=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,     2018),
-##     son=c(          1991,          1994,          1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     tab=c(          1991,          1994,          1997,          2000,          2003,          2006,          2009,          2012,          2015,          2018),
-##     tam=c(1989,          1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,     2018),
-##     tla=c(          1991,          1994,               1998,          2001,          2004,          2007,          2010,          2013,          2016),
-##     ver=c(          1991,          1994,          1997,          2000,               2004,          2007,          2010,          2013,                2017),
-##     yuc=c(     1990,          1993,     1995,          1998,          2001,          2004,          2007,          2010,     2012,          2015,          2018),
-##     zac=c(               1992,          1995,          1998,          2001,          2004,          2007,          2010,          2013,          2016,     2018)
-## )
 #
 calendar <- read.csv("../../calendariosReelec/fechasEleccionesMexicoDesde1994.csv", stringsAsFactors = FALSE) # fechasEleccionesMexicoDesde1994 is csv-friendly version of calendarioConcurrenciasMex05
 #calendar[1,]
@@ -1485,16 +1456,18 @@ load(paste(wd,"mun-reelection.RData",sep=""))
 sel <- which(inc$yr<1997)
 inc <- inc[-sel,]
 
+options(width = 67)
 
-########################################
-## ################################## ##
-## ##                              ## ##
-## ## VOTING DATA PREP STARTS HERE ## ##
-## ##     |         |         |    ## ##
-## ##     |         |         |    ## ##
-## ##     V         V         V    ## ##
-## ################################## ##
-########################################
+
+###########################################################
+## ##################################################### ##
+## ##                                                 ## ##
+## ## VOTING DATA AND ELEC HISTORIES PREP STARTS HERE ## ##
+## ##         |         |         |         |         ## ##
+## ##         |         |         |         |         ## ##
+## ##         V         V         V         v         ## ##
+## ##################################################### ##
+###########################################################
 
 gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
 
@@ -1524,7 +1497,6 @@ vot <- vot[-sel,]
 ## vot <- vot[-sel.r2,]
 ## rm(sel.r1, sel.r2)
 
-vot[1,]
 
 # drop cases that became usos y costumbres
 tmp <- c(1, 3, 8, 11, 12, 15, 17:20, 22, 24, 27, 29, 31, 33, 35:38, 42, 45:48,
@@ -1545,23 +1517,27 @@ sel <- which(vot$edon==20 & vot$munn %in% tmp)
 ## tmp[order(tmp)]
 if (length(sel)>0) vot <- vot[-sel,]
 
-# drop hidalgo 2020, not yet here
+# drop hidalgo 2020, not yet as of 6ago2020
 sel <- grep("hgo-16", vot$emm)
 vot <- vot[-sel,]
 
 # drop void elections
+# 6ago2020: check which don't have extraord data. drop them? would break lags... check in incumbents block too
 sel <- grep("[0-9]+a[.]", vot$emm) # anuladas
-#vot$emm[sel]
+tmp <- vot$emm[sel]
+tmp <- sub("(^.+[0-9])+a[.]", "\\1.", tmp) # drop the a from emm, are these obs in data?
+tmp[which(tmp %in% vot$emm)]==tmp # all have extra data if output only TRUEs wo error
 vot <- vot[-sel,]
 
 # re-compute efec
 sel <- grep("v[0-9]+", colnames(vot))
 v <- vot[,sel]
-tmp <- which(rowSums(v) - vot$efec !=0)
-vot[tmp,] # cases where efec does not match sum
+# cases where efec does not match sum, if any
+sel1 <- which(rowSums(v) - vot$efec !=0)
+if (length(sel1)>0) vot[sel1,]
 vot$efec <- rowSums(v) # re-compute
 # vote shares
-v <- v/rowSums(v)
+v <- round(v/rowSums(v), digits = 4)
 vot[,sel] <- v
 rm(v)
 
@@ -1578,7 +1554,8 @@ rm(v)
 
 # prepare object with pan pri left morena oth votes
 # 4ago2020: add pvem?
-v5 <- vot
+v5 <- vot # duplicate
+v5[1,]
 v5$ord <- v5$mun <- v5$munn <- v5$inegi <- v5$ife <- v5$status <- v5$dy <- v5$mo <- v5$ncand <- v5$dcoal <- v5$ncoal <- v5$win <- v5$efec <- v5$lisnom <- NULL # remove unneeded cols
 v5$status <- NA
 # narrow v01..v14 into long vector
@@ -1785,8 +1762,31 @@ vot$l04 <- vot$l05 <- vot$l06 <- vot$l07 <- vot$l08 <- vot$l09 <- vot$l10 <- vot
 ## setwd("/home/eric/Desktop/MXelsCalendGovt/reelec/data/")
 ## load(file = "tmp.RData")
 
-# get electoral histories
+# clean
+rm(i,sel,sel1,v5)
+
+
+# save a copy
+save.image(paste(wd,"mun-reelection.RData",sep=""))
+
+# load image
+rm(list = ls())
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
+setwd(dd)
+
+load(paste(wd,"mun-reelection.RData",sep=""))
+
+options(width = 67)
+
+#debug
+dim(vot)
+
+#############################
+## GET ELECTORAL HISTORIES ##
+#############################
 vot$vhat.pan <- vot$vhat.pri  <- vot$vhat.left <- vot$alpha.pan  <- vot$alpha.pri <- vot$alpha.left <- NA # open slots
+
 # 2006
 his <- read.csv(paste(gd, "dipfed-municipio-vhat-2006.csv", sep = ""), stringsAsFactors = FALSE)
 # drop unneeded columns
@@ -1796,7 +1796,7 @@ sel <- which(colnames(his) %in%
                "bhat.pan", "bhat.left",
                "betahat.pan", "betahat.left"))
 his <- his[,-sel]
-colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
+colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpha names
 #
 sel <- which(vot$yr==2005 | vot$yr==2006 | vot$yr==2007)
 tmp <- vot[sel,]
@@ -1878,7 +1878,7 @@ tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
 vot[sel,] <- tmp # return to data
 #
 # clean
-rm(tmp,i,sel,sel1,v5,his)
+rm(tmp,sel,his)
 
 # left residuals: use prd-vhat.left and morena-vhat.left (pan-prd went to pan in 2017 and 2018)
 vot$res.pan <- vot$pan - vot$vhat.pan
@@ -1887,6 +1887,25 @@ vot$res.prd <- vot$prd - vot$vhat.left
 vot$res.morena <- vot$morena - vot$vhat.left
 sel <- which(vot$yr<2015)
 vot$res.morena[sel] <- NA
+
+# inspect vot
+sel <- which(vot$yr>2001)
+vot[1,]
+dim(vot)
+table(is.na(vot$vhat.pri[sel]), vot$yr[sel])
+x
+
+#########################################################
+## ################################################### ##
+## ##       ^         ^         ^         ^         ## ##
+## ##       |         |         |         |         ## ##
+## ##       |         |         |         |         ## ##
+## ## VOTING DATA AND ELEC HISTORIES PREP ENDS HERE ## ##
+## ##                                               ## ##
+## ################################################### ##
+#########################################################
+
+
 
 # plug incumbent data
 # was there an incumbent on the ballot? did party reelect?
@@ -1960,15 +1979,6 @@ sel <- which(tmp$yr >= 2018)
 tmp <- tmp[sel,]
 
 
-######################################
-## ################################ ##
-## ##     ^        ^        ^    ## ##
-## ##     |        |        |    ## ##
-## ##     |        |        |    ## ##
-## ## VOTING DATA PREP ENDS HERE ## ##
-## ##                            ## ##
-## ################################ ##
-######################################
 
 
 ## #############################################################################################

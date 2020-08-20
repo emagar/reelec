@@ -1889,10 +1889,11 @@ sel <- which(vot$yr<2015)
 vot$res.morena[sel] <- NA
 
 # inspect vot
-sel <- which(vot$yr>2001)
-vot[1,]
+vot[100,]
 dim(vot)
-table(is.na(vot$vhat.pri[sel]), vot$yr[sel])
+table(is.na(vot$vhat.pri), vot$yr)
+sel <- which(is.na(vot$vhat.pri) & vot$yr==2011)
+vot[sel,]
 x
 
 #########################################################

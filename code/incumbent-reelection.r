@@ -5,7 +5,7 @@
 ## ################################################################ ##
 ######################################################################
 
-options(width = 80)
+options(width = 120)
 
 rm(list = ls())
 dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
@@ -43,9 +43,9 @@ colnames(inc)
 
 # simplify parties
 inc$win2 <- inc$win
-inc$win2 <- sub("conve", "mc", inc$win2, ignore.case = TRUE)
-inc$win2 <- grep("panal", "pna", inc$win2, ignore.case = TRUE)
-inc$win2 <- grep("pucd", "pudc", inc$win2, ignore.case = TRUE) # typo
+inc$win2 <- sub("conve", "mc",   inc$win2, ignore.case = TRUE)
+inc$win2 <- sub("panal", "pna", inc$win2, ignore.case = TRUE)
+inc$win2 <- sub("pucd", "pudc", inc$win2, ignore.case = TRUE) # typo
 sel <- grep("ci_|^ci$|c-i-|ind_|eduardo|luis|oscar|indep", inc$win2, ignore.case = TRUE)
 inc$win2[sel] <- "indep"
 inc$win <- inc$win2 # register changes above in original win to remove false negatives
@@ -630,8 +630,6 @@ sel1 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win.prior[sel])
 sel2 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win[sel])
 tmp[union(sel1,sel2)] <- 0 # either
 inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-sel <- which(inc$emm=="cps-16.064"); inc[sel,]
-x
 #
 # uses win not win.long
 sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
@@ -683,18 +681,6 @@ inc$dpwon.prior[sel] <- tmp # return to data after manipulation
 sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
 sel1 <- grep("dsppn",inc$win.long.prior[sel])
 sel2 <- grep("dsppn",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("fc1",inc$win.long.prior[sel])
-sel2 <- grep("fc1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("fc1",inc$win.long.prior[sel])
-sel2 <- grep("fc1",inc$win.long[sel])
 tmp[intersect(sel1,sel2)] <- 1 # both
 inc$dpwon.prior[sel] <- tmp # return to data after manipulation
 # 
@@ -809,18 +795,6 @@ inc$dpwon.prior[sel] <- tmp # return to data after manipulation
 sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
 sel1 <- grep("pcpp",inc$win.long.prior[sel])
 sel2 <- grep("pcpp",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pd1",inc$win.long.prior[sel])
-sel2 <- grep("pd1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pdm",inc$win.long.prior[sel])
-sel2 <- grep("pdm",inc$win.long[sel])
 tmp[intersect(sel1,sel2)] <- 1 # both
 inc$dpwon.prior[sel] <- tmp # return to data after manipulation
 # 
@@ -1442,21 +1416,7 @@ head(inc)
 ## ################################### ##
 #########################################
 
-# save a copy
-save.image(paste(wd,"mun-reelection.RData",sep=""))
 
-# load image
-rm(list = ls())
-dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
-setwd(dd)
-
-load(paste(wd,"mun-reelection.RData",sep=""))
-# drop incumbents before 1997
-sel <- which(inc$yr<1997)
-inc <- inc[-sel,]
-
-options(width = 67)
 
 
 ###########################################################
@@ -1473,8 +1433,8 @@ gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
 
 # load municipal votes
 vot <- read.csv("aymu1989-present.coalAgg.csv", stringsAsFactors = FALSE)
-vot[1,]
-vot$fuente <- vot$notas <- vot$tot <- vot$nr <- vot$nulos <- NULL
+#vot[1,]
+vot <- within(vot, fuente <- notas <- tot <- nr <- nulos <- NULL)
 # drop before 1997
 sel <- which(vot$yr<1997)
 vot <- vot[-sel,]
@@ -1496,8 +1456,7 @@ vot <- vot[-sel,]
 ## # drop runoffs
 ## vot <- vot[-sel.r2,]
 ## rm(sel.r1, sel.r2)
-
-
+#
 # drop cases that became usos y costumbres
 tmp <- c(1, 3, 8, 11, 12, 15, 17:20, 22, 24, 27, 29, 31, 33, 35:38, 42, 45:48,
          50, 51, 54, 58, 60:65, 69, 71, 72, 74, 76:78, 83:87, 91:93, 94:98,
@@ -1517,7 +1476,11 @@ sel <- which(vot$edon==20 & vot$munn %in% tmp)
 ## tmp[order(tmp)]
 if (length(sel)>0) vot <- vot[-sel,]
 
-# drop hidalgo 2020, not yet as of 6ago2020
+# drop oxchuc in 2018, went usos y costumbres
+sel <- which(vot$emm=="cps-17.064")
+vot <- vot[-sel,]
+
+# drop hidalgo 2020, will be held 18oct2020
 sel <- grep("hgo-16", vot$emm)
 vot <- vot[-sel,]
 
@@ -1536,6 +1499,7 @@ v <- vot[,sel]
 sel1 <- which(rowSums(v) - vot$efec !=0)
 if (length(sel1)>0) vot[sel1,]
 vot$efec <- rowSums(v) # re-compute
+vot$efec[which(vot$efec==0)] <- 1 # put 1 vote to missing races to avoid indeterminate shares
 # vote shares
 v <- round(v/rowSums(v), digits = 4)
 vot[,sel] <- v
@@ -1748,10 +1712,8 @@ rm(tmp,tmp2)
 # return to vot
 vot <- cbind(vot, v5[,c("pan","pri","prd","morena","oth","dmajcoal")])
 # keep 123 places, drop rest
-#vot$v01 <- vot$v02 <- vot$v03 <-
-vot$v04 <- vot$v05 <- vot$v06 <- vot$v07 <- vot$v08 <- vot$v09 <- vot$v10 <- vot$v11 <- vot$v12 <- vot$v13 <- vot$v14 <- NULL
-#vot$l01 <- vot$l02 <- vot$l03 <-
-vot$l04 <- vot$l05 <- vot$l06 <- vot$l07 <- vot$l08 <- vot$l09 <- vot$l10 <- vot$l11 <- vot$l12 <- vot$l13 <- vot$l14 <- NULL
+vot <- within(vot, v04 <- v05 <- v06 <- v07 <- v08 <- v09 <- v10 <- v11 <- v12 <- v13 <- v14 <- NULL)
+vot <- within(vot, l04 <- l05 <- l06 <- l07 <- l08 <- l09 <- l10 <- l11 <- l12 <- l13 <- l14 <- NULL)
 
 ## # debug
 ## save.image(file = "tmp.RData")
@@ -1766,26 +1728,14 @@ vot$l04 <- vot$l05 <- vot$l06 <- vot$l07 <- vot$l08 <- vot$l09 <- vot$l10 <- vot
 rm(i,sel,sel1,v5)
 
 
-# save a copy
-save.image(paste(wd,"mun-reelection.RData",sep=""))
 
-# load image
-rm(list = ls())
-dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
-setwd(dd)
 
-load(paste(wd,"mun-reelection.RData",sep=""))
-
-options(width = 67)
-
-#debug
-dim(vot)
 
 #############################
 ## GET ELECTORAL HISTORIES ##
 #############################
 vot$vhat.pan <- vot$vhat.pri  <- vot$vhat.left <- vot$alpha.pan  <- vot$alpha.pri <- vot$alpha.left <- NA # open slots
+vot$d.pan <- vot$d.pri  <- vot$d.left <- NA # open slots
 
 # 2006
 his <- read.csv(paste(gd, "dipfed-municipio-vhat-2006.csv", sep = ""), stringsAsFactors = FALSE)
@@ -1801,6 +1751,10 @@ colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpha names
 sel <- which(vot$yr==2005 | vot$yr==2006 | vot$yr==2007)
 tmp <- vot[sel,]
 tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+# check that merge ids are complete
+table(is.na(his$ife), is.na(his$inegi))
+table(is.na(tmp$ife), is.na(tmp$inegi))
+# merge
 tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
 tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
 vot[sel,] <- tmp # return to data
@@ -1889,12 +1843,12 @@ sel <- which(vot$yr<2015)
 vot$res.morena[sel] <- NA
 
 # inspect vot
-vot[100,]
+vot[2000,]
 dim(vot)
 table(is.na(vot$vhat.pri), vot$yr)
-sel <- which(is.na(vot$vhat.pri) & vot$yr==2011)
+sel <- which(is.na(vot$vhat.pri) & vot$yr==2007)
 vot[sel,]
-x
+eric  x
 
 #########################################################
 ## ################################################### ##
@@ -1947,38 +1901,58 @@ inc$dtermlim[sel] <- 0
 vot <- merge(x = vot, y = inc[,c("emm","race.current","dopenseat","dptyreel","dtermlim")], by = "emm", all.x = TRUE, all.y = FALSE)
 
 # clean
-rm(e,i,last,sel,sel1,sel2,tmp)
+ls()
+rm(e,i,last,sel,sel1)
+rm(inc) # drop to avoid confusion, useful data has been merged into vot
 
-# debug
-save.image(file = "tmp.RData")
-#
-rm(list = ls()) # clean
+# save a copy
+save.image(paste(wd,"mun-reelection.RData",sep=""))
+
+# load image
+rm(list = ls())
 dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
-setwd("/home/eric/Desktop/MXelsCalendGovt/reelec/data/")
-load(file = "tmp.RData")
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
+setwd(dd)
+
+load(paste(wd,"mun-reelection.RData",sep=""))
+options(width = 120)
 
 # compute winner's margin
 vot$mg <- round(vot$v01 - vot$v02, 4)
 vot$round <- sub(pattern = "[\\w\\D-]+([0-9]{2})[.][0-9]{3}", replacement = "\\1", vot$emm, perl = TRUE)
 vot$round <- as.numeric(vot$round)
+# dincumbent
+vot$dincumbent <- 1 - vot$dopenseat
 
-
-# duplicate for pan analysis
+# duplicate for analysis
 tmp <- vot
-
-# pan or oth incumbent --- complement is open seat
-sel <- grep("pan", tmp$win)
-tmp$dpan <- 0; tmp$dpan[sel] <- 1
-table(tmp$dpan)
-tmp$dpaninc  <-      tmp$dpan  * (1 - tmp$dopenseat)
-tmp$dothinc  <- (1 - tmp$dpan) * (1 - tmp$dopenseat)
-tmp$dpanopen <-      tmp$dpan  *      tmp$dopenseat
-
-# subset yr >= 2018
-sel <- which(tmp$yr >= 2018)
+# retain year with vhat histories only
+sel <- which(tmp$yr>2004)
 tmp <- tmp[sel,]
 
+# duplicate for pan, pri, left analyses
+vot.pan <- tmp.pri <- tmp.left <- tmp; rm(tmp)
+
+
+# four dummies pan/~ and incumbent/~ --- complement is open seat
+sel <- grep("pan", vot.pan$win)
+vot.pan$dpan <- 0; vot.pan$dpan[sel] <- 1
+table(vot.pan$dpan)
+vot.pan$dpaninc  <-      vot.pan$dpan  * (1 - vot.pan$dopenseat)
+vot.pan$dothinc  <- (1 - vot.pan$dpan) * (1 - vot.pan$dopenseat)
+vot.pan$dpanopen <-      vot.pan$dpan  *      vot.pan$dopenseat
+vot.pan$dothopen <- (1-  vot.pan$dpan) *      vot.pan$dopenseat # drop to avoid dummy trap
+
+plot(vot.pan$alpha.pan, vot.pan$res.pan, pch=20, cex = .05)
+x
+# model eric  x
+colnames(vot.pan)
+tmp.mod <- lm(formula = res.pan ~ alpha.pan + dpaninc + dothinc + dpanopen, data = vot.pan)
+tmp.mod <- lm(formula = pan ~ dpan*dincumbent, data = vot.pan)
+tmp.mod <- lm(formula = res.pan ~ alpha.pan + dpan, data = vot.pan)
+summary(tmp.mod)
+colnames(vot.pan)
+x
 
 
 

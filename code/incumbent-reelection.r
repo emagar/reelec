@@ -1737,12 +1737,22 @@ rm(i,sel,sel1,v5)
 vot$vhat.pan <- vot$vhat.pri  <- vot$vhat.left <- vot$alpha.pan  <- vot$alpha.pri <- vot$alpha.left <- NA # open slots
 vot$d.pan <- vot$d.pri  <- vot$d.left <- NA # open slots
 
+# save a copy
+save.image(paste(wd,"tmp.RData",sep=""))
+# load image
+rm(list = ls())
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
+setwd(dd)
+load(paste(wd,"tmp.RData",sep=""))
+
+
 # 2006
 his <- read.csv(paste(gd, "dipfed-municipio-vhat-2006.csv", sep = ""), stringsAsFactors = FALSE)
 # drop unneeded columns
 sel <- which(colnames(his) %in%
              c("edon","pan", "pri", "left", "efec",
-               "d.pan", "d.pri", "d.left",
+#               "d.pan", "d.pri", "d.left",
                "bhat.pan", "bhat.left",
                "betahat.pan", "betahat.left"))
 his <- his[,-sel]
@@ -1750,7 +1760,7 @@ colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpha names
 #
 sel <- which(vot$yr==2005 | vot$yr==2006 | vot$yr==2007)
 tmp <- vot[sel,]
-tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- tmp$d.pan <- tmp$d.pri <- tmp$d.left <- NULL # remove to merge them again
 # check that merge ids are complete
 table(is.na(his$ife), is.na(his$inegi))
 table(is.na(tmp$ife), is.na(tmp$inegi))
@@ -1764,7 +1774,7 @@ his <- read.csv(paste(gd, "dipfed-municipio-vhat-2009.csv", sep = ""), stringsAs
 # drop unneeded columns
 sel <- which(colnames(his) %in%
              c("edon","pan", "pri", "left", "efec",
-               "d.pan", "d.pri", "d.left",
+#               "d.pan", "d.pri", "d.left",
                "bhat.pan", "bhat.left",
                "betahat.pan", "betahat.left"))
 his <- his[,-sel]
@@ -1772,7 +1782,7 @@ colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
 #
 sel <- which(vot$yr==2008 | vot$yr==2009 | vot$yr==2010)
 tmp <- vot[sel,]
-tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- tmp$d.pan <- tmp$d.pri <- tmp$d.left <- NULL # remove to merge them again
 tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
 tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
 vot[sel,] <- tmp # return to data
@@ -1782,7 +1792,7 @@ his <- read.csv(paste(gd, "dipfed-municipio-vhat-2012.csv", sep = ""), stringsAs
 # drop unneeded columns
 sel <- which(colnames(his) %in%
              c("edon","pan", "pri", "left", "efec",
-               "d.pan", "d.pri", "d.left",
+#               "d.pan", "d.pri", "d.left",
                "bhat.pan", "bhat.left",
                "betahat.pan", "betahat.left"))
 his <- his[,-sel]
@@ -1790,7 +1800,7 @@ colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
 #
 sel <- which(vot$yr==2011 | vot$yr==2012 | vot$yr==2013)
 tmp <- vot[sel,]
-tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- tmp$d.pan <- tmp$d.pri <- tmp$d.left <- NULL # remove to merge them again
 tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
 tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
 vot[sel,] <- tmp # return to data
@@ -1800,7 +1810,7 @@ his <- read.csv(paste(gd, "dipfed-municipio-vhat-2015.csv", sep = ""), stringsAs
 # drop unneeded columns
 sel <- which(colnames(his) %in%
              c("edon","pan", "pri", "left", "efec",
-               "d.pan", "d.pri", "d.left",
+#               "d.pan", "d.pri", "d.left",
                "bhat.pan", "bhat.left",
                "betahat.pan", "betahat.left"))
 his <- his[,-sel]
@@ -1808,7 +1818,7 @@ colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
 #
 sel <- which(vot$yr==2014 | vot$yr==2015 | vot$yr==2016)
 tmp <- vot[sel,]
-tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- tmp$d.pan <- tmp$d.pri <- tmp$d.left <- NULL # remove to merge them again
 tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
 tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
 vot[sel,] <- tmp # return to data
@@ -1818,7 +1828,7 @@ his <- read.csv(paste(gd, "dipfed-municipio-vhat-2018.csv", sep = ""), stringsAs
 # drop unneeded columns
 sel <- which(colnames(his) %in%
              c("edon","pan", "pri", "left", "efec",
-               "d.pan", "d.pri", "d.left",
+#               "d.pan", "d.pri", "d.left",
                "bhat.pan", "bhat.left",
                "betahat.pan", "betahat.left"))
 his <- his[,-sel]
@@ -1826,7 +1836,7 @@ colnames(his) <- sub("ahat","a",colnames(his)) # shorten alpa names
 #
 sel <- which(vot$yr==2017 | vot$yr==2018 | vot$yr==2019)
 tmp <- vot[sel,]
-tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- NULL # remove to merge them again
+tmp$vhat.pan <- tmp$vhat.pri <- tmp$vhat.left <- tmp$alpha.pan <- tmp$alpha.pri <- tmp$alpha.left <- tmp$d.pan <- tmp$d.pri <- tmp$d.left <- NULL # remove to merge them again
 tmp <- merge(x = tmp, y = his, by = c("inegi", "ife"), all.x = TRUE, all.y = FALSE, sort = FALSE)
 tmp <- tmp[,colnames(vot)] # sort columns to match vot's before merging
 vot[sel,] <- tmp # return to data
@@ -1915,7 +1925,194 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
 
 load(paste(wd,"mun-reelection.RData",sep=""))
-options(width = 120)
+options(width = 65)
+
+#################################
+## concurrent election dummies ##
+#################################
+# get calendario
+cal <- read.csv("../../calendariosReelec/fechasEleccionesMexicoDesde1994.csv", stringsAsFactors = FALSE) # fechasEleccionesMexicoDesde1994 is csv-friendly version of calendarioConcurrenciasMex05
+#cal[1,]
+sel <- grep("^ord$|^edon$|^elec$|y[0-9]{4}", colnames(cal), perl = TRUE) # drop useless variables
+cal <- cal[,sel]
+sel <- which(cal$elec=="dip") # keep ayun lines only
+cal.fed <- cal[sel,]
+# duplicate rows 5 times to get 32 obs
+cal.fed <- rbind(cal.fed, cal.fed); cal.fed <- rbind(cal.fed, cal.fed); cal.fed <- rbind(cal.fed, cal.fed); cal.fed <- rbind(cal.fed, cal.fed); cal.fed <- rbind(cal.fed, cal.fed)
+sel <- which(cal$elec=="ayun") # keep ayun lines only
+cal.ay <- cal[sel,]
+sel <- which(cal$elec=="gob") # keep ayun lines only
+cal.gob <- cal[sel,]
+# ay concurs with fed
+conc.fed <- cal.ay
+sel.c <- grep("y[0-9]{4}", colnames(cal.ay), perl = TRUE) # select year columns only
+for (i in 1:32){
+    #i <- 1
+    tmp <- as.numeric(cal.ay[i,sel.c]==cal.fed[i,sel.c])
+    conc.fed[i, sel.c] <- tmp
+}
+conc.fed[cal.ay=="--"] <- 0
+# ay concurs with gob
+conc.gob <- cal.ay
+for (i in 1:32){
+    #i <- 1
+    tmp <- as.numeric(cal.ay[i,sel.c]==cal.gob[i,sel.c])
+    conc.gob[i, sel.c] <- tmp
+}
+conc.gob[cal.ay=="--"] <- 0
+# dummify
+tmp <- t(conc.gob[,sel.c])
+tmp <- apply(tmp, c(1,2), FUN = function(x){as.numeric(x)})
+conc.gob <- tmp
+tmp <- t(conc.fed[,sel.c])
+tmp <- apply(tmp, c(1,2), FUN = function(x){as.numeric(x)})
+conc.fed <- tmp
+#
+# plug into vot
+vot$dconcgob <- vot$dconcfed <- NA
+for (e in 1:32){ # loop across states
+    message(sprintf("loop %s", e))
+    #e <- 21
+    sel.e <- which(vot$edon==e) # state e's indices in vot
+    vot.e <- vot[sel.e,]        # subset state e in vot
+    for (y in 1994:2023){ # loop over years up to 2023
+        #y <- 2018
+        sel.y <- which(as.numeric(sub("y", "", names(conc.gob[,e])))==y) # index for year y
+        sel.ey <- which(vot.e$yr==y) # subset state's obs in year y
+        if (length(sel.ey)>0){
+            vot.e$dconcgob[sel.ey] <- conc.gob[sel.y,e]
+            vot.e$dconcfed[sel.ey] <- conc.fed[sel.y,e]
+        }
+    }
+    vot[sel.e,] <- vot.e # return manipulated subset to vot
+}
+# clean
+rm(cal,cal.ay,cal.fed,cal.gob,conc.fed,conc.gob,e,i,sel,sel.c,sel.e,sel.ey,sel.y,tmp,vot.e,y)
+
+# get governor parties
+tmp <- "../../mxBranches/statesBranches/32stategovts.csv"
+gob <- read.csv(file = tmp, stringsAsFactors = FALSE)
+gob <- gob[, c("edon","yr","yrin","dnewgov","govterm","govpty")]
+# fill empty yrins looking at last obs
+gob <- gob[order(gob$edon, gob$yr),] # sort to fill NAs
+for (i in 2:length(gob$yrin)){
+    if (gob$edon[i]==gob$edon[i-1] & is.na(gob$yrin[i])==TRUE) gob$yrin[i] <- gob$yrin[i-1]
+}
+# lag govpty one year (dnewgov==1 for yrs with new gov, even if sworn dec31)
+library(DataCombine) # easy lags with slide
+gob <- slide(data = gob, TimeVar = "yr", GroupVar = "edon", Var = "govpty", NewVar = "govpty.lag",    slideBy = -1) # lag by one period
+#
+# plug into vot
+vot$govpty.lag <- NA
+for (e in 1:32){ # loop across states
+    message(sprintf("loop %s", e))
+    #e <- 17
+    sel.e <- which(vot$edon==e) # state e's indices in vot
+    vot.e <- vot[sel.e,]        # subset state e in vot
+    for (y in 1994:2023){ # loop over years up to 2023
+        #y <- 2006
+        sel.y <- which(gob$edon==e & gob$yr==y) # index for year y
+        sel.ey <- which(vot.e$yr==y) # subset state's obs in year y
+        if (length(sel.ey)>0){
+            vot.e$govpty.lag[sel.ey] <- gob$govpty.lag[sel.y]
+        }
+    }
+    vot[sel.e,] <- vot.e # return manipulated subset to vot
+}
+# clean
+rm(e,gob,i,sel.e,sel.ey,sel.y,tmp,vot.e,y)
+
+# get municipio altitude variance (from censo 2010 @ loc level)
+library(foreign)
+tmp <- read.dbf("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/2010censo/ITER_NALDBF10.dbf", as.is = TRUE)
+#table(tmp$X.1)
+# selected columns only
+sel <- grep("entidad|mun|loc|longitud|latitud|altitud", colnames(tmp), ignore.case = TRUE, perl = TRUE)
+tmp <- tmp[,sel]
+# rename variables
+colnames(tmp) <- c("edon","inegi","mun","locn","localidad","long","lat","alt","drop")
+tmp$drop <- NULL
+tmp$edon <- as.numeric(as.character(tmp$edon))
+tmp$inegi <- as.numeric(as.character(tmp$inegi))
+tmp$mun <- as.character(tmp$mun)
+tmp$locn <- as.numeric(as.character(tmp$locn))
+tmp$localidad <- as.character(tmp$localidad)
+tmp$long <- as.numeric(as.character(tmp$long))
+tmp$lat <- as.numeric(as.character(tmp$lat))
+tmp$alt <- as.numeric(as.character(tmp$alt))
+# drop aggregate rows
+sel <- which(tmp$locn==0|tmp$locn==9998|tmp$locn==9999)
+tmp <- tmp[-sel,]
+# add edon to inegi
+tmp$inegi <- tmp$edon*1000 + tmp$inegi
+# mean sd
+tmp$meanalt <- ave(tmp$alt, as.factor(tmp$inegi), FUN=mean, na.rm=TRUE)
+tmp$sdalt <-   ave(tmp$alt, as.factor(tmp$inegi), FUN=sd,   na.rm=TRUE)
+# cases with single localidad sd=NA
+sel <- which(is.na(tmp$sdalt)==TRUE & is.na(tmp$meanalt)==FALSE)
+tmp$sdalt[sel] <- 0
+# drop redundant rows cols
+tmp <- tmp[-duplicated(as.factor(tmp$inegi))==FALSE,]
+tmp$locn <- tmp$localidad <- tmp$alt <- tmp$long <- tmp$lat <- tmp$mun <- tmp$edon <- NULL
+# merge into vot
+
+vot$sdalt <- vot$meanalt <- NA # open slot for new vars
+for (i in 1:nrow(tmp)){
+    #i <- 1 # debug
+    sel <- which(vot$inegi %in% tmp$inegi[i])
+    if (length(sel)>0){
+        vot$meanalt[sel] <- tmp$meanalt[i]
+        vot$sdalt[sel]   <- tmp$sdalt[i]
+    }
+}
+summary(vot$meanalt)
+summary(vot$sdalt)
+rm(tmp,i,sel)
+
+# read sección-municipio equivalencias
+tmp <- read.csv("/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/equivSecc/tablaEquivalenciasSeccionalesDesde1994.csv", stringsAsFactors = FALSE)
+tmp <- tmp[,grep("edon|seccion|inegi|ife|mun[0-9]+",colnames(tmp))] # select columns
+#tmp[1,]
+#tmp[tmp$edon==1 & tmp$inegi==1010,c("seccion","munn")]
+censo <- tmp # rename, will receive state-by-state
+
+# get ptot censo 2010
+edos <- c("ags","bc","bcs","cam","coa","col","cps","cua","df","dgo","gua","gue","hgo","jal","mex","mic",
+          "mor","nay","nl","oax","pue","que","qui","san","sin","son","tab","tam","tla","ver","yuc","zac")
+tmp.dat <- data.frame() # will receive state's rows
+for (i in 1:32){
+    i <- 1 # debug
+    tmp.dir <- paste("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/secciones/censo2010", edos[i], sep = "/")
+    tmp.file <- grep("secciones.+csv", dir(tmp.dir))
+    tmp.file <- dir(tmp.dir)[grep("secciones.+csv", dir(tmp.dir))]
+    tmp <- read.csv(paste(tmp.dir, tmp.file, sep = "/"))
+    sel <- grep("clavegeo|entidad|pobtot|pcatolica|sin_relig|pder|psinder|vivtot|c_elec|drenaj|p5_hli$|p_5ymas$", colnames(tmp), ignore.case = TRUE, perl = TRUE)
+    tmp <- tmp[,sel]
+    tmp$seccion <- tmp$CLAVEGEO - as.integer(tmp$CLAVEGEO/10000)*10000
+    tmp$edon <- tmp$ENTIDAD; tmp$ENTIDAD <- NULL; tmp$CLAVEGEO <- NULL
+    # sort columns
+    tmp <- tmp[, c("edon", "seccion", "POBTOT", "P_5YMAS", "P5_HLI", "PSINDER", "PDER_SS", "PDER_IMSS", "PDER_ISTE", "PDER_ISTEE", "PDER_SEGP", "PCATOLICA", "PSIN_RELIG", "VIVTOT", "VPH_C_ELEC", "VPH_DRENAJ")]
+    # add rows merge to main object that will merge to censo for mun aggregations
+    #tmp[1,]
+    tmp.dat <- rbind(tmp.dat, tmp)
+}
+# merge to censo
+dim(censo)
+dim(tmp.dat)
+
+censo <- merge(x = censo, y = tmp.dat
+
+tmp.dat[1,]
+censo[1,]
+
+
+ptot2010 <- read.csv("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/munic/2010/ptot2010mu.municipios2013.csv", stringsAsFactors = FALSE)
+ptot2010[1:5,]
+x
+
+# need dipfed and gub votes to interact with concurrence, preferably at mun level, else at state
+vot[9990,]
+x
 
 # compute winner's margin
 vot$mg <- round(vot$v01 - vot$v02, 4)
@@ -1930,28 +2127,36 @@ tmp <- vot
 sel <- which(tmp$yr>2004)
 tmp <- tmp[sel,]
 
-# duplicate for pan, pri, left analyses
-vot.pan <- tmp.pri <- tmp.left <- tmp; rm(tmp)
-
+# own party governor dummy
+tmp$dsamegov <- 0
+tmp$dsamegov[tmp$govpty.lag=="pan"] <- 1
 
 # four dummies pan/~ and incumbent/~ --- complement is open seat
-sel <- grep("pan", vot.pan$win)
-vot.pan$dpan <- 0; vot.pan$dpan[sel] <- 1
-table(vot.pan$dpan)
-vot.pan$dpaninc  <-      vot.pan$dpan  * (1 - vot.pan$dopenseat)
-vot.pan$dothinc  <- (1 - vot.pan$dpan) * (1 - vot.pan$dopenseat)
-vot.pan$dpanopen <-      vot.pan$dpan  *      vot.pan$dopenseat
-vot.pan$dothopen <- (1-  vot.pan$dpan) *      vot.pan$dopenseat # drop to avoid dummy trap
+sel <- grep("pan", tmp$win)
+tmp$dpan <- 0; tmp$dpan[sel] <- 1
+table(tmp$dpan)
+tmp$dpaninc  <-      tmp$dpan  * (1 - tmp$dopenseat)
+tmp$dothinc  <- (1 - tmp$dpan) * (1 - tmp$dopenseat)
+tmp$dpanopen <-      tmp$dpan  *      tmp$dopenseat
+tmp$dothopen <- (1-  tmp$dpan) *      tmp$dopenseat # drop to avoid dummy trap
 
-plot(vot.pan$alpha.pan, vot.pan$res.pan, pch=20, cex = .05)
+# lag votes
+library(DataCombine) # easy lags with slide
+tmp <- tmp[order(tmp$emm),] # check sorted for lags
+tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.][0-9]+", "\\1", tmp$emm))
+tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "ife", Var = "pan", NewVar = "pan.lag", slideBy = -1) # lag by one period
+
+
+plot(tmp$alpha.pan, tmp$pan.lag, pch=20, cex = .05)
+lines(formula = pan.lag ~ alpha.pan, data = tmp)
 x
 # model eric  x
-colnames(vot.pan)
-tmp.mod <- lm(formula = res.pan ~ alpha.pan + dpaninc + dothinc + dpanopen, data = vot.pan)
-tmp.mod <- lm(formula = pan ~ dpan*dincumbent, data = vot.pan)
-tmp.mod <- lm(formula = res.pan ~ alpha.pan + dpan, data = vot.pan)
+colnames(tmp)
+tmp.mod <- lm(formula = res.pan ~ alpha.pan + dpaninc + dothinc + dpanopen, data = tmp)
+tmp.mod <- lm(formula = res.pan ~ pan.lag   + dpaninc + dothinc + dpanopen + dconcgob + dsamegov + as.factor(edon), data = tmp)
+tmp.mod <- lm(formula = pan.lag ~ alpha.pan, data = tmp)
 summary(tmp.mod)
-colnames(vot.pan)
+colnames(tmp)
 x
 
 

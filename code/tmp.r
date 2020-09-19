@@ -17,3 +17,11 @@ for (e in 1:32){ # loop across states
 }
         
 vot[10000,]        
+
+
+
+tmp.dir <- paste("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/secciones/censo2010", edos[i], sep = "/")
+tmp.file <- grep("secciones.+dbf", dir(tmp.dir))
+tmp.file <- dir(tmp.dir)[grep("secciones.+csv", dir(tmp.dir))]
+tmp <- read.dbf(paste(tmp.dir, tmp.file, sep = "/"), as.is = TRUE)
+write.csv(tmp, paste(tmp.dir, "secciones_18.csv", sep = "/"))

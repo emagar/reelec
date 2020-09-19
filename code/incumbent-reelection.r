@@ -2076,22 +2076,23 @@ tmp <- tmp[,grep("edon|seccion|inegi|ife|mun[0-9]+",colnames(tmp))] # select col
 #tmp[tmp$edon==1 & tmp$inegi==1010,c("seccion","munn")]
 censo <- tmp # rename, will receive state-by-state
 
-# get ptot censo 2010
+# get censo 2010 ptot p5li etc
 edos <- c("ags","bc","bcs","cam","coa","col","cps","cua","df","dgo","gua","gue","hgo","jal","mex","mic",
           "mor","nay","nl","oax","pue","que","qui","san","sin","son","tab","tam","tla","ver","yuc","zac")
 tmp.dat <- data.frame() # will receive state's rows
 for (i in 1:32){
-    i <- 1 # debug
+    #i <- 1 # debug
     tmp.dir <- paste("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/secciones/censo2010", edos[i], sep = "/")
     tmp.file <- grep("secciones.+csv", dir(tmp.dir))
     tmp.file <- dir(tmp.dir)[grep("secciones.+csv", dir(tmp.dir))]
     tmp <- read.csv(paste(tmp.dir, tmp.file, sep = "/"))
-    sel <- grep("clavegeo|entidad|pobtot|pcatolica|sin_relig|pder|psinder|vivtot|c_elec|drenaj|p5_hli$|p_5ymas$", colnames(tmp), ignore.case = TRUE, perl = TRUE)
+    sel <- grep("clavegeo|entidad|pobtot|pcatolica|sin_relig|pder|psinder|vivtot|c_elec|drenaj|agua|p5_hli$|p_5ymas$", colnames(tmp), ignore.case = TRUE, perl = TRUE)
+    #colnames(tmp)[sel] # debug
     tmp <- tmp[,sel]
     tmp$seccion <- tmp$CLAVEGEO - as.integer(tmp$CLAVEGEO/10000)*10000
     tmp$edon <- tmp$ENTIDAD; tmp$ENTIDAD <- NULL; tmp$CLAVEGEO <- NULL
     # sort columns
-    tmp <- tmp[, c("edon", "seccion", "POBTOT", "P_5YMAS", "P5_HLI", "PSINDER", "PDER_SS", "PDER_IMSS", "PDER_ISTE", "PDER_ISTEE", "PDER_SEGP", "PCATOLICA", "PSIN_RELIG", "VIVTOT", "VPH_C_ELEC", "VPH_DRENAJ")]
+    tmp <- tmp[, c("edon", "seccion", "POBTOT", "P_5YMAS", "P5_HLI", "PSINDER", "PDER_SS", "PDER_IMSS", "PDER_ISTE", "PDER_ISTEE", "PDER_SEGP", "PCATOLICA", "PSIN_RELIG", "VIVTOT", "VPH_AGUAFV", "VPH_AGUADV", "VPH_C_ELEC", "VPH_DRENAJ")]
     # add rows merge to main object that will merge to censo for mun aggregations
     #tmp[1,]
     tmp.dat <- rbind(tmp.dat, tmp)
@@ -2099,16 +2100,69 @@ for (i in 1:32){
 # merge to censo
 dim(censo)
 dim(tmp.dat)
+censo <- merge(x = censo, y = tmp.dat, by = c("edon","seccion"), all = TRUE)
+#table(censo$POBTOT, useNA = "always")
+#censo[which(is.na(censo$POBTOT))[2],]
+#x
+# change NAs to zero
+sel <- which(colnames(censo) %in% c("POBTOT", "P_5YMAS", "P5_HLI", "PSINDER", "PDER_SS", "PDER_IMSS", "PDER_ISTE", "PDER_ISTEE", "PDER_SEGP", "PCATOLICA", "PSIN_RELIG", "VIVTOT", "VPH_AGUAFV", "VPH_AGUADV", "VPH_C_ELEC", "VPH_DRENAJ"))
+tmp <- censo[,sel]
+tmp[is.na(tmp)] <- 0
+censo[,sel] <- tmp
+# duplicate to fix new municipios
+censo.sec <- censo
+#censo <- censo.sec # restore
+# aggregate municipios
+censo$POBTOT     <- ave(censo$POBTOT    , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$P_5YMAS    <- ave(censo$P_5YMAS   , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$P5_HLI     <- ave(censo$P5_HLI    , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PSINDER    <- ave(censo$PSINDER   , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_SS    <- ave(censo$PDER_SS   , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_IMSS  <- ave(censo$PDER_IMSS , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_ISTE  <- ave(censo$PDER_ISTE , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_ISTEE <- ave(censo$PDER_ISTEE, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_SEGP  <- ave(censo$PDER_SEGP , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PCATOLICA  <- ave(censo$PCATOLICA , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PSIN_RELIG <- ave(censo$PSIN_RELIG, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VIVTOT     <- ave(censo$VIVTOT    , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VPH_AGUAFV <- ave(censo$VPH_AGUAFV, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VPH_AGUADV <- ave(censo$VPH_AGUADV, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VPH_C_ELEC <- ave(censo$VPH_C_ELEC, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VPH_DRENAJ <- ave(censo$VPH_DRENAJ, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+# drop redundant lines cols
+censo <- censo[duplicated(censo$ife)==FALSE,]
+censo <- censo[, -grep("mun[0-9]", colnames(censo))]
 
-censo <- merge(x = censo, y = tmp.dat
-
-tmp.dat[1,]
-censo[1,]
-
-
-ptot2010 <- read.csv("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/munic/2010/ptot2010mu.municipios2013.csv", stringsAsFactors = FALSE)
-ptot2010[1:5,]
-x
+# go back to censo.sec and fix new municipios and their parents
+do it here! --> take code from redistrict/code/elec-data-for-maps.r
+          
+# create census variables
+censo$ptot <- censo$POBTOT
+censo$p5li <- censo$P5_HLI / censo$P_5YMAS
+censo$religoth  <- (censo$ptot - censo$PCATOLICA - censo$PSIN_RELIG) / censo$ptot
+censo$relignone <-                                 censo$PSIN_RELIG  / censo$ptot
+censo$segpop    <-  censo$PDER_SEGP / censo$ptot
+censo$imss      <- censo$PDER_IMSS / censo$ptot
+censo$issste    <- (censo$PDER_ISTE + censo$PDER_ISTEE) / censo$ptot # proxy bureaucrats
+censo$uninsured <- censo$PSINDER   / censo$ptot # no he usado derechohabientes imss
+censo$water     <- (censo$VPH_AGUAFV + censo$VPH_AGUADV) / censo$VIVTOT
+censo$electric  <- censo$VPH_C_ELEC / censo$VIVTOT
+censo$sewage    <- censo$VPH_DRENAJ / censo$VIVTOT
+# round 3 digits
+censo <- within(censo, {
+    p5li      <- round(p5li, 3);     
+    religoth  <- round(religoth, 3); 
+    relignone <- round(relignone, 3);
+    segpop    <- round(segpop, 3);   
+    imss      <- round(imss, 3);     
+    issste    <- round(issste, 3);   
+    uninsured <- round(uninsured, 3);
+    water     <- round(water, 3);    
+    electric  <- round(electric, 3); 
+    sewage    <- round(sewage, 3);
+})
+# clean
+censo <- within(censo, POBTOT <- P_5YMAS <- P5_HLI <- PSINDER <- PDER_SS <- PDER_IMSS <- PDER_ISTE <- PDER_ISTEE <- PDER_SEGP <- PCATOLICA <- PSIN_RELIG <- VIVTOT <- VPH_AGUAFV <- VPH_AGUADV <- VPH_C_ELEC <- VPH_DRENAJ  <- NULL)
 
 # need dipfed and gub votes to interact with concurrence, preferably at mun level, else at state
 vot[9990,]

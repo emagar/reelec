@@ -1,0 +1,338 @@
+# script invoked from within incumbent-reelection.r
+
+## # OJO: when using spTranform in script, use line below for google earth, or next line for OSM/google maps
+#x.map <- spTransform(x.map, CRS("+proj=longlat +datum=WGS84"))
+#x.map <- spTransform(x.map, osm()) # project to osm native Mercator
+
+# to use osm backgrounds
+library(rJava)
+library(OpenStreetMap)
+
+# make discrete altitude variables and colors for maps
+library(arules)
+tmp <- censo$meanalt
+tmp <- discretize(tmp, method = c("interval","frequency")[1], breaks = 9) # factors
+censo$meanaltcat <- as.numeric(tmp)
+tmp <- censo$sdalt
+tmp <- discretize(tmp, method = c("interval","frequency")[2], breaks = 9) # factors
+censo$sdaltcat <- as.numeric(tmp)
+# make colors
+library(RColorBrewer)
+nclr <- 9                                    #CATEGORÍAS DE COLOR (MIN=3 MAX=9)
+blues <- brewer.pal(nclr,"Blues")            #GENERA CODIGOS DE COLOR QUE CRECEN CON GRADO
+reds <- brewer.pal(nclr,"Reds")              
+yellows <- brewer.pal(nclr,"YlOrBr")         
+library(plyr)
+censo$meanaltcol <- mapvalues ( censo$meanaltcat, from = 1:9, to = yellows )
+censo$sdaltcol   <- mapvalues ( censo$sdaltcat, from = 1:9, to = reds )
+censo$meanaltcat <- censo$sdaltcat <- NULL
+
+# geospatial data 
+library(spdep); # no longer available as of 22sep2020
+library(maptools)
+# used to determine what datum rojano data has
+library(rgdal)
+#gpclibPermit()
+
+# state borders
+md <- "/home/eric/Downloads/Desktop/data/mapas/entidad/estados2013/"
+ed.map <- readOGR(dsn = md, layer = 'ESTADOS')
+# projects to a different datum with long and lat
+ed.map <- spTransform(ed.map, osm())
+
+# read municipios
+md <- "/home/eric/Downloads/Desktop/data/mapas/municipio/munInegi2013/"
+mu.map <- readOGR(dsn = md, layer = 'MUNICIPIOS')
+# projects to a different datum with long and lat
+mu.map <- spTransform(mu.map, osm())
+#
+colnames(mu.map@data) <- c("edon","munn","mun")
+mu.map$edon <- as.numeric(as.character(mu.map$edon))
+mu.map$munn <- as.numeric(as.character(mu.map$munn))
+mu.map$mun <-             as.character(mu.map$mun)
+mu.map$ife <- mu.map$edon*1000 + mu.map$munn
+
+# read terrain ruggedness raster
+library(raster)
+library(rgeos)
+library(sp)
+
+# get terrain ruggedness raster
+tmp.r <- raster("/home/eric/Dropbox/data/mapas/terrain-ruggedness/tri-clipped-mx.tif")
+proj4string(tmp.r) <- CRS("+init=epsg:3857")
+plot(tmp.r)
+plot(mu.map[mu.map$ife==1001,], add = TRUE)
+plot(mu.map[mu.map$ife==1001,])
+plot(tmp.r, add = TRUE)
+summary(mu.map)
+
+summary(getValues(tmp.r, 50))/1000
+
+# alternative approach
+library(stars)
+raster_extract = function(x, y, fun = NULL, na.rm = FALSE) {
+  x = as(x, "Raster")
+  y = as(y, "Spatial")
+  raster::extract(x = x, y = y, fun = fun, na.rm = na.rm)
+}
+md <- "/home/eric/Downloads/Desktop/data/mapas/municipio/munInegi2013/"
+tmp.m <- st_read(md, layer = 'MUNICIPIOS')
+plot(tmp.m)
+tmp <- read_stars("/home/eric/Dropbox/data/mapas/terrain-ruggedness/tri-clipped-mx.tif")
+
+tmp2 <- raster_extract(tmp, tmp.m)
+tmp2[[2]]
+
+tmp.m <-
+  tmp.m %>% mutate(
+    hfpMean = raster_extract(tmp, tmp.m), fun = mean, na.rm = TRUE),
+    hfpMax = raster_extract(tmp, tmp.m, fun = max, na.rm = TRUE),
+    hfpMin = raster_extract(tmp, tmp.m, fun = min, na.rm = TRUE)
+  )
+ tmp.m %>%
+     st_set_geometry(NULL)
+%>%
+     knitr::kable()
+
+tmp.m <- within(tmp.m, hfpMax <- hfpMin <- hfpMean <- NULL)
+
+raster_extract(tmp, tmp.m, fun = mean, na.rm = TRUE)
+plot(tmp)
+tmp
+x
+
+# merge census and altitude data
+tmp1 <- mu.map@data
+tmp1$ord <- 1:nrow(tmp1)
+tmp2 <- censo; tmp2$inegi <- tmp2$edon <- NULL
+tmp1 <- merge(x = tmp1, y = tmp2, all.x = TRUE, all.y = FALSE)
+tmp1 <- tmp1[order(tmp1$ord),] # SORT AS IT WAS
+mu.map@data <- tmp1 # return manipulated data
+
+
+## # maybe useful
+## wd2 <- c("~/Dropbox/data/elecs/MXelsCalendGovt/atlasDis/data/")
+## setwd(wd2)
+## load(file="elDatForMaps.RData")
+## wd <- c("/home/eric/Downloads/Desktop/MXelsCalendGovt/reelec/data/")
+## setwd(wd)
+
+
+# shave map's bb to exclude pacific island 
+shave <- function(m = NA, p = .5, s = 0, eastwest = TRUE){ # m is map to be shaved, p the rightmost part (share) to keep, -1<s<1 a shift rightward, eastwest=FALSE makes shift northsouth
+    #m <- ed.map$col # duplicate
+    m <- m; p <- p;
+    dim <- ifelse(eastwest==TRUE, 1, 2) 
+    b <- as.data.frame(m@bbox)
+    b[dim,] <- b[dim,] - s*(b$max[dim] - b$min[dim])       # shift map rightward (bbox leftward)
+    b$min[dim] <- b$max[dim] - p*(b$max[dim] - b$min[dim]) # keeps only 100*p% of horizontal length
+    m@bbox <- as.matrix(b)
+    #ed.map$col <- m
+    return(m)
+}
+#
+# (use 1984 long/lat for this map when mercator projection was chosen)
+p84 <- function(x = NA){
+    x <- x
+    x <- spTransform(x, CRS("+proj=longlat +datum=WGS84"))
+}
+portray <- mu.map$meanaltcol  # elegir qué reportará el mapa
+portray <- mu.map$sdaltcol   # elegir qué reportará el mapa
+
+setwd("/home/eric/Dropbox/data/elecs/MXelsCalendGovt/reelec/graph")
+pdf("map.pdf")
+par(mar=c(0,0,2,0)) ## SETS B L U R MARGIN SIZES
+#par(mar=c(2,2,2,1)) ## SETS B L U R MARGIN SIZES
+plot(shave(p84(ed.map),  p = .93), col = "white", axes = TRUE, main = "sd(Altitud municipal)", bg = "lightblue")
+#library(scales) # has function alpha()
+#plot(p84(mu.map), add = TRUE, border = NULL, col = alpha(portray, .25)) # color nwin
+plot(p84(mu.map), add = TRUE, border = portray, col = portray) # color nwin
+# thick state border
+plot(p84(ed.map), add = TRUE, lwd = 1)
+#plot(p84(ed.map), add = TRUE, border = "red", lty = 3, lwd = 1.5)
+#
+# add neighboring states
+## text( x = -117, y = 29.5, labels = "O C E A N O   P A C I F I C O", cex = .9, col = "deepskyblue", srt = -60 )
+## text( x = -113.2, y = 30, labels = "M A R   D E   C O R T E Z", cex = .9, col = "deepskyblue", srt = -55 )
+## text( x = -113.4, y = 27.9, labels = "B.C.S.", col = "darkgray", cex = .9 )
+## text( x = -113.5, y = 31.8, labels = "SONORA", col = "darkgray", cex = .9, srt = -20 )
+## text( x = -116, y = 32.75, labels = "EE.UU.", col = "darkgray", cex = .9, srt = 6 )
+dev.off()
+
+# plot same distrito only
+# need to merge disn info into mun and sec object, in order to select just those belonging to dis
+# get openstreetmap background
+m <- p84(dl.map[dl.map$disloc==dn,])  # subsetted map
+## m <- p84(shave(shave(dl.map[dl.map$disloc==dn,], p = .55, s = 0),
+##            p = .02, s = .14, eastwest = FALSE)
+##                ) # subsetted map for dn = 15 --- shave island
+b <- as.data.frame(m@bbox)
+# gets xx degrees more than bbox (decimal defines share of max range)
+xx <- .12*max(b$max[2] - b$min[2], b$max[1] - b$min[1])
+#bg.tn <- openmap(c(b$max[2]+xx,b$min[1]-xx), c(b$min[2]-xx,b$max[1]+xx), type=c("stamen-toner"))
+#bg.bi <- openmap(c(b$max[2]+xx,b$min[1]-xx), c(b$min[2]-xx,b$max[1]+xx), type=c("bing"))
+#bg.to <- openmap(c(b$max[2]+xx,b$min[1]-xx), c(b$min[2]-xx,b$max[1]+xx), type=c("maptoolkit-topo"))
+bg.os <- openmap(c(b$max[2]+xx,b$min[1]-xx), c(b$min[2]-xx,b$max[1]+xx), type=c("osm"))
+bg <- bg.os
+#
+#png(file = paste(md2, edo, dn, "-2.png", sep = ""), width=15, height=15, units="cm", res=144) 
+par(mar=c(0,0,2,0)) ## SETS B L U R MARGIN SIZES
+tmp <-  dl.map$cab[which(dl.map$disloc==dn)]
+tmp2 <- dl.map$dsi[which(dl.map$disloc==dn)]
+plot(dl.map[dl.map$disloc==dn,], axes = TRUE, main = paste("Baja California ", dn, " - ", tmp, " (DSI = ", tmp2, ")", sep = ""))
+## plot(shave(shave(dl.map[dl.map$disloc==dn,], p = .55, s = 0),
+##            p = .02, s = .14, eastwest = FALSE), axes = TRUE, main = paste("Baja California ", dn, " - ", tmp, " (DSI = ", tmp2, ")", sep = "")) # for dn = 15
+plot(bg, add = TRUE)
+plot(ed.map$bc, add = TRUE)
+library(scales) # has function alpha()
+plot(se.map, add = TRUE, border = "darkgray", col = alpha(portray, .25)) # color nwin
+#plot(ffcc, add = TRUE, lwd = .75)
+#
+plot(se.map[se.map$disloc2016==dn,], add = TRUE, border = "darkgray", col = alpha(portray[se.map$disloc2016==dn], .5)) # color nwin
+# add casillas
+points(cas.map, pch = 20, col = "white" , cex = .3)
+#points(cas.map[cas.map$disloc2017==dn,], pch = 20, col = rgb(1,1,1,.33), cex = .3)
+#
+#
+plot(ed.map$bcs, add = TRUE, lty = 1)
+plot(ed.map$son, add = TRUE, lty = 1)
+sel <- which(dl2013.map$disloc==dl.map$father[dl.map$disloc==dn])
+plot(dl2013.map[sel,], add = TRUE, lwd = 6, border = "red")
+#
+plot(dl.map[dl.map$disloc==dn,], add = TRUE, lwd = 4)
+plot(mu.map, add = TRUE, border = "green", lwd = 1)
+plot(mu.map, add = TRUE, lwd = 1, lty = 3)
+plot(ed.map$bc, add = TRUE, lwd = 3)
+plot(ed.map$bc, add = TRUE, border = "red", lty = 3, lwd = 2)
+## points(coordinates(cab), pch = 19, col = "white", cex = .5)
+## points(coordinates(cab), pch = 1, col = "green", cex = .75)
+text(coordinates(mu.map), labels=mu.map$mun, cex=.51, col = "green")
+text(coordinates(mu.map), labels=mu.map$mun, cex=.5)
+lp <- c("bottomright", #1 
+        "bottomleft",  #2 
+        "bottomright", #3 
+        "bottomright", #4 
+        "bottomright", #5 
+        "bottomright", #6 
+        "bottomright", #7 
+        "bottomleft",  #8 
+        "bottomright", #9 
+        "bottomleft",  #10
+        "bottomright", #11
+        "topleft",     #12
+        "bottomright", #13
+        "topright",    #14
+        "bottomleft", #15
+        "topright",    #16
+        "topright")    #17
+legend(x=lp[dn], bg = "white", legend=c("distrito","padre","lím. edo.","lím. munic.","casilla"), col=c("black","red","black","black","gray"), lty = c(1,1,1,1,1), pch = c(NA,NA,NA,NA,19), lwd = c(6,6,2,2,0), bty="o", cex=.75)
+legend(x=lp[dn], bg = NULL,    legend=c("distrito","padre","lím. edo.","lím. munic.","casilla"), col=c("black","red","red","green","white"),  lty = c(1,1,3,3,1), pch = c(NA,NA,NA,NA,20), lwd = c(2,2,2,2,0), bty="o", cex=.75)
+library(prettymapr)
+addnortharrow(pos = ifelse(lp[dn]=="topright", "topleft", "topright"), scale=.75)
+addscalebar(style = "ticks", pos = ifelse(lp[dn]=="bottomright", "bottomleft", "bottomright"))
+#dev.off()
+#}
+
+# plot same distrito's nCasillas
+loc <- c("topright","topright","bottomleft","topleft","bottomright",
+         "topright","bottomright","topright")
+## pdf(file = paste(md2, edo, dn, "-3.pdf", sep = ""))
+par(mar=c(2,2,2,1)) ## SETS B L U R MARGIN SIZES
+tmp <- cabDisNames$cab[which(cabDisNames$edon==2 & cabDisNames$disn==dn)]
+plot(di.map[di.map$DISTRITO==dn,], axes = TRUE, main = paste("Baja California", dn, "-", tmp))
+plot(ed.map$bc, add = TRUE)
+plot(se.map[se.map$disn==dn,], add = TRUE, border = "darkgray", col = portray2[se.map$disn==dn]) # color nwin
+#plot(ffcc, add = TRUE, lwd = .75)
+#
+plot(ed.map$bcs, add = TRUE, lty = 1)
+plot(ed.map$son, add = TRUE, lty = 1)
+#
+plot(di.map[di.map$DISTRITO==dn,], add = TRUE, lwd = 4)
+plot(mu.map, add = TRUE, border = "green", lwd = 1)
+plot(mu.map, add = TRUE, lwd = 1, lty = 3)
+plot(ed.map$bc, add = TRUE, lwd = 3)
+plot(ed.map$bc, add = TRUE, border = "red", lty = 3, lwd = 2)
+points(coordinates(cab), pch = 19, col = "white", cex = .5)
+points(coordinates(cab), pch = 1, col = "green", cex = .75)
+text(coordinates(mu.map), labels=mu.map$mun, cex=.51, col = "green")
+text(coordinates(mu.map), labels=mu.map$mun, cex=.5)
+legend(x=loc[dn], legend=c("21+","11-20","6-10","3-5","2","1"), fill=rev(purples), bty="o", bg = "white", cex=.85, title = "N casillas")
+## dev.off()
+## }
+
+
+# export for google earth
+#v1
+## library(maptools)
+## gd <- paste(md2, "kml/", sep = ""); setwd(gd)
+## kmlPolygons(obj = se.map, kmlfile = "mexseccion.kml", border = "white", col = sub("#", "#FF", se.map$bastion))
+#v2
+library(plotKML)
+setwd(paste(md2, "kml/", sep = ""))
+#plotKML(se.map, filename = "mexseccion.kml", fill = col2kml(se.map$bastion), open.kml = FALSE)
+
+kml_open(file.name = paste(edo, ".kml", sep = ""), folder.name = edo, kml_open = FALSE, kml_visibility = FALSE)
+#
+# Bastiones
+tmp <- subset(se.map, bastion2 == "swing")
+kml_layer.SpatialPolygons(tmp, colour = "gray", subfolder.name = "swingSec", altitudeMode = "clampToGround", alpha = .7)
+tmp <- subset(se.map, bastion2 == "pan4")
+kml_layer.SpatialPolygons(tmp, colour = "royalblue2", subfolder.name = "corePan4", altitudeMode = "clampToGround", alpha = .7)
+tmp <- subset(se.map, bastion2 == "pan5")
+kml_layer.SpatialPolygons(tmp, colour = "royalblue3", subfolder.name = "corePan5", altitudeMode = "clampToGround", alpha = .7)
+tmp <- subset(se.map, bastion2 == "pan6")
+kml_layer.SpatialPolygons(tmp, colour = "royalblue4", subfolder.name = "corePan6", altitudeMode = "clampToGround", alpha = .7)
+tmp <- subset(se.map, bastion2 == "pri4")
+kml_layer.SpatialPolygons(tmp, colour = "red1", subfolder.name = "corePri4", altitudeMode = "clampToGround", alpha = .7)
+tmp <- subset(se.map, bastion2 == "pri5")
+kml_layer.SpatialPolygons(tmp, colour = "red2", subfolder.name = "corePri5", altitudeMode = "clampToGround", alpha = .7)
+tmp <- subset(se.map, bastion2 == "pri6")
+kml_layer.SpatialPolygons(tmp, colour = "red3", subfolder.name = "corePri6", altitudeMode = "clampToGround", alpha = .7)
+tmp <- subset(se.map, bastion2 == "izq4")
+kml_layer.SpatialPolygons(tmp, colour = "gold1", subfolder.name = "coreLeft4", altitudeMode = "clampToGround", alpha = .7)
+tmp <- subset(se.map, bastion2 == "izq5")
+kml_layer.SpatialPolygons(tmp, colour = "gold2", subfolder.name = "coreLeft5", altitudeMode = "clampToGround", alpha = .7)
+tmp <- subset(se.map, bastion2 == "izq6")
+kml_layer.SpatialPolygons(tmp, colour = "gold3", subfolder.name = "coreLeft6", altitudeMode = "clampToGround", alpha = .7)
+#
+# Estado
+tmp <- as(ed.map$bc, "SpatialLinesDataFrame") # coerce polygons to lines 
+kml_layer.SpatialLines(tmp, colour = "hotpink", width = 2.5, subfolder.name = "stateLimit", altitudeMode = "clampToGround")
+#
+# Distritos federales 2006
+tmp <- as(di.map, "SpatialLinesDataFrame") # coerce polygons to lines 
+kml_layer.SpatialLines(tmp, colour = "white", width = 2, subfolder.name = "fedDist2006map", altitudeMode = "clampToGround")
+tmp <- SpatialPointsDataFrame(coords=coordinates(di.map), data = di.map@data, proj4string = CRS("+proj=longlat +datum=WGS84"))
+kml_layer.SpatialPoints(tmp, LabelScale = .75, extrude = TRUE, labels = disrri06, subfolder.name = "fedDistRRI@2006", altitudeMode = "clampToGround")
+kml_layer.SpatialPoints(tmp, LabelScale = .75, extrude = TRUE, labels = disrri15, subfolder.name = "fedDistRRI@2015", altitudeMode = "clampToGround")
+#
+# Municipios
+tmp <- as(mu.map, "SpatialLinesDataFrame") # coerce polygons to lines
+kml_layer.SpatialLines(tmp, colour = "springgreen", width = 1, subfolder.name = "municLimit", altitudeMode = "clampToGround")
+tmp <- SpatialPointsDataFrame(coords=coordinates(mu.map), data = mu.map@data, proj4string = CRS("+proj=longlat +datum=WGS84"))
+kml_layer.SpatialPoints(tmp, shape = "", labels = mun, subfolder.name = "municNames", altitudeMode = "clampToGround", LabelScale = .5)
+#
+# Lista nominal 2015
+shape = "http://maps.google.com/mapfiles/kml/pal2/icon18.png"
+tmp <- SpatialPointsDataFrame(coords=coordinates(se.map), data = se.map@data, proj4string = CRS("+proj=longlat +datum=WGS84"))
+tmp$ln15k <- round(tmp$ln15/1000, 1) # lista nominal in thousands for labels
+tmp$sqrtln15 <- sqrt(tmp$ln15) # lista nominal sq root
+#kml_layer.SpatialPoints(tmp, shape = shape, labels = ln15k, colour = ln15, colour_scale = SAGA_pal$SG_COLORS_WHITE_GREEN, extrude = TRUE, altitude = ln15, altitudeMode = "relativeToGround", subfolder.name = "barras") 
+kml_layer.SpatialPoints(tmp, shape = shape, labels = "", colour = "green", size = sqrtln15, alpha = .33, altitudeMode = "clampToGround", subfolder.name = "listaNominal@2015") 
+kml_layer.SpatialPoints(tmp, shape = "", labels = ln15k, colour = "white", altitudeMode = "clampToGround", subfolder.name = "listaNominal@2015x1000") 
+#
+# añadir fch, amlo, epn
+#
+kml_close(file.name = paste(edo, ".kml", sep = ""))
+
+# display.pal(SAGA_pal[1:5]) # <- useful to pick colors
+
+# compress kml files to kmz
+md2 <- c("/home/eric/Dropbox/data/elecs/MXelsCalendGovt/atlasDis/maps/")
+library(plotKML)
+setwd(paste(md2, "kml/", sep = ""))
+kml_compress("bc.kml")
+
+# print the result:
+library(XML)
+xmlRoot(xmlTreeParse("tmp.kml"))[["Document"]][1:100]

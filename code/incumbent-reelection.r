@@ -1925,7 +1925,7 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
 
 load(paste(wd,"mun-reelection.RData",sep=""))
-options(width = 65)
+options(width = 130)
 
 #################################
 ## concurrent election dummies ##
@@ -2027,10 +2027,10 @@ library(foreign)
 tmp <- read.dbf("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/2010censo/ITER_NALDBF10.dbf", as.is = TRUE)
 #table(tmp$X.1)
 # selected columns only
-sel <- grep("entidad|mun|loc|longitud|latitud|altitud", colnames(tmp), ignore.case = TRUE, perl = TRUE)
+sel <- grep("entidad|mun|loc|longitud|latitud|altitud|pobtot", colnames(tmp), ignore.case = TRUE, perl = TRUE)
 tmp <- tmp[,sel]
 # rename variables
-colnames(tmp) <- c("edon","inegi","mun","locn","localidad","long","lat","alt","drop")
+colnames(tmp) <- c("edon","inegi","mun","locn","localidad","long","lat","alt","ptot","drop")
 tmp$drop <- NULL
 tmp$edon <- as.numeric(as.character(tmp$edon))
 tmp$inegi <- as.numeric(as.character(tmp$inegi))
@@ -2040,33 +2040,55 @@ tmp$localidad <- as.character(tmp$localidad)
 tmp$long <- as.numeric(as.character(tmp$long))
 tmp$lat <- as.numeric(as.character(tmp$lat))
 tmp$alt <- as.numeric(as.character(tmp$alt))
+tmp$ptot <- as.numeric(as.character(tmp$ptot))
 # drop aggregate rows
 sel <- which(tmp$locn==0|tmp$locn==9998|tmp$locn==9999)
 tmp <- tmp[-sel,]
 # add edon to inegi
 tmp$inegi <- tmp$edon*1000 + tmp$inegi
-# mean sd
+# mun pop share
+tmp$tmp      <- ave(tmp$ptot, as.factor(tmp$inegi), FUN=sum, na.rm=TRUE)
+tmp$popsh    <- tmp$ptot / tmp$tmp
+# weighted mean(alt) and sd(alt)
+tmp$altpopsh <- tmp$popsh * tmp$alt 
+tmp$wmeanalt <- ave(tmp$altpopsh, as.factor(tmp$inegi), FUN=sum, na.rm=TRUE)
+tmp$altpopsh <- tmp$popsh * (tmp$alt - tmp$wmeanalt)^2
+tmp$wsdalt <-   ave(tmp$altpopsh, as.factor(tmp$inegi), FUN=sum, na.rm=TRUE)
+tmp$wsdalt <-   sqrt(tmp$wsdalt)
+tmp$altpopsh <- NULL # clean
+# mean(alt) and sd(alt)
 tmp$meanalt <- ave(tmp$alt, as.factor(tmp$inegi), FUN=mean, na.rm=TRUE)
 tmp$sdalt <-   ave(tmp$alt, as.factor(tmp$inegi), FUN=sd,   na.rm=TRUE)
 # cases with single localidad sd=NA
 sel <- which(is.na(tmp$sdalt)==TRUE & is.na(tmp$meanalt)==FALSE)
+tmp$wsdalt[sel] <- 0
 tmp$sdalt[sel] <- 0
 # drop redundant rows cols
 tmp <- tmp[-duplicated(as.factor(tmp$inegi))==FALSE,]
-tmp$locn <- tmp$localidad <- tmp$alt <- tmp$long <- tmp$lat <- tmp$mun <- tmp$edon <- NULL
-# merge into vot
+tmp$locn <- tmp$localidad <- tmp$alt <- tmp$long <- tmp$lat <- tmp$mun <- tmp$edon <- tmp$popsh <- tmp$tmp <- NULL
+tmp$wmeanalt <- round(tmp$wmeanalt, 1)
+tmp$wsdalt <- round(tmp$wsdalt, 1)
+tmp$meanalt <- round(tmp$meanalt, 1)
+tmp$sdalt <- round(tmp$sdalt, 1)
+#summary(tmp$sdalt)
+#summary(tmp$wsdalt)
 
-vot$sdalt <- vot$meanalt <- NA # open slot for new vars
-for (i in 1:nrow(tmp)){
-    #i <- 1 # debug
-    sel <- which(vot$inegi %in% tmp$inegi[i])
-    if (length(sel)>0){
-        vot$meanalt[sel] <- tmp$meanalt[i]
-        vot$sdalt[sel]   <- tmp$sdalt[i]
-    }
-}
-summary(vot$meanalt)
-summary(vot$sdalt)
+## THIS CAN BE DROPPED
+## # merge into vot
+## vot$sdalt <- vot$meanalt <- vot$wsdalt <- vot$wmeanalt <- NA # open slot for new vars
+## for (i in 1:nrow(tmp)){
+##     #i <- 1 # debug
+##     sel <- which(vot$inegi %in% tmp$inegi[i])
+##     if (length(sel)>0){
+##         vot$wmeanalt[sel] <- tmp$wmeanalt[i]
+##         vot$wsdalt[sel]   <- tmp$wsdalt[i]
+##         vot$meanalt[sel] <- tmp$meanalt[i]
+##         vot$sdalt[sel]   <- tmp$sdalt[i]
+##     }
+## }
+
+# make discrete altitude variables for mapping exploration
+alt <- tmp
 rm(tmp,i,sel)
 
 # read sección-municipio equivalencias
@@ -2133,8 +2155,16 @@ censo$VPH_DRENAJ <- ave(censo$VPH_DRENAJ, as.factor(censo$ife), FUN=sum, na.rm=T
 censo <- censo[duplicated(censo$ife)==FALSE,]
 censo <- censo[, -grep("mun[0-9]", colnames(censo))]
 
-# go back to censo.sec and fix new municipios and their parents
-do it here! --> take code from redistrict/code/elec-data-for-maps.r
+###########################################################################################
+## go back to censo.sec and fix new municipios and their parents in exact year happened  ##
+## at present, seccion-mun map taken from 2018 and projected backwards                   ##
+## --> take code from redistrict/code/elec-data-for-maps.r to achieve exact year mapping ##
+## --> steps for 2015                                                                    ##
+## --> (1) change censo.sec$ife  <- censo.sec$mun2015                                    ##
+## --> (2) subset parent.children secciones with target.ife                              ##
+## --> (3) aggregate                                                                     ##
+## --> (4) paste manipulation in censo                                                   ##
+###########################################################################################
           
 # create census variables
 censo$ptot <- censo$POBTOT
@@ -2163,10 +2193,27 @@ censo <- within(censo, {
 })
 # clean
 censo <- within(censo, POBTOT <- P_5YMAS <- P5_HLI <- PSINDER <- PDER_SS <- PDER_IMSS <- PDER_ISTE <- PDER_ISTEE <- PDER_SEGP <- PCATOLICA <- PSIN_RELIG <- VIVTOT <- VPH_AGUAFV <- VPH_AGUADV <- VPH_C_ELEC <- VPH_DRENAJ  <- NULL)
+censo$seccion <- NULL
+
+# merge altitudes
+dim(censo)
+dim(alt)
+alt$ptot <- NULL
+
+#tmp <- censo # duplicate for debug
+censo <- merge(x = censo, y = alt, by = "inegi", all = TRUE)
+
+# make discrete altitude variables for mapping exploration
+# script mapa-municipios.r draws wsd(alt) etc
+
+# merge censo into vot
+options(width = 175)
+sel <- which(colnames(censo) %in% c("ife","edon")) # drop towards merge
+vot <- merge(x = vot, y = censo[,-sel], by = "inegi", all.x = TRUE, all.y = FALSE)
+rm(censo, censo.sec, i, sel, tmp, tmp.dat, tmp.file, tmp.dir)
 
 # need dipfed and gub votes to interact with concurrence, preferably at mun level, else at state
-vot[9990,]
-x
+--> get edo-level first while mun-level available
 
 # compute winner's margin
 vot$mg <- round(vot$v01 - vot$v02, 4)
@@ -2174,6 +2221,41 @@ vot$round <- sub(pattern = "[\\w\\D-]+([0-9]{2})[.][0-9]{3}", replacement = "\\1
 vot$round <- as.numeric(vot$round)
 # dincumbent
 vot$dincumbent <- 1 - vot$dopenseat
+
+# capital municipalities
+sel <- which(vot$ife  %in%  c( 1001,
+                               2002,
+                               3003,
+                               4001,
+                               5030,
+                               6001,
+                               7102,
+                               8019,
+#                              90,  
+                              10005,
+                              11015,
+                              12001,
+                              13047,
+                              14041,
+                              15107,
+                              16054,
+                              17007,
+                              18017,
+                              19040,
+                              20066,
+                              21115,
+                              22014,
+                              23007,
+                              24028,
+                              25006,
+                              26049,
+                              27004,
+                              28041,
+                              29033,
+                              30089,
+                              31050,
+                              32056))
+vot$dcapital <- 0; vot$dcapital[sel] <- 1
 
 # duplicate for analysis
 tmp <- vot
@@ -2198,8 +2280,17 @@ tmp$dothopen <- (1-  tmp$dpan) *      tmp$dopenseat # drop to avoid dummy trap
 library(DataCombine) # easy lags with slide
 tmp <- tmp[order(tmp$emm),] # check sorted for lags
 tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.][0-9]+", "\\1", tmp$emm))
+tmp[1,]
 tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "ife", Var = "pan", NewVar = "pan.lag", slideBy = -1) # lag by one period
 
+# single-term states after reform
+tmp$dhgover <- as.numeric(tmp$edon==13 | tmp$edon==30)
+# pre-reform dummy
+tmp$dpreref  <- as.numeric(tmp$yr< 2018)
+tmp$dpostref <- as.numeric(tmp$yr>=2018)
+
+## # drop hgo ver
+## tmp <- tmp[tmp$dhgover==0,] 
 
 plot(tmp$alpha.pan, tmp$pan.lag, pch=20, cex = .05)
 lines(formula = pan.lag ~ alpha.pan, data = tmp)
@@ -2207,12 +2298,13 @@ x
 # model eric  x
 colnames(tmp)
 tmp.mod <- lm(formula = res.pan ~ alpha.pan + dpaninc + dothinc + dpanopen, data = tmp)
-tmp.mod <- lm(formula = res.pan ~ pan.lag   + dpaninc + dothinc + dpanopen + dconcgob + dsamegov + as.factor(edon), data = tmp)
 tmp.mod <- lm(formula = pan.lag ~ alpha.pan, data = tmp)
+tmp.mod <- lm(formula = res.pan ~ pan.lag   + dpaninc + dothinc + dpanopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon), data = tmp, subset = (dhgover==0 & yr>=2006))
 summary(tmp.mod)
-colnames(tmp)
+nobs(tmp.mod)
 x
 
+estimate with jags, simulate
 
 
 ## #############################################################################################

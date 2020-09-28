@@ -2257,44 +2257,24 @@ sel <- which(vot$ife  %in%  c( 1001,
                               32056))
 vot$dcapital <- 0; vot$dcapital[sel] <- 1
 
-# duplicate for analysis
-tmp <- vot
-# retain year with vhat histories only
-sel <- which(tmp$yr>2004)
-tmp <- tmp[sel,]
-
-# own party governor dummy
-tmp$dsamegov <- 0
-tmp$dsamegov[tmp$govpty.lag=="pan"] <- 1
-
-# four dummies pan/~ and incumbent/~ --- complement is open seat
-sel <- grep("pan", tmp$win)
-tmp$dpan <- 0; tmp$dpan[sel] <- 1
-table(tmp$dpan)
-tmp$dpaninc  <-      tmp$dpan  * (1 - tmp$dopenseat)
-tmp$dothinc  <- (1 - tmp$dpan) * (1 - tmp$dopenseat)
-tmp$dpanopen <-      tmp$dpan  *      tmp$dopenseat
-tmp$dothopen <- (1-  tmp$dpan) *      tmp$dopenseat # drop to avoid dummy trap
-
-# lag votes
-library(DataCombine) # easy lags with slide
-tmp <- tmp[order(tmp$emm),] # check sorted for lags
-tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.][0-9]+", "\\1", tmp$emm))
-tmp[1,]
-tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "ife", Var = "pan", NewVar = "pan.lag", slideBy = -1) # lag by one period
-
 # single-term states after reform
-tmp$dhgover <- as.numeric(tmp$edon==13 | tmp$edon==30)
+vot$dhgover <- as.numeric(vot$edon==13 | vot$edon==30)
 # pre-reform dummy
-tmp$dpreref  <- as.numeric(tmp$yr< 2018)
-tmp$dpostref <- as.numeric(tmp$yr>=2018)
+vot$dpreref  <- as.numeric(vot$yr< 2018)
+vot$dpostref <- as.numeric(vot$yr>=2018)
 
-## # drop hgo ver
-## tmp <- tmp[tmp$dhgover==0,] 
+# left vote is prd pre-2015, morena in 2015 and post
+vot <- within(vot, {
+    left = prd
+    left[yr>=2015] = morena[yr>=2015]
+    res.left = res.prd
+    res.left[yr>=2015] = res.morena[yr>=2015]
+})
 
-plot(tmp$alpha.pan, tmp$pan.lag, pch=20, cex = .05)
-lines(formula = pan.lag ~ alpha.pan, data = tmp)
-x
+
+
+
+
 # model eric  x
 colnames(tmp)
 tmp.mod <- lm(formula = res.pan ~ alpha.pan + dpaninc + dothinc + dpanopen, data = tmp)

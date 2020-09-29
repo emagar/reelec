@@ -15,23 +15,23 @@ estim.mod <- function(pty = "pan"){
     if (pty == "pan"){
         tmp$vot <- tmp$pan
         tmp$res.pty <- tmp$res.pan
+        sel <- grep("pan", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
     }
     if (pty == "pri"){
         tmp$vot <- tmp$pri
         tmp$res.pty <- tmp$res.pri
+        sel <- grep("pri", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
     }
     if (pty == "left"){
         tmp$vot <- tmp$left
         tmp$res.pty <- tmp$res.left
+        sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
+        tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
+        sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1
+        tmp$dpty[tmp$yr>=2015] <- tmp$dtmp[tmp$yr>=2015]; tmp$dtmp <- NULL # morena since 2015
     }
-    colnames(tmp)
-    table(tmp$win2, useNA = "always")
-    x
     #
     # incumbent x pty dummies (complement is open seat)
-    sel <- which(tmp$win==pty)
-    tmp$dpty <- 0; tmp$dpty[sel] <- 1
-    #table(tmp$dpty)
     tmp$dptyinc  <-      tmp$dpty  * (1 - tmp$dopenseat)
     tmp$dothinc  <- (1 - tmp$dpty) * (1 - tmp$dopenseat)
     tmp$dptyopen <-      tmp$dpty  *      tmp$dopenseat
@@ -53,6 +53,7 @@ estim.mod <- function(pty = "pan"){
     tmp.mod <- lm(formula = form, data = tmp, subset = (dhgover==0 & yr>=2004))
     return(tmp.mod)
 }
+
 
 pan.mod <- estim.mod(pty = "pan")
 summary(pan.mod)

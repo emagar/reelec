@@ -46,8 +46,8 @@ inc$win2 <- inc$win
 inc$win2 <- sub("conve", "mc",   inc$win2, ignore.case = TRUE)
 inc$win2 <- sub("panal", "pna", inc$win2, ignore.case = TRUE)
 inc$win2 <- sub("pucd", "pudc", inc$win2, ignore.case = TRUE) # typo
-sel <- grep("ci_|^ci$|c-i-|ind_|eduardo|luis|oscar|indep", inc$win2, ignore.case = TRUE)
-inc$win2[sel] <- "indep"
+## sel <- grep("ci_|^ci$|c-i-|ind_|eduardo|luis|oscar|indep", inc$win2, ignore.case = TRUE) # deprecated
+## inc$win2[sel] <- "indep"                                                                 # deprecated
 inc$win <- inc$win2 # register changes above in original win to remove false negatives
 sel <- grep("pan-", inc$win2, ignore.case = TRUE)
 inc$win2[sel] <- "pan"
@@ -68,6 +68,8 @@ inc$win2[sel] <- "loc/oth"
 #
 inc$win.long <- inc$win # retain unsimplified version
 inc$win <- inc$win2; inc$win2 <- NULL # keep manipulated version only
+table(inc$win)
+x
 
 #############################################################
 ## lag race.after & win to generate race.prior & win.prior ##
@@ -2271,6 +2273,9 @@ vot <- within(vot, {
     res.left[yr>=2015] = res.morena[yr>=2015]
 })
 
+# elevation variance
+vot$varalt <- vot$sdalt
+vot$wvaralt <- vot$wsdalt
 
 ###################################
 ## function to estimate ols regs ##
@@ -2279,7 +2284,7 @@ library(DataCombine) # easy lags with slide
 #
 form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon)"
 #
-estim.mod <- function(pty = "pan", y = 2004){
+estim.mod <- function(pty = "pan", y = 2005, ret.data = FALSE){
     # duplicate vot for analysis
     tmp <- vot
     #
@@ -2321,8 +2326,13 @@ estim.mod <- function(pty = "pan", y = 2004){
     #tmp[1,]
     tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "ife", Var = "vot", NewVar = "vot.lag", slideBy = -1) # lag by one period
     #
+    # alpha
+    if (pty=="pan")  tmp$alpha <- tmp$alpha.pan
+    if (pty=="pri")  tmp$alpha <- tmp$alpha.pri
+    if (pty=="left") tmp$alpha <- tmp$alpha.left
+    #
     # years to retain in estimation (vhat histories after 2004 only) --- do after lag to avoid losing obs
-    sel <- which(tmp$yr>y)
+    sel <- which(tmp$yr>=y)
     tmp <- tmp[sel,]
     #
     # change var units
@@ -2345,42 +2355,100 @@ estim.mod <- function(pty = "pan", y = 2004){
     ## table(is.na(tmp$wsdalt   ))
     ## table(is.na(tmp$dpostref ))
     #
-    return(tmp.mod)
+    if (ret.data == TRUE){
+        return(tmp)
+    } else {
+        return(tmp.mod)
+    }
 }
 
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon)"
+#
+pan.dat05 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE)
+pan.lag05 <- estim.mod(pty = "pan", y = 2005)
+summary(pan.lag05)
+pri.dat05 <- estim.mod(pty = "pri", y = 2005, ret.data = TRUE)
+pri.lag05 <- estim.mod(pty = "pri", y = 2005)
+summary(pri.lag05)
+left.dat05 <- estim.mod(pty = "left", y = 2005, ret.data = TRUE)
+left.lag05 <- estim.mod(pty = "left", y = 2005)
+summary(left.lag05)
+#
+## pan.lag12 <- estim.mod(pty = "pan", y = 2012)
+## summary(pan.lag12)
+## pri.lag12 <- estim.mod(pty = "pri", y = 2012)
+## summary(pri.lag12)
+## left.lag12 <- estim.mod(pty = "left", y = 2012)
+## summary(left.lag12)
 
-pan.mod <- estim.mod(pty = "pan")
-summary(pan.mod)
-pri.mod <- estim.mod(pty = "pri")
-summary(pri.mod)
-left.mod <- estim.mod(pty = "left")
-summary(left.mod)
+## # alpha has little effect in oth coefs, but seems to overshoot pan and prd
+## form <- "res.pty ~ alpha  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon)"
+## #
+## pan.alpha <- estim.mod(pty = "pan")
+## summary(pan.alpha)
+## pri.alpha <- estim.mod(pty = "pri")
+## summary(pri.alpha)
+## left.alpha <- estim.mod(pty = "left")
+## summary(left.alpha)
 
 
 library(stargazer)
-stargazer(pan.mod, pri.mod, left.mod, align=TRUE, report = 'vc*s',
-#          title = "Regression results",
-          type = "text",
-#          out = "tmp-tab.txt",
-          digits = 3,
-##           dep.var.labels = c("Words/exposure in period", "Speeches in period")
-          covariate.labels=
- c("vote share (lagged)",
-   "party incumbent",
-   "other-party incumbent",
-   "party open seat",
-   "governor",
-   "population (10k)",
-   "elevation (pop. weigthed)",
-   "sd.elev",
-   "post reform",
-   "elev x sd.elev",
-   "Constant")
+stargazer(pan.lag05, pri.lag05, left.lag05, align=TRUE, report = 'vc*s'
+#          , title = "Regression results"
+          , type = "latex"
+#          , out = "tmp-tab.txt"
+          , digits = 3
+          , dep.var.labels = c("Residual")
+          , column.labels = c("PAN", "PRI", "Left")
+ ##          , covariate.labels=
+ ## c("vote share (lagged)",
+ ##   "party incumbent",
+ ##   "other-party incumbent",
+ ##   "party open seat",
+ ##   "governor",
+ ##   "population (10k)",
+ ##   "elevation (pop. weigthed)",
+ ##   "sd.elev",
+ ##   "post reform",
+ ##   "elev x sd.elev",
+ ##   "Constant")
           )
 
 ## library(apsrtable)
 ## apsrtable(fit1, fit2)
 
+# some descriptives
+tmp <- pan.dat05
+table(tmp$dpty, tmp$dopenseat)
+tmp <- pri.dat05
+table(tmp$dpty, tmp$dopenseat)
+tmp <- left.dat05
+table(tmp$dpty, tmp$dopenseat)
+# colsum
+table(tmp$dopenseat)
+
+## need to present morena, prd, and left, need break pan-prd (which i've done elsewhere, win2)
+##         inc open
+##   pan   182 2532
+##   pri   143 4194
+##   left   94 1511
+##   oth   117  754
+##   tot   536 8991
+colnames(pan.dat05)
+tmp$win2 <- "."
+tmp$win2[grep("morena", tmp$win)] <- "morena"
+tmp$win2[grep("pri", tmp$win)] <- "pri"
+tmp$win2[grep("pan-prd", tmp$win)] <- "pan-prd"
+sel <- which(tmp$win2=="."); sel <- intersect(sel, grep("pan", tmp$win)); tmp$win2[sel] <- "pan"
+sel <- which(tmp$win2=="."); sel <- intersect(sel, grep("prd", tmp$win)); tmp$win2[sel] <- "prd"
+sel <- which(tmp$win2=="."); sel <- intersect(sel, grep("pvem", tmp$win)); tmp$win2[sel] <- "pvem"
+table(tmp$win2)
+table(tmp$win[tmp$win2=="."]) # does not reflect win in aymuincumbents! why?
+x
+
+# explore missingness
+table(is.na(tmp$res.pan[tmp$yr>=2006]), is.na(tmp$alpha.pan[tmp$yr>=2006]))
+x
 
 
 # model eric  x

@@ -1,78 +1,81 @@
-###################################
-## function to estimate ols regs ##
-###################################
-library(DataCombine) # easy lags with slide
+#####################################
+## deal with major-party coalition ##
+#####################################
+inc$status <- NA
+sel <- grep("(?=.*pan)(?=.*prd)", inc$win, perl = TRUE)
+inc$status[sel] <- "majors"
+sel <- grep("(?=.*pan)(?=.*pri)", inc$win, perl = TRUE)
+inc$status[sel] <- "majors"
+sel <- grep("(?=.*pri)(?=.*prd)", inc$win, perl = TRUE)
+inc$status[sel] <- "majors"
 #
-form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon)"
+# 3-majors coalition in mun split in thirds
+sel <- which(inc$status=="majors") 
+sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", inc$win[sel], perl = TRUE) # 
+inc$inegi[sel][sel1]; inc$mun[sel][sel1]; inc$yr[sel][sel1] # which?
+# assign to strong party (coal vs narco it seems)
+inc$win2[which(inc$inegi==16056 & inc$yr==2015)] <- "pri"  # Nahuatzén to pri
+inc$win2[which(inc$inegi==16083 & inc$yr==2015)] <- "pan"  # Tancítaro to pan
+inc$status[sel][sel1] <- "done"
 #
-estim.mod <- function(pty = "pan"){
-    # duplicate vot for analysis
-    tmp <- vot
-    # retain year with vhat histories only
-    sel <- which(tmp$yr>2004)
-    tmp <- tmp[sel,]
-    #
-    if (pty == "pan"){
-        tmp$vot <- tmp$pan
-        tmp$res.pty <- tmp$res.pan
-        sel <- grep("pan", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
-    }
-    if (pty == "pri"){
-        tmp$vot <- tmp$pri
-        tmp$res.pty <- tmp$res.pri
-        sel <- grep("pri", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
-    }
-    if (pty == "left"){
-        tmp$vot <- tmp$left
-        tmp$res.pty <- tmp$res.left
-        sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
-        tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
-        sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1
-        tmp$dpty[tmp$yr>=2015] <- tmp$dtmp[tmp$yr>=2015]; tmp$dtmp <- NULL # morena since 2015
-    }
-    #
-    # incumbent x pty dummies (complement is open seat)
-    tmp$dptyinc  <-      tmp$dpty  * (1 - tmp$dopenseat)
-    tmp$dothinc  <- (1 - tmp$dpty) * (1 - tmp$dopenseat)
-    tmp$dptyopen <-      tmp$dpty  *      tmp$dopenseat
-    tmp$dothopen <- (1-  tmp$dpty) *      tmp$dopenseat # drop to avoid dummy trap
-    #
-    # manipulate prd/morena govpty for left
-    sel <- which( (tmp$govpty.lag=="prd" & tmp$yr<=2015) | (tmp$govpty.lag=="morena" & tmp$yr>2015) )
-    tmp$govpty.lag[sel] <- "left"
-    # own party governor dummy
-    tmp$dsamegov <- 0
-    tmp$dsamegov[tmp$govpty.lag == pty] <- 1
-    #
-    # lag votes
-    tmp <- tmp[order(tmp$emm),] # check sorted for lags
-    tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.][0-9]+", "\\1", tmp$emm))
-    #tmp[1,]
-    tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "ife", Var = "vot", NewVar = "vot.lag", slideBy = -1) # lag by one period
-    #
-    tmp.mod <- lm(formula = form, data = tmp, subset = (dhgover==0 & yr>=2004))
-    return(tmp.mod)
-}
-
-
-pan.mod <- estim.mod(pty = "pan")
-summary(pan.mod)
-pri.mod <- estim.mod(pty = "pri")
-summary(pri.mod)
-left.mod <- estim.mod(pty = "left")
-summary(left.mod)
-
-
-
-## # drop hgo ver
-## tmp <- tmp[tmp$dhgover==0,] 
-
-plot(tmp$alpha.pan, tmp$pan.lag, pch=20, cex = .05)
-lines(formula = pan.lag ~ alpha.pan, data = tmp)
-x
-# model eric  x
-colnames(tmp)
-tmp.mod <- lm(formula = res.pan ~ alpha.pan + dpaninc + dothinc + dpanopen, data = tmp)
-tmp.mod <- lm(formula = pan.lag ~ alpha.pan, data = tmp)
-tmp.mod <- lm(formula = res.pan ~ pan.lag   + dpaninc + dothinc + dpanopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon), data = tmp, subset = (dhgover==0 & yr>=2006))
-nobs(tmp.mod)
+# pan-pri to pri (19 cases in mic07 mic11 mic15)
+sel <- which(inc$status=="majors" & inc$edon==16) 
+sel1 <- grep("(?=.*pan)(?=.*pri)", inc$win[sel], perl = TRUE) # 
+inc$win2[sel][sel1] <- "pri"
+inc$status[sel][sel1] <- "done"
+#
+# pri-prd to pri (chihuahua and guanajuato)
+sel <- which(inc$status=="majors") 
+sel1 <- grep("(?=.*pri)(?=.*prd)", inc$win[sel], perl = TRUE) # 
+inc$win2[sel][sel1] <- "pri"
+inc$status[sel][sel1] <- "done"
+#
+# rest are pan-prd
+#
+# pan-prd to pan (bc coa2009 coa col00 col18 cua dgo jal que san sin son tam yuc)
+sel <- which(inc$status=="majors" & (inc$edon==2 | inc$edon==5 | inc$edon==6 | inc$edon==8 | inc$edon==10 | inc$edon==14 | inc$edon==22 | inc$edon==24 | inc$edon==25 | inc$edon==26 | inc$edon==28  | inc$edon==31)) 
+inc$win2[sel] <- "pan"
+inc$status[sel] <- "done"
+#
+# pan-prd in 2018 to pan (bcs cps df gue mex mic oax pue qui tab zac)
+sel <- which(inc$status=="majors" & inc$yr==2018) 
+inc$win2[sel] <- "pan"
+inc$status[sel] <- "done"
+#
+# pan-prd to prd (cps2004, cps2010)
+sel <- which(inc$status=="majors" & inc$edon==7 & inc$yr<=2010) 
+inc$win2[sel] <- "prd"
+inc$status[sel] <- "done"
+#
+# pan-prd to pan (nay1999 nay2017 ver2000 ver2017)
+sel <- which(inc$status=="majors" & (inc$edon==18 | inc$edon==30) & (inc$yr==1999 | inc$yr==2000 | inc$yr==2017)) 
+inc$win2[sel] <- "pan"
+inc$status[sel] <- "done"
+#
+# pan-prd to prd (votes split halfway, qui2016)
+sel <- which(inc$status=="majors" & inc$edon==23 & inc$yr==2016)
+inc$win2[sel] <- "prd"
+inc$status[sel] <- "done"
+#
+# pan-prd to pan (votes split halfway, pue2010 pue2013)
+sel <- which(inc$status=="majors" & inc$edon==21)
+inc$win2[sel] <- "pan"
+inc$status[sel] <- "done"
+#
+# pan-prd to prd (votes split halfway, pue2010 pue2013 qui2013 qui2010)
+sel <- which(inc$status=="majors" & (inc$edon==21 | inc$edon==23))
+inc$win2[sel] <- "prd"
+inc$status[sel] <- "done"
+#
+# pan-prd to prd (votes split halfway, gue2015 hgo2011 mic2015 oax2010 oax2013 oax2016 zac2013, zac2016)
+sel <- which(inc$status=="majors" & (inc$edon==12 | inc$edon==13 | inc$edon==16 | inc$edon==20 | inc$edon==32) & inc$yr<2018) 
+inc$win2[sel] <- "prd"
+inc$status[sel] <- "done"
+#
+# pan-prd to pan (votes split halfway, mex2006)
+sel <- which(inc$status=="majors" & inc$edon==15 & inc$yr==2006) 
+inc$win2[sel] <- "pan"
+inc$status[sel] <- "done"
+#
+# clean
+inc$status <- NULL

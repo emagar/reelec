@@ -431,6 +431,39 @@ rm(cal)
 ############################
 ## dummy party reelected  ##
 ############################
+#
+# 2oct2020 need to change win==prd/morena to win=left to make data comparable to electoral histories 
+inc.dupli <- inc # duplicate for debug
+#inc <- inc.dupli # restore
+sel1 <- grep("prd|morena", inc$win)
+sel2 <- grep("prd|morena", inc$win.prior)
+sel <- unique(union(sel1, sel2))
+tmp <- inc[sel,]
+#
+sel1 <- which(tmp$win=="prd"    & tmp$yr<=2015) # manipulate up to 2015     # note
+tmp$win[sel1] <- "left"                                                     # the
+tmp$win.long[sel1] <- sub("prd", "left", tmp$win.long[sel1])
+sel1 <- which(tmp$win=="morena" & tmp$yr>=2015) # manipulate 2015 and after # overlap
+tmp$win[sel1] <- "left"                                                     # 2015 sum
+tmp$win.long[sel1] <- sub("morena", "left", tmp$win.long[sel1])
+#
+sel1 <- which(tmp$win.prior=="prd"    & tmp$yr<=2015) # manipulate up to 2015     # note
+tmp$win.prior[sel1] <- "left"                                                     # the
+tmp$win.long.prior[sel1] <- sub("prd", "left", tmp$win.long.prior[sel1])
+sel1 <- which(tmp$win.prior=="morena" & tmp$yr>=2015) # manipulate 2015 and after # overlap
+tmp$win.prior[sel1] <- "left"                                                     # the
+tmp$win.long.prior[sel1] <- sub("morena", "left", tmp$win.long.prior[sel1])
+## # debug
+## table(tmp$win, tmp$win.prior)
+## table(tmp$win, tmp$yr)
+## table(tmp$win.prior, tmp$yr)
+#
+# return to data
+inc[sel,] <- tmp
+#
+# END 2oct2020 change win==prd/morena to win=left to make data comparable to electoral histories 
+#
+# dichotomize
 inc$dpwon.prior <- NA # will receive info
 #
 sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
@@ -535,6 +568,12 @@ inc$dpwon.prior[sel] <- tmp # return to data after manipulation
 sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
 sel1 <- grep("morena",inc$win.long.prior[sel])
 sel2 <- grep("morena",inc$win.long[sel])
+tmp[intersect(sel1,sel2)] <- 1 # both
+inc$dpwon.prior[sel] <- tmp # return to data after manipulation
+# 
+sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
+sel1 <- grep("left",inc$win.long.prior[sel])
+sel2 <- grep("left",inc$win.long[sel])
 tmp[intersect(sel1,sel2)] <- 1 # both
 inc$dpwon.prior[sel] <- tmp # return to data after manipulation
 # 
@@ -937,6 +976,12 @@ tmp[intersect(sel0,sel1)] <- "prd"
 #
 tmp0 <- inc$win.prior[sel]
 tmp1 <- inc$win[sel]
+sel0 <- which(tmp0=="left")
+sel1 <- which(tmp1=="left")
+tmp[intersect(sel0,sel1)] <- "left"
+#
+tmp0 <- inc$win.prior[sel]
+tmp1 <- inc$win[sel]
 sel0 <- which(tmp0=="morena")
 sel1 <- which(tmp1=="morena")
 tmp[intersect(sel0,sel1)] <- "morena"
@@ -1336,6 +1381,9 @@ rm(v)
 
 # prepare object with pan pri left morena oth votes
 # 4ago2020: add pvem?
+
+NEED TO ADD left AND FILL W prd OR morena ACCORDINGLY?
+
 v5 <- vot # duplicate
 v5[1,]
 v5 <- within(v5, ord <- mun <- munn <- inegi <- ife <- status <- dy <- mo <- ncand <- dcoal <- ncoal <- win <- efec <- lisnom <- NULL) # drop cols
@@ -1408,12 +1456,22 @@ v5$dmajcoal <- 0 # will indicate major party coalitions
 #
 rm(tmp, tmp.orig)
 #
+# change prd/morena to left
+sel <- which(v5$yr<=2015)
+v5$l[sel] <- sub("prd","left",v5$l[sel])
+sel <- which(v5$yr>=2015)
+v5$l[sel] <- sub("morena","left",v5$l[sel])
+#
 # deal with major-party coalition below
 sel <- grep("(?=.*pan)(?=.*prd)", v5$l, perl = TRUE)
+v5$status[sel] <- "majors"
+sel <- grep("(?=.*pan)(?=.*left)", v5$l, perl = TRUE)
 v5$status[sel] <- "majors"
 sel <- grep("(?=.*pan)(?=.*pri)", v5$l, perl = TRUE)
 v5$status[sel] <- "majors"
 sel <- grep("(?=.*pri)(?=.*prd)", v5$l, perl = TRUE)
+v5$status[sel] <- "majors"
+sel <- grep("(?=.*pri)(?=.*left)", v5$l, perl = TRUE)
 v5$status[sel] <- "majors"
 #
 sel1 <- which(is.na(v5$status))
@@ -1424,6 +1482,11 @@ v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
 sel1 <- which(is.na(v5$status))
 sel <- grep("pri-|-pri|^pri$", v5$l[sel1])
 v5$pri[sel1][sel] <- v5$v[sel1][sel]
+v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+sel1 <- which(is.na(v5$status))
+sel <- grep("left-|-left|^left$", v5$l[sel1])
+v5$morena[sel1][sel] <- v5$v[sel1][sel]
 v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
 #
 sel1 <- which(is.na(v5$status))
@@ -1443,6 +1506,11 @@ v5$v[sel1] <- 0; v5$l[sel1] <- "0"; v5$status[sel1] <- "done"
 #
 # 3-majors coalition in mun split in thirds
 sel <- which(v5$status=="majors") 
+sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*left)", v5$l[sel], perl = TRUE) # 
+v5$pan[sel][sel1] <- v5$v[sel][sel1] / 3; v5$pri[sel][sel1] <- v5$v[sel][sel1] / 3; v5$prd[sel][sel1] <- v5$v[sel][sel1] / 3; v5$v[sel][sel1] <- 0; v5$l[sel][sel1] <- "0"; v5$status[sel][sel1] <- "done"
+v5$dmajcoal[sel][sel1] <- 1
+#
+sel <- which(v5$status=="majors") 
 sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", v5$l[sel], perl = TRUE) # 
 v5$pan[sel][sel1] <- v5$v[sel][sel1] / 3; v5$pri[sel][sel1] <- v5$v[sel][sel1] / 3; v5$prd[sel][sel1] <- v5$v[sel][sel1] / 3; v5$v[sel][sel1] <- 0; v5$l[sel][sel1] <- "0"; v5$status[sel][sel1] <- "done"
 v5$dmajcoal[sel][sel1] <- 1
@@ -1455,7 +1523,7 @@ v5$dmajcoal[sel][sel1] <- 1
 #
 # pri-prd to pri (chihuahua and guanajuato)
 sel <- which(v5$status=="majors") 
-sel1 <- grep("(?=.*pri)(?=.*prd)", v5$l[sel], perl = TRUE) # 
+sel1 <- grep("(?=.*pri)(?=.*left)", v5$l[sel], perl = TRUE) # 
 v5$pri[sel][sel1] <- v5$v[sel][sel1]; v5$v[sel][sel1] <- 0; v5$l[sel][sel1] <- "0"; v5$status[sel][sel1] <- "done"
 v5$dmajcoal[sel][sel1] <- 1
 #
@@ -1728,11 +1796,17 @@ inc$dtermlim[sel] <- 0
 
 # paste incumbent data into vot
 vot.dup <- vot
+colnames(vot)
+
 vot <- merge(x = vot, y = inc[,c("emm","race.current","dopenseat","dptyreel","dtermlim","win")], by = "emm", all.x = TRUE, all.y = FALSE)
-table(vot$win.x, vot$win.y)
-vot[1,]
-
-
+#
+## # verify that win in vot (win.x) and in inc (win.y) have no inconsistencies
+## table(vot$win.x, vot$win.y)
+## sel <- which(vot$win.y=="indep" & vot$win.x=="pt-morena-pes")
+## vot[sel,]
+#
+# keep inc's version only
+vot <- within(vot, {win <- win.y; win.x <- win.y <- NULL})
 
 # clean
 ls()
@@ -1897,23 +1971,9 @@ tmp$sdalt <- round(tmp$sdalt, 1)
 #summary(tmp$sdalt)
 #summary(tmp$wsdalt)
 
-## THIS CAN BE DROPPED
-## # merge into vot
-## vot$sdalt <- vot$meanalt <- vot$wsdalt <- vot$wmeanalt <- NA # open slot for new vars
-## for (i in 1:nrow(tmp)){
-##     #i <- 1 # debug
-##     sel <- which(vot$inegi %in% tmp$inegi[i])
-##     if (length(sel)>0){
-##         vot$wmeanalt[sel] <- tmp$wmeanalt[i]
-##         vot$wsdalt[sel]   <- tmp$wsdalt[i]
-##         vot$meanalt[sel] <- tmp$meanalt[i]
-##         vot$sdalt[sel]   <- tmp$sdalt[i]
-##     }
-## }
-
 # make discrete altitude variables for mapping exploration
 alt <- tmp
-rm(tmp,i,sel)
+rm(tmp,sel)
 
 # read sección-municipio equivalencias
 tmp <- read.csv("/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/equivSecc/tablaEquivalenciasSeccionalesDesde1994.csv", stringsAsFactors = FALSE)
@@ -2110,6 +2170,14 @@ estim.mod <- function(pty = "pan", y = 2005, ret.data = FALSE){
     # duplicate vot for analysis
     tmp <- vot
     #
+    # drop indetermined races
+    sel <- which(tmp$win %in% c("anulada","consejoMunic","litigio"))
+    tmp <- tmp[-sel,]
+    #
+    # change prd/morena to left in win
+    eric  x grep("win", colnames(tmp))
+    x
+
     if (pty == "pan"){
         tmp$vot <- tmp$pan
         tmp$res.pty <- tmp$res.pan
@@ -2217,7 +2285,7 @@ summary(left.lag05)
 library(stargazer)
 stargazer(pan.lag05, pri.lag05, left.lag05, align=TRUE, report = 'vc*s'
 #          , title = "Regression results"
-          , type = "latex"
+          , type = "text"
 #          , out = "tmp-tab.txt"
           , digits = 3
           , dep.var.labels = c("Residual")
@@ -2240,13 +2308,17 @@ stargazer(pan.lag05, pri.lag05, left.lag05, align=TRUE, report = 'vc*s'
 ## apsrtable(fit1, fit2)
 
 # some descriptives
+options(width = 90)
 tmp <- pan.dat05
-table(tmp$dpty, tmp$dopenseat)
+table(tmp$win, tmp$dptyreel, (1-tmp$dopenseat), useNA = "ifany")
+table(tmp$win, tmp$dptyreel, useNA = "ifany")
+colnames(tmp)
 tmp <- pri.dat05
 table(tmp$dpty, tmp$dopenseat)
 tmp <- left.dat05
-table(tmp$dpty, tmp$dopenseat)
-# colsum
+table(tmp$win, tmp$dptyreel)
+sel <- which(tmp$win=="morena" & tmp$dptyreel==0)
+tmp[sel[1],]
 table(tmp$dopenseat)
 
 ## need to present morena, prd, and left, need break pan-prd (which i've done elsewhere, win2)

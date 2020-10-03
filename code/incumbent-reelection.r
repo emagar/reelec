@@ -2223,23 +2223,23 @@ vot$dpostref <- as.numeric(vot$yr>=2018)
 # left vote is prd pre-2015, morena in 2015 and post
 vot <- within(vot, {
     left = prd
-    left[yr>=2015] = morena[yr>=2015]
+#    left[yr>=2015] = morena[yr>=2015]
     res.left = res.prd
-    res.left[yr>=2015] = res.morena[yr>=2015]
+#    res.left[yr>=2015] = res.morena[yr>=2015]
 })
 
 # elevation variance
 vot$varalt <- vot$sdalt
 vot$wvaralt <- vot$wsdalt
 
+
+
 ###################################
 ## function to estimate ols regs ##
 ###################################
 library(DataCombine) # easy lags with slide
 #
-form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon)"
-#
-estim.mod <- function(pty = "pan", y = 2005, ret.data = FALSE){
+estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     # duplicate vot for analysis
     tmp <- vot
     #
@@ -2264,6 +2264,7 @@ estim.mod <- function(pty = "pan", y = 2005, ret.data = FALSE){
     if (pty == "left"){
         tmp$vot <- tmp$left
         tmp$res.pty <- tmp$res.left
+        sel <- grep("left", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
         ## DROP sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1

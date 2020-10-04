@@ -1382,7 +1382,6 @@ rm(v)
 # prepare object with pan pri left morena oth votes
 # 4ago2020: add pvem?
 
-
 NEED TO ADD left AND FILL W prd OR morena ACCORDINGLY?
 
 v5 <- vot # duplicate
@@ -1586,30 +1585,31 @@ v5$dmajcoal[sel] <- 1
 tmp <- v5[v5$r==1,] # will receive consolidated data
 dim(tmp)
 
-
 for (i in 1:max(v5$n)){
     #i <- 1 # debug
     message(sprintf("loop %s of %s", i, max(v5$n)))
-    tmp2 <- v5[v5$n==i, c("pan","pri","prd","left","oth","dmajcoal")]
+    tmp2 <- v5[v5$n==i, c("pan","pri","prd","morena","oth","dmajcoal")]
     tmp2 <- colSums(tmp2)
-    tmp[tmp$n==i, c("pan","pri","prd","left","oth","dmajcoal")] <- tmp2 # plug colsolidated data
+    tmp[tmp$n==i, c("pan","pri","prd","morena","oth","dmajcoal")] <- tmp2 # plug colsolidated data
 }
 v5 <- tmp
-
-# debug inspect v5, all vs and ls should be 0
-table(v5$v, useNA = "always")
-#
-# clean, data in pan pri left prd oth
 v5$n <- v5$r <- v5$v <- v5$l <- v5$status <- NULL
 rm(tmp,tmp2)
 # return to vot
-vot <- cbind(vot, v5[,c("pan","pri","prd","left","oth","dmajcoal")])
+vot <- cbind(vot, v5[,c("pan","pri","prd","morena","oth","dmajcoal")])
 # keep 123 places, drop rest
 vot <- within(vot, v04 <- v05 <- v06 <- v07 <- v08 <- v09 <- v10 <- v11 <- v12 <- v13 <- v14 <- NULL)
 vot <- within(vot, l04 <- l05 <- l06 <- l07 <- l08 <- l09 <- l10 <- l11 <- l12 <- l13 <- l14 <- NULL)
-# inspect
-vot[1,]
-#
+
+## # debug
+## save.image(file = "tmp.RData")
+## #
+## rm(list = ls()) # clean
+## dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+## gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
+## setwd("/home/eric/Desktop/MXelsCalendGovt/reelec/data/")
+## load(file = "tmp.RData")
+
 # clean
 rm(i,sel,sel1,v5)
 
@@ -1739,11 +1739,10 @@ sel <- which(vot$yr<2015)
 vot$res.morena[sel] <- NA
 
 # inspect vot
-options(width = 199)
+options(width = 200)
 vot[2000,]
 dim(vot)
 table(is.na(vot$vhat.pri), vot$yr)
-# 3oct2020 no veo por qué faltan éstos... ando checho, revisar
 sel <- which(is.na(vot$vhat.pri) & vot$yr==2007)
 vot[sel,]
 eric  x
@@ -1824,7 +1823,7 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
 
 load(paste(wd,"mun-reelection.RData",sep=""))
-options(width = 199)
+options(width = 130)
 
 #################################
 ## concurrent election dummies ##
@@ -2092,7 +2091,7 @@ censo <- merge(x = censo, y = alt, by = "inegi", all = TRUE)
 # script mapa-municipios.r draws wsd(alt) etc
 
 # merge censo into vot
-options(width = 199)
+options(width = 175)
 sel <- which(colnames(censo) %in% c("ife","edon")) # drop towards merge
 vot <- merge(x = vot, y = censo[,-sel], by = "inegi", all.x = TRUE, all.y = FALSE)
 rm(censo, censo.sec, i, sel, tmp, tmp.dat, tmp.file, tmp.dir)
@@ -2151,23 +2150,23 @@ vot$dpostref <- as.numeric(vot$yr>=2018)
 # left vote is prd pre-2015, morena in 2015 and post
 vot <- within(vot, {
     left = prd
-#    left[yr>=2015] = morena[yr>=2015]
+    left[yr>=2015] = morena[yr>=2015]
     res.left = res.prd
-#    res.left[yr>=2015] = res.morena[yr>=2015]
+    res.left[yr>=2015] = res.morena[yr>=2015]
 })
 
 # elevation variance
 vot$varalt <- vot$sdalt
 vot$wvaralt <- vot$wsdalt
 
-
-
 ###################################
 ## function to estimate ols regs ##
 ###################################
 library(DataCombine) # easy lags with slide
 #
-estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon)"
+#
+estim.mod <- function(pty = "pan", y = 2005, ret.data = FALSE){
     # duplicate vot for analysis
     tmp <- vot
     #
@@ -2175,10 +2174,10 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     sel <- which(tmp$win %in% c("anulada","consejoMunic","litigio"))
     tmp <- tmp[-sel,]
     #
-    ## # change prd/morena to left in win ## DONE IN OBJECTS VOT AND INC
-    ## grep("win", colnames(tmp))
-    ## table(tmp$win)
-    #
+    # change prd/morena to left in win
+    eric  x grep("win", colnames(tmp))
+    x
+
     if (pty == "pan"){
         tmp$vot <- tmp$pan
         tmp$res.pty <- tmp$res.pan
@@ -2192,11 +2191,10 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     if (pty == "left"){
         tmp$vot <- tmp$left
         tmp$res.pty <- tmp$res.left
-        sel <- grep("left", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
-        ## DROP sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
-        ## DROP tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
-        ## DROP sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1
-        ## DROP tmp$dpty[tmp$yr>=2015] <- tmp$dtmp[tmp$yr>=2015]; tmp$dtmp <- NULL # morena since 2015
+        sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
+        tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
+        sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1
+        tmp$dpty[tmp$yr>=2015] <- tmp$dtmp[tmp$yr>=2015]; tmp$dtmp <- NULL # morena since 2015
     }
     #
     # incumbent x pty dummies (complement is open seat)

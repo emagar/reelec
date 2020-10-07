@@ -432,36 +432,6 @@ rm(cal)
 ## dummy party reelected  ##
 ############################
 #
-# 2oct2020 need to change win==prd/morena to win=left to make data comparable to electoral histories 
-inc.dupli <- inc # duplicate for debug
-#inc <- inc.dupli # restore
-sel1 <- grep("prd|morena", inc$win)
-sel2 <- grep("prd|morena", inc$win.prior)
-sel <- unique(union(sel1, sel2))
-tmp <- inc[sel,]
-#
-sel1 <- which(tmp$win=="prd"    & tmp$yr<=2015) # manipulate up to 2015     # note
-tmp$win[sel1] <- "left"                                                     # the
-tmp$win.long[sel1] <- sub("prd", "left", tmp$win.long[sel1])
-sel1 <- which(tmp$win=="morena" & tmp$yr>=2015) # manipulate 2015 and after # overlap
-tmp$win[sel1] <- "left"                                                     # 2015 sum
-tmp$win.long[sel1] <- sub("morena", "left", tmp$win.long[sel1])
-#
-sel1 <- which(tmp$win.prior=="prd"    & tmp$yr<=2015) # manipulate up to 2015     # note
-tmp$win.prior[sel1] <- "left"                                                     # the
-tmp$win.long.prior[sel1] <- sub("prd", "left", tmp$win.long.prior[sel1])
-sel1 <- which(tmp$win.prior=="morena" & tmp$yr>=2015) # manipulate 2015 and after # overlap
-tmp$win.prior[sel1] <- "left"                                                     # the
-tmp$win.long.prior[sel1] <- sub("morena", "left", tmp$win.long.prior[sel1])
-## # debug
-## table(tmp$win, tmp$win.prior)
-## table(tmp$win, tmp$yr)
-## table(tmp$win.prior, tmp$yr)
-#
-# return to data
-inc[sel,] <- tmp
-#
-# END 2oct2020 change win==prd/morena to win=left to make data comparable to electoral histories 
 #
 # dichotomize
 inc$dpwon.prior <- NA # will receive info
@@ -571,11 +541,11 @@ sel2 <- grep("morena",inc$win.long[sel])
 tmp[intersect(sel1,sel2)] <- 1 # both
 inc$dpwon.prior[sel] <- tmp # return to data after manipulation
 # 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("left",inc$win.long.prior[sel])
-sel2 <- grep("left",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
+## sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
+## sel1 <- grep("left",inc$win.long.prior[sel])
+## sel2 <- grep("left",inc$win.long[sel])
+## tmp[intersect(sel1,sel2)] <- 1 # both
+## inc$dpwon.prior[sel] <- tmp # return to data after manipulation
 # 
 sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
 sel1 <- grep("npp",inc$win.long.prior[sel])
@@ -923,7 +893,7 @@ inc$dpwon.prior[sel] <- NA
 #
 # unlag
 library(DataCombine) # easy lags with slide
-inc <- inc[order(inc$ife),] # verify sorted before lags
+inc <- inc[order(inc$ife),] # verify sorted before lags ## 6oct2020 ojo: should it be by inc$emm??
 inc <- slide(inc, Var = "dpwon.prior", NewVar = "dpwon", GroupVar = "ife", slideBy = +1) # lead by one period
 # these lag NAs can be filled with current info
 sel <- which(is.na(inc$dpwon) & inc$race.after=="uyc")
@@ -974,12 +944,12 @@ sel0 <- which(tmp0=="prd")
 sel1 <- which(tmp1=="prd")
 tmp[intersect(sel0,sel1)] <- "prd"
 #
-tmp0 <- inc$win.prior[sel]
-tmp1 <- inc$win[sel]
-sel0 <- which(tmp0=="left")
-sel1 <- which(tmp1=="left")
-tmp[intersect(sel0,sel1)] <- "left"
-#
+## tmp0 <- inc$win.prior[sel]
+## tmp1 <- inc$win[sel]
+## sel0 <- which(tmp0=="left")
+## sel1 <- which(tmp1=="left")
+## tmp[intersect(sel0,sel1)] <- "left"
+## #
 tmp0 <- inc$win.prior[sel]
 tmp1 <- inc$win[sel]
 sel0 <- which(tmp0=="morena")
@@ -997,10 +967,12 @@ inc <- inc[order(inc$ife),] # verify sorted before lags
 inc <- slide(inc, Var = "returning.p.prior", NewVar = "returning.p", GroupVar = "ife", slideBy = +1) # lead by one period
 
 # clean: drop lags
-inc <- inc[,-grep("prior", colnames(inc))]
+#inc <- inc[,-grep("prior", colnames(inc))]
+inc$returning.p.prior <- NULL
+inc$win.long.prior <- NULL
 rm(tmp,tmp0,tmp1,tmp2,i,sel,sel0,sel1,sel2,sel3,sel4,min.cal)
 inc$fuente <- NULL
-head(inc)
+#inc[1,]
 
 
 ## ######################################
@@ -1381,18 +1353,15 @@ rm(v)
 
 # prepare object with pan pri left morena oth votes
 # 4ago2020: add pvem?
-
-NEED TO ADD left AND FILL W prd OR morena ACCORDINGLY?
-
 v5 <- vot # duplicate
 v5[1,]
 v5 <- within(v5, ord <- mun <- munn <- inegi <- ife <- status <- dy <- mo <- ncand <- dcoal <- ncoal <- win <- efec <- lisnom <- NULL) # drop cols
 v5$status <- NA
 # narrow v01..v14 into long vector
-v5$n <- 1:nrow(v5)
-v5$r <- 1
-v5$v <- v5$v01
-v5$l <- v5$l01
+v5$n <- 1:nrow(v5) # obs no
+v5$r <- 1          # round
+v5$v <- v5$v01     # vote
+v5$l <- v5$l01     # label
 #
 tmp.orig <- v5 # duplicate
 tmp <- tmp.orig
@@ -1456,23 +1425,23 @@ v5$dmajcoal <- 0 # will indicate major party coalitions
 #
 rm(tmp, tmp.orig)
 #
-# change prd/morena to left
-sel <- which(v5$yr<=2015)
-v5$l[sel] <- sub("prd","left",v5$l[sel])
-sel <- which(v5$yr>=2015)
-v5$l[sel] <- sub("morena","left",v5$l[sel])
+## # change prd/morena to left
+## sel <- which(v5$yr<=2015)
+## v5$l[sel] <- sub("prd","left",v5$l[sel])
+## sel <- which(v5$yr>=2015)
+## v5$l[sel] <- sub("morena","left",v5$l[sel])
 #
 # deal with major-party coalition below
 sel <- grep("(?=.*pan)(?=.*prd)", v5$l, perl = TRUE)
 v5$status[sel] <- "majors"
-sel <- grep("(?=.*pan)(?=.*left)", v5$l, perl = TRUE)
-v5$status[sel] <- "majors"
+## sel <- grep("(?=.*pan)(?=.*left)", v5$l, perl = TRUE)
+## v5$status[sel] <- "majors"
 sel <- grep("(?=.*pan)(?=.*pri)", v5$l, perl = TRUE)
 v5$status[sel] <- "majors"
 sel <- grep("(?=.*pri)(?=.*prd)", v5$l, perl = TRUE)
 v5$status[sel] <- "majors"
-sel <- grep("(?=.*pri)(?=.*left)", v5$l, perl = TRUE)
-v5$status[sel] <- "majors"
+## sel <- grep("(?=.*pri)(?=.*left)", v5$l, perl = TRUE)
+## v5$status[sel] <- "majors"
 #
 sel1 <- which(is.na(v5$status))
 sel <- grep("pan-|-pan|^pan$", v5$l[sel1])
@@ -1484,10 +1453,10 @@ sel <- grep("pri-|-pri|^pri$", v5$l[sel1])
 v5$pri[sel1][sel] <- v5$v[sel1][sel]
 v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
 #
-sel1 <- which(is.na(v5$status))
-sel <- grep("left-|-left|^left$", v5$l[sel1])
-v5$morena[sel1][sel] <- v5$v[sel1][sel]
-v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+## sel1 <- which(is.na(v5$status))
+## sel <- grep("left-|-left|^left$", v5$l[sel1])
+## v5$morena[sel1][sel] <- v5$v[sel1][sel]
+## v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
 #
 sel1 <- which(is.na(v5$status))
 sel <- grep("prd-|-prd|^prd$", v5$l[sel1])
@@ -1506,7 +1475,7 @@ v5$v[sel1] <- 0; v5$l[sel1] <- "0"; v5$status[sel1] <- "done"
 #
 # 3-majors coalition in mun split in thirds
 sel <- which(v5$status=="majors") 
-sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*left)", v5$l[sel], perl = TRUE) # 
+sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", v5$l[sel], perl = TRUE) # 
 v5$pan[sel][sel1] <- v5$v[sel][sel1] / 3; v5$pri[sel][sel1] <- v5$v[sel][sel1] / 3; v5$prd[sel][sel1] <- v5$v[sel][sel1] / 3; v5$v[sel][sel1] <- 0; v5$l[sel][sel1] <- "0"; v5$status[sel][sel1] <- "done"
 v5$dmajcoal[sel][sel1] <- 1
 #
@@ -1523,7 +1492,7 @@ v5$dmajcoal[sel][sel1] <- 1
 #
 # pri-prd to pri (chihuahua and guanajuato)
 sel <- which(v5$status=="majors") 
-sel1 <- grep("(?=.*pri)(?=.*left)", v5$l[sel], perl = TRUE) # 
+sel1 <- grep("(?=.*pri)(?=.*prd)", v5$l[sel], perl = TRUE) # 
 v5$pri[sel][sel1] <- v5$v[sel][sel1]; v5$v[sel][sel1] <- 0; v5$l[sel][sel1] <- "0"; v5$status[sel][sel1] <- "done"
 v5$dmajcoal[sel][sel1] <- 1
 #
@@ -1593,6 +1562,12 @@ for (i in 1:max(v5$n)){
     tmp[tmp$n==i, c("pan","pri","prd","morena","oth","dmajcoal")] <- tmp2 # plug colsolidated data
 }
 v5 <- tmp
+
+# debug inspect v5, all vs and ls should be 0
+table(v5$v, useNA = "always")
+
+#
+# clean, data in pan pri morena prd oth
 v5$n <- v5$r <- v5$v <- v5$l <- v5$status <- NULL
 rm(tmp,tmp2)
 # return to vot
@@ -1600,16 +1575,9 @@ vot <- cbind(vot, v5[,c("pan","pri","prd","morena","oth","dmajcoal")])
 # keep 123 places, drop rest
 vot <- within(vot, v04 <- v05 <- v06 <- v07 <- v08 <- v09 <- v10 <- v11 <- v12 <- v13 <- v14 <- NULL)
 vot <- within(vot, l04 <- l05 <- l06 <- l07 <- l08 <- l09 <- l10 <- l11 <- l12 <- l13 <- l14 <- NULL)
-
-## # debug
-## save.image(file = "tmp.RData")
-## #
-## rm(list = ls()) # clean
-## dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-## gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
-## setwd("/home/eric/Desktop/MXelsCalendGovt/reelec/data/")
-## load(file = "tmp.RData")
-
+# inspect
+vot[1,]
+#
 # clean
 rm(i,sel,sel1,v5)
 
@@ -1625,6 +1593,7 @@ vot$d.pan <- vot$d.pri  <- vot$d.left <- NA # open slots
 
 # save a copy
 save.image(paste(wd,"tmp.RData",sep=""))
+
 # load image
 rm(list = ls())
 dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
@@ -1739,10 +1708,11 @@ sel <- which(vot$yr<2015)
 vot$res.morena[sel] <- NA
 
 # inspect vot
-options(width = 200)
+options(width = 199)
 vot[2000,]
 dim(vot)
 table(is.na(vot$vhat.pri), vot$yr)
+# 3oct2020 no veo por qué faltan éstos... ando checho, revisar
 sel <- which(is.na(vot$vhat.pri) & vot$yr==2007)
 vot[sel,]
 eric  x
@@ -1757,7 +1727,29 @@ eric  x
 ## ################################################### ##
 #########################################################
 
+# change prd/morena for left before/after 2015
+# rule is as follows:
+# all morena mayors are left
+# all prd mayors up to 2017 are left
 
+sel <- grep("morena", inc$win)
+inc$win[sel] <- "left"
+sel <- grep("prd", inc$win)
+sel1 <- which(inc$yr[sel]<=2017)
+inc$win[sel][sel1] <- "left"
+#
+sel <- grep("morena", inc$win.prior)
+inc$win.prior[sel] <- "left"
+sel <- grep("prd", inc$win.prior)
+sel1 <- which(inc$yr[sel]<=2017)
+inc$win.prior[sel][sel1] <- "left"
+#
+table(inc$win, inc$win.prior) # debug
+#
+# re-compute drace.after with left recategorization; compute dincran.after, dincwon.after, and dptywon.after; lag for .prior
+AQUI ANDO CHAMBIANDO 6oct2020
+inc[1,]
+x
 
 # plug incumbent data
 # was there an incumbent on the ballot? did party reelect?
@@ -1768,6 +1760,7 @@ inc$round <- as.numeric(inc$round)
 # lag race after
 inc <- inc[order(inc$emm),] # sort
 inc$tmp <- as.numeric(sub(pattern = "[\\w\\D-]+[0-9]{2}[.]([0-9]{3})", replacement = "\\1", inc$emm, perl = TRUE)) # munn from emm
+table(inc$tmp, useNA = "always")
 for (e in 1:32){
     #e <- 1 # debug
     message(sprintf("loop %s of %s", e, 32))
@@ -1780,6 +1773,17 @@ for (e in 1:32){
         inc$race.current[sel][sel1][-1] <- inc$race.after[sel][sel1][-last]
     }
 }
+
+
+library(DataCombine) # easy lags with slide
+inc <- slide(data = inc, TimeVar = "yr", GroupVar = "munn", Var = "race.after", NewVar = "tmp", slideBy = -1) # lag by one period
+inc[100,]
+table(inc$tmp, inc$race.current, useNA = "always")
+
+CHANGE WIN WIN.PRIOR TO LEFT BEFORE LOOP
+CHANGE RACE.AFTER ACCORDINGLY
+THEN LAG...
+
 inc <- inc[order(inc$edon, inc$tmp, inc$round),] # re-sort
 inc$tmp <- NULL
 #
@@ -1823,7 +1827,7 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
 
 load(paste(wd,"mun-reelection.RData",sep=""))
-options(width = 130)
+options(width = 199)
 
 #################################
 ## concurrent election dummies ##
@@ -2091,7 +2095,7 @@ censo <- merge(x = censo, y = alt, by = "inegi", all = TRUE)
 # script mapa-municipios.r draws wsd(alt) etc
 
 # merge censo into vot
-options(width = 175)
+options(width = 199)
 sel <- which(colnames(censo) %in% c("ife","edon")) # drop towards merge
 vot <- merge(x = vot, y = censo[,-sel], by = "inegi", all.x = TRUE, all.y = FALSE)
 rm(censo, censo.sec, i, sel, tmp, tmp.dat, tmp.file, tmp.dir)
@@ -2150,23 +2154,23 @@ vot$dpostref <- as.numeric(vot$yr>=2018)
 # left vote is prd pre-2015, morena in 2015 and post
 vot <- within(vot, {
     left = prd
-    left[yr>=2015] = morena[yr>=2015]
+#    left[yr>=2015] = morena[yr>=2015]
     res.left = res.prd
-    res.left[yr>=2015] = res.morena[yr>=2015]
+#    res.left[yr>=2015] = res.morena[yr>=2015]
 })
 
 # elevation variance
 vot$varalt <- vot$sdalt
 vot$wvaralt <- vot$wsdalt
 
+
+
 ###################################
 ## function to estimate ols regs ##
 ###################################
 library(DataCombine) # easy lags with slide
 #
-form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon)"
-#
-estim.mod <- function(pty = "pan", y = 2005, ret.data = FALSE){
+estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     # duplicate vot for analysis
     tmp <- vot
     #
@@ -2174,10 +2178,10 @@ estim.mod <- function(pty = "pan", y = 2005, ret.data = FALSE){
     sel <- which(tmp$win %in% c("anulada","consejoMunic","litigio"))
     tmp <- tmp[-sel,]
     #
-    # change prd/morena to left in win
-    eric  x grep("win", colnames(tmp))
-    x
-
+    ## # change prd/morena to left in win ## DONE IN OBJECTS VOT AND INC
+    ## grep("win", colnames(tmp))
+    ## table(tmp$win)
+    #
     if (pty == "pan"){
         tmp$vot <- tmp$pan
         tmp$res.pty <- tmp$res.pan
@@ -2191,10 +2195,11 @@ estim.mod <- function(pty = "pan", y = 2005, ret.data = FALSE){
     if (pty == "left"){
         tmp$vot <- tmp$left
         tmp$res.pty <- tmp$res.left
-        sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
-        tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
-        sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1
-        tmp$dpty[tmp$yr>=2015] <- tmp$dtmp[tmp$yr>=2015]; tmp$dtmp <- NULL # morena since 2015
+        sel <- grep("left", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
+        ## DROP sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
+        ## DROP tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
+        ## DROP sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1
+        ## DROP tmp$dpty[tmp$yr>=2015] <- tmp$dtmp[tmp$yr>=2015]; tmp$dtmp <- NULL # morena since 2015
     }
     #
     # incumbent x pty dummies (complement is open seat)

@@ -70,10 +70,6 @@ inc$dpwon.prior <- NULL # drop redundant
 # remaining NAs are all start-of-series in early 1990s
 sel <- which(is.na(inc$dinptywon.current)==TRUE) # 
 table(sub("^[a-z]+-([0-9]{2})[.0-9]+$", "\\1", inc$emm[sel])) # cycle they occur in
-
-
-colnames(inc)
-
 #
 #drop all after versions, unneeded for analysis of current period
 inc$race.after         <- NULL 
@@ -91,25 +87,6 @@ inc <- inc[,sel]
 
 
 
-
-# sort columns
-c("emm", "ord","mun","yr","dextra","dy","mo","edon","munn", "ife","inegi",
-  "win","incumbent","race.after",
-  "runnerup","pty2nd","mg","note", "drepe","drepg","who","check",
-  "win.long",
-  "race.prior","win.prior","dpwon.prior",
-  "dpwon", "returning.p",
-  "win.left",
-  "race.after.left","dincran.after","dincwon.after","dptywon.after","dptywon.after.left",
-  "race.prior.left","dincwon.prior", "dincran.prior","dptywon.prior","dptywon.prior.left")
-
-
-colnames(inc)
-table(inc$dptywon.after, inc$dptywon.after.left)
-
-
-
-NEED TO UNLAG AFTERWARDS...
 
 # unlag
 library(DataCombine) # easy lags with slide

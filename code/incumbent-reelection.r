@@ -1698,7 +1698,7 @@ vot[sel,] <- tmp # return to data
 #
 # clean
 rm(tmp,sel,his)
-
+#
 # left residuals: use prd-vhat.left and morena-vhat.left (pan-prd went to pan in 2017 and 2018)
 vot$res.pan <- vot$pan - vot$vhat.pan
 vot$res.pri <- vot$pri - vot$vhat.pri
@@ -1708,7 +1708,6 @@ sel <- which(vot$yr<2015)
 vot$res.morena[sel] <- NA
 
 # inspect vot
-options(width = 199)
 vot[2000,]
 dim(vot)
 table(is.na(vot$vhat.pri), vot$yr)
@@ -1731,31 +1730,30 @@ eric  x
 # rule is as follows:
 # all morena mayors are left
 # all prd mayors up to 2017 are left
-
+inc$win.left <- inc$win # duplicate
 sel <- grep("morena", inc$win)
-inc$win[sel] <- "left"
+inc$win.left[sel] <- "left"
 sel <- grep("prd", inc$win)
 sel1 <- which(inc$yr[sel]<=2017)
-inc$win[sel][sel1] <- "left"
+inc$win.left[sel][sel1] <- "left"
 #
-sel <- grep("morena", inc$win.prior)
-inc$win.prior[sel] <- "left"
-sel <- grep("prd", inc$win.prior)
-sel1 <- which(inc$yr[sel]<=2017)
-inc$win.prior[sel][sel1] <- "left"
-#
-table(inc$win, inc$win.prior) # debug
+## DEPRECATED
+## inc$win.left.prior <- inc$win.prior # duplicate
+## sel <- grep("morena", inc$win.prior)
+## inc$win.left.prior[sel] <- "left"
+## sel <- grep("prd", inc$win.prior)
+## sel1 <- which(inc$yr[sel]<=2017)
+## inc$win.left.prior[sel][sel1] <- "left"
 #
 # re-compute race.after with left recategorization; compute dincran.after, dincwon.after, and dptywon.after; lag for .current
 #inc.dupli <- inc # duplicate for debug
 #inc <- inc.dupli # restore
+# 
+# win.left, win.after.left, race.after.left (overestimates reelection cases, just like race.after misses some where perredista went to morena) 
 # lag win
 library(DataCombine) # easy lags with slide
 inc <- inc[order(inc$ife, inc$emm),] # verify sorted before lags
-inc <- slide(inc, Var = "win", NewVar = "win.after", GroupVar = "ife", slideBy = +1) # lead by one period
-# win.left, win.after.left, race.after.left (overestimates reelection cases, just like race.after misses some where perredista went to morena) 
-inc$win.left <- inc$win
-inc$win.after.left <- inc$win.after
+inc <- slide(inc, Var = "win.left", NewVar = "win.after.left", GroupVar = "ife", slideBy = +1) # lead by one period
 inc$race.after.left <- inc$race.after
 # recode left cases only, remaining prds were take care in excel and appear in race.after
 sel1 <- grep("left", inc$win.left)
@@ -1871,33 +1869,32 @@ inc$round <- as.numeric(inc$round)
 ## #
 ## inc$dopenseat <- 1
 ## inc$dptyreel <- 0
-## inc$dtermlim <- 1
 ## table(inc$race.current)
 ## sel <- grep("Beaten|Reelected", inc$race.current)
 ## inc$dopenseat[sel] <- 0
 ## sel <- grep("Reelected|won", inc$race.current)
 ## inc$dptyreel[sel] <- 1
-## sel <- grep("^(?!Term-lim).*$", inc$race.current, perl = TRUE)
-## inc$dtermlim[sel] <- 0
+inc$dtermlim <- 1
+sel <- grep("^(?!Term-lim).*$", inc$race.current, perl = TRUE)
+inc$dtermlim[sel] <- 0
 
 # paste incumbent data into vot
-vot.dup <- vot
-colnames(vot)
-
-vot <- merge(x = vot, y = inc[,c("emm","race.current","dopenseat","dptyreel","dtermlim","win")], by = "emm", all.x = TRUE, all.y = FALSE)
+vot.dup <- vot # duplicate for debug
+#sel.c <- which(colnames(inc) %in% c("emm", "race.current", "dopenseat", "dptyreel", "dtermlim", "win"))
+#vot <- merge(x = vot, y = inc[,sel.c], by = "emm", all.x = TRUE, all.y = FALSE)
+sel.c <- which(colnames(inc) %in% c("emm", "race.current", "race.current.left", "dincran.current", "dinptywon.current", "dtermlim", "win.current", "win.current.left"))
+vot <- merge(x = vot, y = inc[, sel.c], by = "emm", all.x = TRUE, all.y = FALSE)
 #
-## # verify that win in vot (win.x) and in inc (win.y) have no inconsistencies
-## table(vot$win.x, vot$win.y)
-## sel <- which(vot$win.y=="indep" & vot$win.x=="pt-morena-pes")
+## # verify that win in vot (win) and in inc (win.current) have no inconsistencies
+table(vot$win, vot$win.current)
+## sel <- which(vot$win.current=="indep" & vot$win=="pt-morena-pes")
 ## vot[sel,]
 #
 # keep inc's version only
-vot <- within(vot, {win <- win.y; win.x <- win.y <- NULL})
+vot <- within(vot, {win <- win.current; win.current <- NULL; win.left <- win.current.left; win.current.left <- NULL})
 
 # clean
-ls()
-rm(e,i,last,sel,sel1)
-rm(inc) # drop to avoid confusion, useful data has been merged into vot
+rm(sel,sel1,sel2,sel.c,tmp)
 
 # save a copy
 save.image(paste(wd,"mun-reelection.RData",sep=""))
@@ -1909,7 +1906,9 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
 
 load(paste(wd,"mun-reelection.RData",sep=""))
-options(width = 199)
+options(width = 130)
+rm(vot.dup)
+rm(inc) # drop to avoid confusion, useful data has been merged into vot
 
 #################################
 ## concurrent election dummies ##
@@ -2177,20 +2176,19 @@ censo <- merge(x = censo, y = alt, by = "inegi", all = TRUE)
 # script mapa-municipios.r draws wsd(alt) etc
 
 # merge censo into vot
-options(width = 199)
 sel <- which(colnames(censo) %in% c("ife","edon")) # drop towards merge
 vot <- merge(x = vot, y = censo[,-sel], by = "inegi", all.x = TRUE, all.y = FALSE)
 rm(censo, censo.sec, i, sel, tmp, tmp.dat, tmp.file, tmp.dir)
 
 # need dipfed and gub votes to interact with concurrence, preferably at mun level, else at state
---> get edo-level first while mun-level available
+ojo --> get edo-level first while mun-level available
 
 # compute winner's margin
 vot$mg <- round(vot$v01 - vot$v02, 4)
 vot$round <- sub(pattern = "[\\w\\D-]+([0-9]{2})[.][0-9]{3}", replacement = "\\1", vot$emm, perl = TRUE)
 vot$round <- as.numeric(vot$round)
-# dincumbent
-vot$dincumbent <- 1 - vot$dopenseat
+## DEPRECATED # dincumbent
+## DEPRECATED vot$dincumbent <- 1 - vot$dopenseat
 
 # capital municipalities
 sel <- which(vot$ife  %in%  c( 1001,
@@ -2242,7 +2240,7 @@ vot <- within(vot, {
 })
 
 # elevation variance
-vot$varalt <- vot$sdalt
+vot$varalt <- vot$sdalt    # olvidé el cuadrado?
 vot$wvaralt <- vot$wsdalt
 
 
@@ -2277,7 +2275,7 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     if (pty == "left"){
         tmp$vot <- tmp$left
         tmp$res.pty <- tmp$res.left
-        sel <- grep("left", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
+        sel <- grep("left", tmp$win.left); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
         ## DROP sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1
@@ -2285,10 +2283,10 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     }
     #
     # incumbent x pty dummies (complement is open seat)
-    tmp$dptyinc  <-      tmp$dpty  * (1 - tmp$dopenseat)
-    tmp$dothinc  <- (1 - tmp$dpty) * (1 - tmp$dopenseat)
-    tmp$dptyopen <-      tmp$dpty  *      tmp$dopenseat
-    tmp$dothopen <- (1-  tmp$dpty) *      tmp$dopenseat # drop to avoid dummy trap
+    tmp$dptyinc  <-      tmp$dpty  *      tmp$dincran.current #(1 - tmp$dopenseat)
+    tmp$dothinc  <- (1 - tmp$dpty) *      tmp$dincran.current
+    tmp$dptyopen <-      tmp$dpty  * (1 - tmp$dincran.current)
+    tmp$dothopen <- (1-  tmp$dpty) * (1 - tmp$dincran.current) # drop to avoid dummy trap
     #
     # manipulate prd/morena govpty for left
     sel <- which( (tmp$govpty.lag=="prd" & tmp$yr<=2015) | (tmp$govpty.lag=="morena" & tmp$yr>2015) )
@@ -2395,18 +2393,34 @@ stargazer(pan.lag05, pri.lag05, left.lag05, align=TRUE, report = 'vc*s'
 ## apsrtable(fit1, fit2)
 
 # some descriptives
-options(width = 90)
+#options(width = 90)
 tmp <- pan.dat05
-table(tmp$win, tmp$dptyreel, (1-tmp$dopenseat), useNA = "ifany")
-table(tmp$win, tmp$dptyreel, useNA = "ifany")
+colnames(tmp)
+
+# prior win for xtab
+library(DataCombine) # easy lags with slide
+tmp <- tmp[order(tmp$emm),] # check sorted for lags
+tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "inegi", Var = "win", NewVar = "win.prior",    slideBy = -1) # lag by one period
+tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "inegi", Var = "win.left", NewVar = "win.prior.left",    slideBy = -1) # lag by one period
+
+
+table(tmp$win.prior, tmp$dinptywon.current, tmp$dincran.current)
+table(tmp$win.prior.left, tmp$dinptywon.current, tmp$dincran.current)
 colnames(tmp)
 tmp <- pri.dat05
-table(tmp$dpty, tmp$dopenseat)
+table(tmp$dpty, (1 - tmp$dincran.current)
 tmp <- left.dat05
-table(tmp$win, tmp$dptyreel)
-sel <- which(tmp$win=="morena" & tmp$dptyreel==0)
+
+# debug
+table(tmp$dptyopen)
+sel <- which(is.na(tmp$dptyinc))
+tmp$emm[sel]
+x
+
+table(tmp$win, tmp$dinptywon.current)
+sel <- which(tmp$win=="morena" & tmp$dinptywon.current==0)
 tmp[sel[1],]
-table(tmp$dopenseat)
+table(tmp$dincran.current)
 
 ## need to present morena, prd, and left, need break pan-prd (which i've done elsewhere, win2)
 ##         inc open

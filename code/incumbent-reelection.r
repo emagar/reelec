@@ -205,6 +205,9 @@ sel <- grep("drop-obs", inc$race.after, ignore.case = TRUE)
 if (length(sel)>0) inc <- inc[-sel,]
 sel <- grep("uyc", inc$win, ignore.case = TRUE)
 if (length(sel)>0) inc <- inc[-sel,]
+# mark election before went uyc as p-lost
+sel <- grep("uyc", inc$race.after, ignore.case = TRUE)
+inc$race.after[sel] <- "Term-limited-p-lost"
 
 # 31jul2020: NEED TO DEAL WITH WIN.PRIOR IN NEW MUNICS... looked at win in parent municipio and used it 
 inc$win.prior[inc$emm=="ags-08.010"] <- inc$win.long.prior[inc$emm=="ags-08.010"] <- "pri"
@@ -1777,6 +1780,12 @@ inc$dinptywon.after[sel] <- 1
 inc$dinptywon.after.left <- 0
 sel <- grep("p-won",inc$race.after.left)
 inc$dinptywon.after.left[sel] <- 1
+#
+# code dtermlim
+inc$dtermlim <- 1
+sel <- grep("^(?!Term-lim).*$", inc$race.after, perl = TRUE)
+inc$dtermlim[sel] <- 0
+#
 # lag to get current versions
 inc <- inc[order(inc$ife, inc$emm),] # verify sorted before lags
 inc <- slide(inc, Var = "race.after", NewVar = "race.current", GroupVar = "ife", slideBy = -1) # lag by one period
@@ -1811,22 +1820,23 @@ sel <- which(inc$dpwon.prior==1 & is.na(inc$dinptywon.current)==TRUE) # new muni
 inc$dinptywon.current[sel] <- 1                                       # new municipalities
 table(inc$dinptywon.current, inc$dpwon.prior, useNA = "always")
 inc$dpwon.prior <- NULL # drop redundant
+inc$dpwon <- NULL       # drop redundant, it's dinptywon.after with more NAs and some inconsistencies
 # remaining NAs are all start-of-series in early 1990s
 sel <- which(is.na(inc$dinptywon.current)==TRUE) # 
 table(sub("^[a-z]+-([0-9]{2})[.0-9]+$", "\\1", inc$emm[sel])) # cycle they occur in
 #
-#drop all after versions, unneeded for analysis of current period
-inc$race.after         <- NULL 
-inc$race.after.left    <- NULL
+#drop after versions, unneeded for analysis of current period
+##inc$race.after           <- NULL 
+##inc$race.after.left      <- NULL
 inc$dinptywon.after.left <- NULL
-inc$dincran.after      <- NULL
-inc$dincwon.after      <- NULL
+inc$dincran.after        <- NULL
+inc$dincwon.after        <- NULL
 inc$dinptywon.after      <- NULL
-inc$win.after          <- NULL
-inc$win.after.left     <- NULL
+inc$win.after            <- NULL
+inc$win.after.left       <- NULL
 #
-# sort columns
-sel <- c("emm","ord","mun","yr","dextra","dy","mo","edon","munn","ife", "inegi", "incumbent","mg","pty2nd","runnerup", "win.long", "returning.p", "win.current", "win.current.left", "race.current", "race.current.left", "dptywon.current", "dptywon.current.left", "dincran.current", "dincwon.current", "dptywon.current")
+# sort columns 
+sel <- c("emm","ord","mun","yr","dextra","dy","mo","edon","munn","ife", "inegi", "incumbent","race.after","mg","pty2nd","runnerup", "win.long", "returning.p", "dtermlim", "win.current", "win.current.left", "race.current", "race.current.left", "dinptywon.current", "dinptywon.current.left", "dincran.current", "dincwon.current")
 inc <- inc[,sel]
 #
 # plug incumbent data to vot
@@ -1874,15 +1884,16 @@ inc$round <- as.numeric(inc$round)
 ## inc$dopenseat[sel] <- 0
 ## sel <- grep("Reelected|won", inc$race.current)
 ## inc$dptyreel[sel] <- 1
-inc$dtermlim <- 1
-sel <- grep("^(?!Term-lim).*$", inc$race.current, perl = TRUE)
-inc$dtermlim[sel] <- 0
+## # 11oct2020 this is wrong, dtermlim needs to be coded with race.after
+## inc$dtermlim <- 1
+## sel <- grep("^(?!Term-lim).*$", inc$race.current, perl = TRUE)
+## inc$dtermlim[sel] <- 0
 
 # paste incumbent data into vot
 vot.dup <- vot # duplicate for debug
 #sel.c <- which(colnames(inc) %in% c("emm", "race.current", "dopenseat", "dptyreel", "dtermlim", "win"))
 #vot <- merge(x = vot, y = inc[,sel.c], by = "emm", all.x = TRUE, all.y = FALSE)
-sel.c <- which(colnames(inc) %in% c("emm", "race.current", "race.current.left", "dincran.current", "dinptywon.current", "dtermlim", "win.current", "win.current.left"))
+sel.c <- which(colnames(inc) %in% c("emm", "race.after","race.current", "race.current.left", "dincran.current", "dinptywon.current", "dtermlim", "win.current", "win.current.left"))
 vot <- merge(x = vot, y = inc[, sel.c], by = "emm", all.x = TRUE, all.y = FALSE)
 #
 ## # verify that win in vot (win) and in inc (win.current) have no inconsistencies
@@ -1952,6 +1963,7 @@ tmp <- apply(tmp, c(1,2), FUN = function(x){as.numeric(x)})
 conc.fed <- tmp
 #
 # plug into vot
+
 vot$dconcgob <- vot$dconcfed <- NA
 for (e in 1:32){ # loop across states
     message(sprintf("loop %s", e))
@@ -2337,7 +2349,7 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     }
 }
 
-form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dcapital - as.factor(edon)"
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dtermlim - dcapital - as.factor(edon)"
 #
 pan.dat05 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE)
 pan.lag05 <- estim.mod(pty = "pan", y = 2005)
@@ -2403,13 +2415,20 @@ tmp <- tmp[order(tmp$emm),] # check sorted for lags
 tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "inegi", Var = "win", NewVar = "win.prior",    slideBy = -1) # lag by one period
 tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "inegi", Var = "win.left", NewVar = "win.prior.left",    slideBy = -1) # lag by one period
 
-
 table(tmp$win.prior, tmp$dinptywon.current, tmp$dincran.current)
 table(tmp$win.prior.left, tmp$dinptywon.current, tmp$dincran.current)
 colnames(tmp)
 tmp <- pri.dat05
 table(tmp$dpty, (1 - tmp$dincran.current)
 tmp <- left.dat05
+
+# term-limited / reelected or not through yrs
+tmp$status <- NA
+tmp$status[tmp$dtermlim==1] <- "1 term limited"
+tmp$status[tmp$dtermlim==0] <- "3 can reelect next race"
+tmp$status[tmp$race.current=="Reelected"] <- "2 reelected last race (term limited)"
+table(tmp$yr,tmp$status, useNA = "ifany")
+x chambiando aqui x
 
 # debug
 table(tmp$dptyopen)

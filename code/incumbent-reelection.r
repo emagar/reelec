@@ -2533,11 +2533,11 @@ tmp3  <- colSums(tmp3)  / colSums(tmp4)
 tmp12 <- colSums(tmp12) / colSums(tmp4)
 #
 # plot without usos
-#
+
 setwd(wd)
 #pdf(file = "../graph/horizon-yrs.pdf", width = 7, height = 4)
 library(RColorBrewer)
-colors <- c(rev(brewer.pal(4, "Purples")),"gray")
+colors <- c(rev(brewer.pal(4, "Greens")),"gray")
 par(mar = c(2.5,4,1,2)+.1) # bottom, left, top, right 
 plot(c(.75,11.5), c(0,1), type = "n", axes = FALSE,
 #     xlab = "", ylab = expression("Percent municipalities (N" %~~% "2,030)"))
@@ -2556,23 +2556,23 @@ y <- 1
     x <- c(y-.15,y+.15,y+.15,y-.15)
     y1 <- rep(0,2)
     y2 <- rep(1,2)
-    polygon(x, c(y1, y2), col = "gray")
+    polygon(x, c(y1, y2), col = "gray", border = "gray")
 #
 for (y in 2:7){
     #y <- 1
     x <- c(y-.15,y+.15,y+.15,y-.15)
     y1 <- rep(0,2)
     y2 <- rep(tmp2[y],2)
-    polygon(x, c(y1, y2), col = colors[1])
+    polygon(x, c(y1, y2), col = colors[1], border = colors[1])
     y1 <- y2
     y2 <- y2 + tmp3[y]
-    polygon(x, c(y1, y2), col = colors[2])
+    polygon(x, c(y1, y2), col = colors[2], border = colors[2])
     y1 <- y2
     y2 <- y2 + tmp1[y]
-    polygon(x, c(y1, y2), col = colors[3])
+    polygon(x, c(y1, y2), col = colors[3], border = colors[3])
     y1 <- y2
     y2 <- rep(1,2)
-    polygon(x, c(y1, y2), col = "gray") # without usos
+    polygon(x, c(y1, y2), col = "gray", border = "gray") # without usos
 }
 #
 # add 2021 (exception won't be needed after the els take place)
@@ -2585,29 +2585,29 @@ y <- 8
 x <- c(y-.15,y+.15,y+.15,y-.15)
 y1 <- rep(0,2)
 y2 <- rep(tmptmp2,2)
-polygon(x, c(y1, y2), col = colors[1])
-y1 <- y2
-y2 <- y2 + tmptmp3
-polygon(x, c(y1, y2), col = colors[2])
-## y1 <- y2
-## y2 <- y2 + tmptmp1
-## polygon(x, c(y1, y2), col = colors[3])
+polygon(x, c(y1, y2), col = colors[1], border = colors[1])
 y1 <- y2
 y2 <- y2 + tmptmp21
-polygon(x, c(y1, y2), col = colors[4])
+polygon(x, c(y1, y2), col = "white", border = colors[2])#colors[4])
+y1 <- y2
+y2 <- y2 + tmptmp3
+polygon(x, c(y1, y2), col = colors[2], border = colors[2])
+## y1 <- y2
+## y2 <- y2 + tmptmp1
+## polygon(x, c(y1, y2), col = colors[3], border = colors[3])
 y1 <- y2
 y2 <- rep(1,2)
-polygon(x, c(y1, y2), col = "gray") # without usos
+polygon(x, c(y1, y2), col = "gray", border = "gray") # without usos
 #
 # footnote
 mtext("* forthcoming", side = 1, line = 1.5, outer = FALSE, adj = 1, cex = .7)
 #
 legend(x=8.5, y=.7,
        legend =  rev(c("reelected","can run again","term limited","to be determined","non-reformers")), # without usos
-       fill =    rev(c(colors[1],colors[2],colors[3],colors[4],"gray")),                     # without usos
+       fill =    rev(c(colors[1],colors[2],colors[3],"white","gray")),                     # without usos
+       border = rev(c(colors[1],colors[2],colors[3],colors[2],"gray")),
        bty = "n")
 #dev.off()
-
 #
 ## # plot including with usos (needs tmp11 colsums above)
 ## setwd(wd)
@@ -2649,7 +2649,15 @@ legend(x=8.5, y=.7,
 ## term-limited / reelected or not through yrs plot ENDS HERE ##
 ###############################################################
 
+# relative population of reelected mayors
+vot$shptot <- vot$ptot/112336539 # rel population
+sel <- which(vot$round==15 | vot$round==16)
+sum(vot$shptot[sel][vot$race.after[sel]=="Reelected"], na.rm = TRUE)
+
 colSums(tmp4)
+# clean
+rm(tmp,tmp1,tmp2,tmp11,tmp12,tmp21,tmp3,tmp4,tmp5,tmp.ey,tmptmp1,tmptmp12,tmptmp2,tmptmp21,tmptmp3,colors,x,y,y1,y2)
+# restore
 vot <- vot.dup; rm(vot.dup)
 
 # debug

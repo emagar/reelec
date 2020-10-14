@@ -1,110 +1,205 @@
-Necesito conservar win.prior en inc/vot para que lo herede tmp ---- me permitirá recodificar win para left...
-
-
-#inc.dupli <- inc # duplicate for debug
-#inc <- inc.dupli # restore
-# lag win
-library(DataCombine) # easy lags with slide
-inc <- inc[order(inc$ife, inc$emm),] # verify sorted before lags
-inc <- slide(inc, Var = "win", NewVar = "win.after", GroupVar = "ife", slideBy = +1) # lead by one period
-# win.left, win.after.left, race.after.left (overestimates reelection cases, just like race.after misses some where perredista went to morena) 
-inc$win.left <- inc$win
-inc$win.after.left <- inc$win.after
-inc$race.after.left <- inc$race.after
-# recode left cases only, remaining prds were take care in excel and appear in race.after
-sel1 <- grep("left", inc$win.left)
-sel2 <- grep("left", inc$win.after.left)
-sel <- intersect(sel1, sel2) # both
-tmp <- inc$race.after.left[sel] # subset for manipulation
-tmp <- sub("lost","won",tmp)
-table(tmp) # ojo: retains Beaten --- ie cases where perredista incumbent lost to morena
-inc$race.after.left[sel] <- tmp # return post manipulation
-# incumbent in ballot, incumbent won
-inc$dincran.after <- 0
-sel <- which(inc$race.after=="Beaten" | inc$race.after=="Reelected")
-inc$dincran.after[sel] <- 1
-inc$dincwon.after <- 0
-sel <- which(inc$race.after=="Reelected")
-inc$dincwon.after[sel] <- 1
-# party won
-inc$dinptywon.after <- 0
-sel <- grep("p-won|Reelected",inc$race.after)
-inc$dinptywon.after[sel] <- 1
-inc$dinptywon.after.left <- 0
-sel <- grep("p-won",inc$race.after.left)
-inc$dinptywon.after.left[sel] <- 1
-# lag to get current versions
-inc <- inc[order(inc$ife, inc$emm),] # verify sorted before lags
-inc <- slide(inc, Var = "race.after", NewVar = "race.current", GroupVar = "ife", slideBy = -1) # lag by one period
-inc <- slide(inc, Var = "race.after.left", NewVar = "race.current.left", GroupVar = "ife", slideBy = -1) # lag by one period
-inc <- slide(inc, Var = "dincran.after", NewVar = "dincran.current", GroupVar = "ife", slideBy = -1) # lag by one period
-inc <- slide(inc, Var = "dincwon.after", NewVar = "dincwon.current", GroupVar = "ife", slideBy = -1) # lag by one period
-inc <- slide(inc, Var = "dinptywon.after", NewVar = "dinptywon.current", GroupVar = "ife", slideBy = -1) # lag by one period
-inc <- slide(inc, Var = "dinptywon.after.left", NewVar = "dinptywon.current.left", GroupVar = "ife", slideBy = -1) # lag by one period
-# rename current vars
-inc$win.current <- inc$win; inc$win <- NULL
-inc$win.current.left <- inc$win.left; inc$win.left <- NULL
-# drop name-searching ancillary
-inc$note <- NULL
-inc$drepe <- NULL
-inc$drepg <- NULL
-inc$who <- NULL
-inc$check <- NULL
+######################################################
+## term-limited / reelected or not through yrs plot ##
+######################################################
+vot <- vot.dup # duplicate for debud
+#vot.dup <- vot # restore
+vot$status <- NA
+vot$status[vot$dtermlim==1] <- "1 term limited"
+vot$status[vot$dtermlim==0] <- "3 can reelect next race"
+vot$status[vot$race.current=="Reelected"] <- "2 reelected last race (term limited)"
+#table(vot$yr,vot$status, useNA = "ifany")
+# will receive state/yr sums
+tmp1 <- data.frame(y2014=rep(NA,32),
+                  y2015=rep(NA,32),
+                  y2016=rep(NA,32),
+                  y2017=rep(NA,32),
+                  y2018=rep(NA,32),
+                  y2019=rep(NA,32),
+                  y2020=rep(NA,32))
+tmp2 <- tmp3 <- tmp1
 #
-# drop original version of same variable
-#table(inc$race.prior, inc$race.current)
-inc$race.prior <- NULL # it's not prior, its current
-#table(inc$win.prior, inc$win.current)
-inc$win.prior <- NULL # it is prior, but not needed
-# inc$dptywon.current is original inc$dpwon.prior with less info, update
-sel <- which(inc$dpwon.prior==1 & inc$dinptywon.current==0) # cases where win.long has the returning party
-inc$dinptywon.current[sel] <- 1                             # cases where win.long has the returning party
-sel <- which(inc$dpwon.prior==0 & inc$dinptywon.current==1) # cases where incumbent reelected with other pty
-inc$dinptywon.current[sel] <- 0                             # cases where incumbent reelected with other pty
-sel <- which(inc$dpwon.prior==0 & is.na(inc$dinptywon.current)==TRUE) # new municipalities
-inc$dinptywon.current[sel] <- 0                                       # new municipalities
-sel <- which(inc$dpwon.prior==1 & is.na(inc$dinptywon.current)==TRUE) # new municipalities
-inc$dinptywon.current[sel] <- 1                                       # new municipalities
-table(inc$dinptywon.current, inc$dpwon.prior, useNA = "always")
-inc$dpwon.prior <- NULL # drop redundant
-# remaining NAs are all start-of-series in early 1990s
-sel <- which(is.na(inc$dinptywon.current)==TRUE) # 
-table(sub("^[a-z]+-([0-9]{2})[.0-9]+$", "\\1", inc$emm[sel])) # cycle they occur in
+for (e in 1:32){
+    for (y in 2014:2020){
+        #e <- 1; y <- 2016 # debug
+        #table(vot$edon,vot$yr) # debud
+        tmp.ey <- vot[which(vot$edon==e & vot$yr==y),] # subset
+        if (nrow(tmp.ey)>0){
+            tmp1[e,(y-2013)] <- length(grep("1", tmp.ey$status)) # how many 1s
+            tmp2[e,(y-2013)] <- length(grep("2", tmp.ey$status)) # how many 2s
+            tmp3[e,(y-2013)] <- length(grep("3", tmp.ey$status)) # how many 3s
+        }
+    }
+}
+# extraordinarias to NA
+tmp1[tmp1>0 & tmp1<5] <- NA
+tmp2[tmp2>0 & tmp2<5] <- NA
+tmp3[tmp3>0 & tmp3<5] <- NA
+tmp3[21,6] <- NA
 #
-#drop all after versions, unneeded for analysis of current period
-inc$race.after         <- NULL 
-inc$race.after.left    <- NULL
-inc$dinptywon.after.left <- NULL
-inc$dincran.after      <- NULL
-inc$dincwon.after      <- NULL
-inc$dinptywon.after      <- NULL
-inc$win.after          <- NULL
-inc$win.after.left     <- NULL
+# df round 1 had no el
+tmp1[9,1] <- tmp2[9,1] <- tmp3[9,1] <- 16
+# all term limited round 1
+tmp2[,1] <- tmp3[,1] <- 0
+# cps has a mistake???
+tmp1[7,2] <- 0
+# gue has a mistake???
+tmp1[12,2] <- 0
 #
-# sort columns
-sel <- c("emm","ord","mun","yr","dextra","dy","mo","edon","munn","ife", "inegi", "incumbent","mg","pty2nd","runnerup", "win.long", "returning.p", "win.current", "win.current.left", "race.current", "race.current.left", "dptywon.current", "dptywon.current.left", "dincran.current", "dincwon.current", "dptywon.current")
-inc <- inc[,sel]
-
-
-
-
-# unlag
-library(DataCombine) # easy lags with slide
-inc <- inc[order(inc$ife, inc$emm),] # verify sorted before lags
-inc <- slide(inc, Var = "dpwon.prior", NewVar = "dpwon.manip", GroupVar = "ife", slideBy = +1) # lead by one period
-table(inc$dpwon[sel])       # debug
-table(inc$dpwon.manip[sel]) # debug
-table(inc$dpwon[-sel])       # debug --- some of these also change!!!
-table(inc$dpwon.manip[-sel]) # debug
-
-# debug
-options(width=199)
-tmp <- inc[-sel,]
-tmp[which(tmp$dpwon!=tmp$dpwon.manip),]
-inc[grep("mic-[0-9]{2}[.]105", inc$emm),]
-
-1. recode race after given left
-2. compute dincran.after
-3. compute dincwon.after
-4. compute dptywon.after
-5. lag 234 to prior
+# columns should add to 2030 - 16 municipios round 1 (minus df)
+tmp4 <- tmp1[,1] + tmp2[,1] + tmp3[,1]
+tmp4[is.na(tmp4)] <- 0 # nmun
+tmp5 <- table(vot$edon[vot$round==10])
+tmp5 <- as.vector(tmp5) # frequencies
+tmp5 <- c(tmp5[1:8],16,tmp5[9:31]) # add df
+tmp4[tmp4!=tmp5] <- tmp5[tmp4!=tmp5]
+tmp1[,1] <- tmp4 # fill tot mun
+#
+# fill NAs with left col
+for (y in 2:7){
+    #y <- 2 # debug
+    tmp1[which(is.na(tmp1[,y])), y] <- tmp1[which(is.na(tmp1[,y])), (y-1)]
+    tmp2[which(is.na(tmp2[,y])), y] <- tmp2[which(is.na(tmp2[,y])), (y-1)]
+    tmp3[which(is.na(tmp3[,y])), y] <- tmp3[which(is.na(tmp3[,y])), (y-1)]
+}
+# columns should add to ~2030 municipios
+tmp4 <- tmp1 + tmp2 + tmp3
+colSums(tmp4)
+#
+# add usos object
+tmp11 <- tmp1
+tmp11[] <- 0
+tmp11[20,] <- 427
+tmp11[7,7] <- 1
+tmp11[12,7] <- 1
+tmp11[16,] <- 1
+# add hgo ver object
+tmp12 <- tmp1
+tmp12[] <- 0
+tmp12[c(13,30),] <- tmp1[c(13,30),]
+tmp1[c(13,30),] <- 0
+#
+# pre reform make ver hgo std term lim
+tmp1[c(13,30),1]  <- tmp12[c(13,30),1]
+tmp12[c(13,30),1] <- 0
+#
+# yr aggs
+#tmp4 <- tmp1 + tmp11 + tmp12 + tmp2 + tmp3 # with usos
+tmp4 <- tmp1 + tmp12 + tmp2 + tmp3 # without usos
+tmp1  <- colSums(tmp1)  / colSums(tmp4)
+tmp2  <- colSums(tmp2)  / colSums(tmp4)
+tmp3  <- colSums(tmp3)  / colSums(tmp4)
+#tmp11 <- colSums(tmp11) / colSums(tmp4)
+tmp12 <- colSums(tmp12) / colSums(tmp4)
+#
+# plot without usos
+setwd(wd)
+#pdf(file = "../graph/horizon-yrs.pdf", width = 7, height = 4)
+library(RColorBrewer)
+colors <- c(rev(brewer.pal(4, "Greens")),"gray")
+par(mar = c(2.5,4,1,2)+.1) # bottom, left, top, right 
+plot(c(.75,11.5), c(0,1), type = "n", axes = FALSE,
+     xlab = "", ylab ="% municipalities")
+axis(1, at=1:8, labels=c(2014,"'15","'16","'17","'18","'19","'20","'21*"))
+axis(2, at=seq(0,1,.1), labels = FALSE)
+axis(2, at=seq(0,1,.2), labels = seq(0,100,20))
+abline(h=seq(0,1,.1), lty=1, col = "gray90")
+abline(v=1.5, lty=2, col = "black")
+text(x=1.65, y=.95, labels="Reform", col = "black", cex = .8, srt = 90)
+# white box to cover hlines in right side
+polygon(c(8.5,12,12,8.5),c(-3,-3,3,3), border = "white", col = "white")
+#
+y <- 1
+    x <- c(y-.15,y+.15,y+.15,y-.15)
+    y1 <- rep(0,2)
+    y2 <- rep(1,2)
+    polygon(x, c(y1, y2), col = "gray")
+#
+for (y in 2:7){
+    #y <- 1
+    x <- c(y-.15,y+.15,y+.15,y-.15)
+    y1 <- rep(0,2)
+    y2 <- rep(tmp2[y],2)
+    polygon(x, c(y1, y2), col = colors[1])
+    y1 <- y2
+    y2 <- y2 + tmp3[y]
+    polygon(x, c(y1, y2), col = colors[2])
+    y1 <- y2
+    y2 <- y2 + tmp1[y]
+    polygon(x, c(y1, y2), col = colors[3])
+    y1 <- y2
+    y2 <- rep(1,2)
+    polygon(x, c(y1, y2), col = "gray") # without usos
+}
+#
+# add 2021 (exception won't be needed after the els take place)
+tmptmp1 <- 0 # other than those who reelected, no incumbent term lim in 2021 and thereafter
+tmptmp12 <- tmp12["y2020"] # non-reformers
+tmptmp2 <- 7/colSums(tmp4)[7] # durango terms end 2022, 7 reelected 2019
+tmptmp21 <- tmp3[7] # # indetermined category
+tmptmp3 <- tmp2[7] - tmptmp2 + tmp1[7] # can run next round
+y <- 8
+x <- c(y-.15,y+.15,y+.15,y-.15)
+y1 <- rep(0,2)
+y2 <- rep(tmptmp2,2)
+polygon(x, c(y1, y2), col = colors[1])
+y1 <- y2
+y2 <- y2 + tmptmp3
+polygon(x, c(y1, y2), col = colors[2])
+## y1 <- y2
+## y2 <- y2 + tmptmp1
+## polygon(x, c(y1, y2), col = colors[3])
+y1 <- y2
+y2 <- y2 + tmptmp21
+polygon(x, c(y1, y2), col = colors[4])
+y1 <- y2
+y2 <- rep(1,2)
+polygon(x, c(y1, y2), col = "gray") # without usos
+#
+# footnote
+mtext("* forthcoming", side = 1, line = 1.5, outer = FALSE, adj = 1, cex = .7)
+#
+legend(x=8.5, y=.6,
+       legend =  rev(c("reelected","can run again","term limited","to be determined","non-reformers")), # without usos
+       fill =    rev(c(colors[1],colors[2],colors[3],colors[4],"gray")),                     # without usos
+       bty = "n")
+#dev.off()
+#
+## # plot including with usos (needs tmp11 colsums above)
+## setwd(wd)
+## #pdf(file = "../graph/horizon-yrs-wusos.pdf", width = 7, height = 4)
+## par(mar = c(2.5,4,2,2)+.1) # bottom, left, top, right 
+## plot(seq(.75,9.75,1), c(0,0,0,0,0,0,0,0,0,1), type = "n", axes = FALSE,
+##      xlab = "", ylab ="% municipalities")
+## axis(1, at=1:8, labels=2014:2021)
+## axis(2, at=seq(0,1,.1), labels = FALSE)
+## axis(2, at=seq(0,1,.2), labels = seq(0,100,20))
+## for (y in 1:7){
+##     #y <- 1
+##     x <- c(y-.15,y+.15,y+.15,y-.15)
+##     y1 <- rep(0,2)
+##     y2 <- rep(tmp2[y],2)
+##     polygon(x, c(y1, y2), col = "black")
+##     y1 <- y2
+##     y2 <- rep(tmp2[y]+tmp3[y],2)
+##     polygon(x, c(y1, y2), col = "gray")
+##     y1 <- y2
+##     y2 <- rep(tmp2[y]+tmp3[y]+tmp1[y],2)
+##     polygon(x, c(y1, y2), col = "white")
+##     y1 <- y2
+##     y2 <- rep(tmp2[y]+tmp3[y]+tmp1[y]+tmp12[y],2)
+##     polygon(x, c(y1, y2), col = "black", density = 10, angle = -45) # with usos
+##     y1 <- y2
+##     y2 <- rep(1,2)
+##     polygon(x, c(y1, y2), col = "black", density = 10, angle = 45) # usos
+## }
+## legend(x=7.5, y=.6,
+##        legend =  rev(c("reelected","can run again","term limited","non-reformers","unelected")), # with usos
+##        fill =    rev(c("black","gray","white","black","black")),                                 # with usos
+##        angle =   rev(c(NA,NA,NA,-45,45)),                                                        # with usos
+##        density = rev(c(NA,NA,NA,10,10)),                                                         # with usos
+##        bty = "n")
+## #dev.off()
+#
+################################################################
+## term-limited / reelected or not through yrs plot ENDS HERE ##
+################################################################

@@ -94,10 +94,16 @@ Kick-off in the 2021 mid-term election.
 
 At subnational level, reformers left some discretion to state legislatures. State law-makers: either 2-, 3-, or 4-term limits. For municipal officers single- or 2-term limits. Two states only retained single-term limits for municipal presidents, Hidalgo and Veracruz. Unelected municipal officers in Oaxaca's \emph{usos y costumbres} Party clause mandatory. Variable election calendars: incumbents on the ballot progressively. 
 
+Figure \ref{F:horizons} reports relative frequencies of incumbents with shifting electoral horizons since the reform. Each vertical bar accounts for all municipalities with elected officeholders---new municipalities were carved out in the period, so the total is between 2,016 and 2,039. Gray bar portions include municipalities in Hidalgo and Veracruz, states that retained single term limits after 2014---as municipalities nationwide did before the reform. Non-reformers account for nearly 15 percent of yearly observations. The first group of returning incumbents arrived in 2018, colored in darker purple. A total 273 municipal presidents from 17 states reelected for a consecutive term that year, 12 more joining them in 2019 in order to account for 14 percent of observed municipalities. This is no small feat. 2018 concurred with a presidential race won by a landslide that, we will see, probably depressed reelection rates. 
+
+Freshmen elected in 2015, representing nearly 50 percent of municipal officers, had a very different perspective from their predecessors, as they were not barred from running again at the end of the term.  
+
+Other post-2014 incumbents, in light purple, remained term-limited due to reforms coming into force further down in time. This block shrank progressively from about one-third of municipalities in 2015 to less than 5 percent in 2018. By 2021, only returning incumbents will be term limited. 
+
 \begin{figure}
   \centering
-  \caption{Municipalities with extended horizons. Dark green indicates the frequency of municipal governments whose officers can reelect once for another consecutive term. Gray portion corresponds to indigenous municipalities who appoint municipal officers by means other than elections.}
-  \includegraphics[width=.8\columnwidth]{../pics/ayuntamientos.pdf} \\
+  \includegraphics[width=.8\columnwidth]{../graph/horizon-yrs.pdf} \\
+  \caption{Variably-extended horizons for municipal incumbents. Columns classify $N\approx2,030$ municipalities according to the yearly reelection status of elected officeholders (430 municipalities with unelected indigenous governments are excluded).}\label{F:horizons}
 \end{figure}
 eric  x
 
@@ -108,30 +114,6 @@ Term limits sever the personalized electoral connection, collective reputation o
 See \citet{cain.etal.1987} for argumentation.
 
 \section{A hypothesis perhaps}
-
-\begin{figure}
-  \centering
-    \caption{The president rules game}\label{F:game}
-    \tikzstyle{mid}=[circle,draw]
-    \begin{tikzpicture}
-      \node[mid] at (1.5,-0.25) (c) {\emph{C}};
-      \node[mid] at (4,1) (p) {\emph{P}};
-      \node[mid] at (6.5,-0.25) (f) {\emph{F}};
-      \node at (4,-1.5) (ce) {$q$};
-      \node at (6.5,2.25) (pe1) {$x_F$};
-      \node at (9,1) (fe1) {$x_C$};
-      \node at (9,-1.5) (fe2) {$q$};
-      \path[-] (c) edge node [above, sloped] {\footnotesize{report}} (p)
-               (p) edge node [above, sloped] {\footnotesize{fast}} (f)
-                   edge node [below, sloped] {\footnotesize{track}} (f);
-      \path[] (c) edge node [below, sloped] {\footnotesize{$x_C$}} (p);
-      \path[-o] (c) edge node [below, sloped] {\footnotesize{not}} (ce)
-                (p) edge node [above, sloped] {\footnotesize{standard}} (pe1)
-                (f) edge node [above, sloped] {\footnotesize{accept}} (fe1)
-                    edge node [below, sloped] {\footnotesize{reject}} (fe2);
-      \path[-o] (p) edge node [below, sloped] {\footnotesize{considerat.}} (pe1);
-    \end{tikzpicture}
-\end{figure}
 
 \begin{description}
   \item [Hypothesis 1:] Presidents are more likely to fast-track bills when the committee chair with jurisdiction over the bill  belongs to the president's party than otherwise.

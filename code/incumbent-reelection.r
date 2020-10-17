@@ -1907,19 +1907,6 @@ vot <- within(vot, {win <- win.current; win.current <- NULL; win.left <- win.cur
 # clean
 rm(sel,sel1,sel2,sel.c,tmp)
 
-# save a copy
-save.image(paste(wd,"mun-reelection.RData",sep=""))
-
-# load image
-rm(list = ls())
-dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
-setwd(dd)
-
-load(paste(wd,"mun-reelection.RData",sep=""))
-options(width = 130)
-rm(vot.dup)
-rm(inc) # drop to avoid confusion, useful data has been merged into vot
 
 #################################
 ## concurrent election dummies ##
@@ -2251,10 +2238,34 @@ vot <- within(vot, {
 #    res.left[yr>=2015] = res.morena[yr>=2015]
 })
 
-# elevation variance
-vot$varalt <- vot$sdalt    # olvidé el cuadrado?
-vot$wvaralt <- vot$wsdalt
 
+
+
+# save a copy
+save.image(paste(wd,"mun-reelection.RData",sep=""))
+
+# load image
+rm(list = ls())
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
+setwd(dd)
+
+load(paste(wd,"mun-reelection.RData",sep=""))
+options(width = 130)
+rm(vot.dup)
+rm(inc) # drop to avoid confusion, useful data has been merged into vot
+
+# elevation variance
+vot$varalt <- vot$sdalt^2 /1000
+vot$wvaralt <- vot$wsdalt^2 /1000
+vot$wmeanalt2 <- vot$wmeanalt^2
+vot$logptot <- log(vot$ptot)
+# inspect
+plot(vot$wmeanalt, vot$wsdalt, pch = 20, cex = .1)
+
+# get state-level gob elections (will need to replace with mu-level)
+
+x
 
 
 ###################################
@@ -2350,6 +2361,7 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
 }
 
 form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dtermlim - dcapital - as.factor(edon)"
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen            + dsamegov + logptot + wsdalt + dpostref"
 #
 pan.dat05 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE)
 pan.lag05 <- estim.mod(pty = "pan", y = 2005)
@@ -2382,7 +2394,7 @@ summary(left.lag05)
 library(stargazer)
 stargazer(pan.lag05, pri.lag05, left.lag05, align=TRUE, report = 'vc*s'
 #          , title = "Regression results"
-          , type = "text"
+          , type = c("text","latex")[1]
 #          , out = "tmp-tab.txt"
           , digits = 3
           , dep.var.labels = c("Residual")
@@ -2393,11 +2405,9 @@ stargazer(pan.lag05, pri.lag05, left.lag05, align=TRUE, report = 'vc*s'
  ##   "other-party incumbent",
  ##   "party open seat",
  ##   "governor",
- ##   "population (10k)",
- ##   "elevation (pop. weigthed)",
- ##   "sd.elev",
+ ##   "population (log, 10k)",
+ ##   "sd elev. (pop. weigthed)",
  ##   "post reform",
- ##   "elev x sd.elev",
  ##   "Constant")
           )
 
@@ -2442,8 +2452,8 @@ tmp2 <- within(tmp2, {
 ######################################################
 ## term-limited / reelected or not through yrs plot ##
 ######################################################
-vot <- vot.dup # duplicate for debud
-#vot.dup <- vot # restore
+vot.dup <- vot # duplicate for debud
+#vot <- vot.dup # restore
 vot$status <- NA
 vot$status[vot$dtermlim==1] <- "1 term limited"
 vot$status[vot$dtermlim==0] <- "3 can reelect next race"
@@ -2533,7 +2543,6 @@ tmp3  <- colSums(tmp3)  / colSums(tmp4)
 tmp12 <- colSums(tmp12) / colSums(tmp4)
 #
 # plot without usos
-
 setwd(wd)
 #pdf(file = "../graph/horizon-yrs.pdf", width = 7, height = 4)
 library(RColorBrewer)
@@ -2590,12 +2599,13 @@ y1 <- y2
 y2 <- y2 + tmptmp21
 polygon(x, c(y1, y2), col = "white", border = colors[2])#colors[4])
 y1 <- y2
-y2 <- y2 + tmptmp3
+y2 <- rep((1-84/colSums(tmp4)[7]),2) # veracruz joins 'can run next' group in 2021
+#y2 <- y2 + tmptmp3
 polygon(x, c(y1, y2), col = colors[2], border = colors[2])
 ## y1 <- y2
 ## y2 <- y2 + tmptmp1
 ## polygon(x, c(y1, y2), col = colors[3], border = colors[3])
-y1 <- y2
+y1 <- y2 # only Hidalgo left in gray
 y2 <- rep(1,2)
 polygon(x, c(y1, y2), col = "gray", border = "gray") # without usos
 #

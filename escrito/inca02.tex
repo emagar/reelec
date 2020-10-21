@@ -149,57 +149,65 @@ left     &   58    &   42     &   100   &   (96)   &   39   &   61   &   100   &
 \section{Regression model}
 
 % Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-% Date and time: Thu, Oct 15, 2020 - 05:02:16 PM
+% Date and time: Wed, Oct 21, 2020 - 12:28:13 AM
 % Requires LaTeX packages: dcolumn 
-\begin{table}[!htbp] \centering 
-  \caption{} 
-  \label{} 
-\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\begin{sidewaystable}[!htbp] \centering 
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
 \\[-1.8ex]\hline 
 \hline \\[-1.8ex] 
- & \multicolumn{3}{c}{\textit{Dependent variable:}} \\ 
-\cline{2-4} 
-\\[-1.8ex] & \multicolumn{3}{c}{Residual} \\ 
- & \multicolumn{1}{c}{PAN} & \multicolumn{1}{c}{PRI} & \multicolumn{1}{c}{Left} \\ 
-\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)}\\ 
+ & \multicolumn{6}{c}{\emph{Dependent variable:} vote share - E(vote share)} \\ 
+\cline{2-7} 
+%\\[-1.8ex] & \multicolumn{6}{c}{Residual} \\ 
+ & \multicolumn{1}{c}{PAN} & \multicolumn{1}{c}{PRI} & \multicolumn{1}{c}{Left} & \multicolumn{1}{c}{PAN} & \multicolumn{1}{c}{PRI} & \multicolumn{1}{c}{Left} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)} & \multicolumn{1}{c}{(6)}\\ 
 \hline \\[-1.8ex] 
- vote share (lagged) & -0.213^{***} & -0.051^{***} & -0.298^{***} \\ 
-  & (0.011) & (0.013) & (0.013) \\ 
-  & & & \\ 
- party incumbent & 0.235^{***} & 0.172^{***} & -0.080^{***} \\ 
-  & (0.013) & (0.014) & (0.019) \\ 
-  & & & \\ 
- other-party incumbent & -0.016 & -0.007 & 0.056^{***} \\ 
-  & (0.010) & (0.009) & (0.010) \\ 
-  & & & \\ 
- party open seat & 0.177^{***} & 0.123^{***} & 0.091^{***} \\ 
-  & (0.004) & (0.004) & (0.005) \\ 
-  & & & \\ 
- governor & -0.015^{***} & 0.027^{***} & 0.013^{**} \\ 
-  & (0.004) & (0.004) & (0.006) \\ 
-  & & & \\ 
- population (log, 10k) & -0.006^{***} & -0.005^{***} & -0.003^{***} \\ 
-  & (0.001) & (0.001) & (0.001) \\ 
-  & & & \\ 
- sd elev. (pop. weigthed) & -0.010 & -0.064^{***} & 0.040^{**} \\ 
-  & (0.015) & (0.014) & (0.016) \\ 
-  & & & \\ 
- post reform & 0.076^{***} & -0.158^{***} & -0.106^{***} \\ 
-  & (0.005) & (0.005) & (0.006) \\ 
-  & & & \\ 
- Constant & 0.024^{*} & 0.019 & -0.049^{***} \\ 
-  & (0.013) & (0.014) & (0.013) \\ 
-  & & & \\ 
+ vote share (lagged) & -0.216^{***} & -0.051^{***} & -0.303^{***} & -0.260^{***} & -0.049^{***} & -0.210^{***} \\ 
+  & (0.011) & (0.013) & (0.013) & (0.013) & (0.014) & (0.014) \\ 
+  & & & & & & \\ 
+ party incumbent & 0.237^{***} & 0.173^{***} & -0.077^{***} & 0.217^{***} & 0.171^{***} & -0.033^{*} \\ 
+  & (0.013) & (0.014) & (0.019) & (0.013) & (0.013) & (0.017) \\ 
+  & & & & & & \\ 
+ other-party incumbent & -0.014 & -0.007 & 0.062^{***} & -0.021^{**} & -0.009 & 0.072^{***} \\ 
+  & (0.010) & (0.009) & (0.010) & (0.010) & (0.009) & (0.009) \\ 
+  & & & & & & \\ 
+ party open seat & 0.176^{***} & 0.123^{***} & 0.087^{***} & 0.182^{***} & 0.125^{***} & 0.118^{***} \\ 
+  & (0.005) & (0.004) & (0.006) & (0.004) & (0.003) & (0.005) \\ 
+  & & & & & & \\ 
+ concurrent gub. race & 0.027^{***} & 0.013 & 0.068^{***} & 0.031^{***} & -0.002 & 0.133^{***} \\ 
+  & (0.010) & (0.009) & (0.014) & (0.010) & (0.009) & (0.014) \\ 
+  & & & & & & \\ 
+ governor & -0.017^{***} & 0.027^{***} & 0.010 & 0.012^{**} & 0.024^{***} & 0.040^{***} \\ 
+  & (0.005) & (0.004) & (0.006) & (0.005) & (0.004) & (0.007) \\ 
+  & & & & & & \\ 
+ population (log, 10k) & -0.005^{***} & -0.004^{***} & -0.003^{***} & -0.001 & -0.001 & -0.009^{***} \\ 
+  & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) \\ 
+  & & & & & & \\ 
+ sd elevation (pop. weigthed) & -0.008 & -0.063^{***} & 0.041^{***} & 0.036^{**} & 0.010 & 0.045^{***} \\ 
+  & (0.015) & (0.014) & (0.016) & (0.016) & (0.015) & (0.016) \\ 
+  & & & & & & \\ 
+ post reform & 0.077^{***} & -0.157^{***} & -0.114^{***} & 0.075^{***} & -0.159^{***} & -0.114^{***} \\ 
+  & (0.005) & (0.005) & (0.006) & (0.005) & (0.005) & (0.006) \\ 
+  & & & & & & \\ 
+ Constant & 0.020 & 0.015 & -0.051^{***} & -0.088^{***} & 0.022 & 0.066^{**} \\ 
+  & (0.013) & (0.014) & (0.013) & (0.026) & (0.025) & (0.026) \\ 
+  & & & & & & \\ 
 \hline \\[-1.8ex] 
-Observations & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} \\ 
-R$^{2}$ & \multicolumn{1}{c}{0.221} & \multicolumn{1}{c}{0.294} & \multicolumn{1}{c}{0.109} \\ 
-Residual Std. Error (df = 8301) & \multicolumn{1}{c}{0.162} & \multicolumn{1}{c}{0.151} & \multicolumn{1}{c}{0.172} \\ 
-F Statistic (df = 8; 8301) & \multicolumn{1}{c}{293.772$^{***}$} & \multicolumn{1}{c}{432.623$^{***}$} & \multicolumn{1}{c}{127.382$^{***}$} \\ 
+ Fixed state effects & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} \\
+\hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.221} & \multicolumn{1}{c}{0.294} & \multicolumn{1}{c}{0.112} & \multicolumn{1}{c}{0.293} & \multicolumn{1}{c}{0.344} & \multicolumn{1}{c}{0.241} \\ 
+%Adjusted R$^{2}$ & \multicolumn{1}{c}{0.221} & \multicolumn{1}{c}{0.294} & \multicolumn{1}{c}{0.111} & \multicolumn{1}{c}{0.290} & \multicolumn{1}{c}{0.341} & \multicolumn{1}{c}{0.238} \\ 
+Residual Std. Error & \multicolumn{1}{c}{0.162} & \multicolumn{1}{c}{0.151} & \multicolumn{1}{c}{0.171} & \multicolumn{1}{c}{0.155} & \multicolumn{1}{c}{0.146} & \multicolumn{1}{c}{0.159} \\ 
+F Statistic & \multicolumn{1}{c}{262.2$^{***}$} & \multicolumn{1}{c}{384.9$^{***}$} & \multicolumn{1}{c}{116.3$^{***}$} & \multicolumn{1}{c}{90.3$^{***}$} & \multicolumn{1}{c}{114.4$^{***}$} & \multicolumn{1}{c}{69.1$^{***}$} \\ 
 \hline 
 \hline \\[-1.8ex] 
-\textit{Note:}  & \multicolumn{3}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\textit{Note:}  & \multicolumn{6}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
 \end{tabular} 
-\end{table} 
+}
+  \caption{Models} 
+  \label{} 
+\end{sidewaystable}
 
 
 

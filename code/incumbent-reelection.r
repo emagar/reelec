@@ -1840,54 +1840,11 @@ sel <- c("emm","ord","mun","yr","dextra","dy","mo","edon","munn","ife", "inegi",
 inc <- inc[,sel]
 #
 # plug incumbent data to vot
-## DROP redundant # was there an incumbent on the ballot? did party reelect?
-## DROP redundant inc$race.current <- inc$race.after
 inc$round <- sub(pattern = "[\\w\\D-]+([0-9]{2})[.][0-9]{3}", replacement = "\\1", inc$emm, perl = TRUE)
 inc$round <- as.numeric(inc$round)
 #table(inc$round)
 #
-## DEPRECATED
-## # lag race after
-## inc <- inc[order(inc$emm),] # sort
-## inc$tmp <- as.numeric(sub(pattern = "[\\w\\D-]+[0-9]{2}[.]([0-9]{3})", replacement = "\\1", inc$emm, perl = TRUE)) # munn from emm
-## table(inc$tmp, useNA = "always")
-## for (e in 1:32){
-##     #e <- 1 # debug
-##     message(sprintf("loop %s of %s", e, 32))
-##     sel  <- which(inc$edon==e)
-##     for (i in unique(inc$tmp[sel])){
-##         #i <- 10 # debug
-##         sel1 <- which(inc$tmp[sel]==i)
-##         last <- length(sel1)
-##         inc$race.current[sel][sel1][1]  <- NA
-##         inc$race.current[sel][sel1][-1] <- inc$race.after[sel][sel1][-last]
-##     }
-## }
 
-## DEPRECATED
-## library(DataCombine) # easy lags with slide
-## inc <- slide(data = inc, TimeVar = "yr", GroupVar = "munn", Var = "race.after", NewVar = "tmp", slideBy = -1) # lag by one period
-## inc[100,]
-## table(inc$tmp, inc$race.current, useNA = "always")
-##
-## CHANGE WIN WIN.PRIOR TO LEFT BEFORE LOOP
-## CHANGE RACE.AFTER ACCORDINGLY
-## THEN LAG...
-##
-## inc <- inc[order(inc$edon, inc$tmp, inc$round),] # re-sort
-## inc$tmp <- NULL
-## #
-## inc$dopenseat <- 1
-## inc$dptyreel <- 0
-## table(inc$race.current)
-## sel <- grep("Beaten|Reelected", inc$race.current)
-## inc$dopenseat[sel] <- 0
-## sel <- grep("Reelected|won", inc$race.current)
-## inc$dptyreel[sel] <- 1
-## # 11oct2020 this is wrong, dtermlim needs to be coded with race.after
-## inc$dtermlim <- 1
-## sel <- grep("^(?!Term-lim).*$", inc$race.current, perl = TRUE)
-## inc$dtermlim[sel] <- 0
 
 # paste incumbent data into vot
 vot.dup <- vot # duplicate for debug
@@ -1932,6 +1889,7 @@ for (i in 1:32){
     tmp <- as.numeric(cal.ay[i,sel.c]==cal.fed[i,sel.c])
     conc.fed[i, sel.c] <- tmp
 }
+
 conc.fed[cal.ay=="--"] <- 0
 # ay concurs with gob
 conc.gob <- cal.ay
@@ -2170,6 +2128,8 @@ alt$ptot <- NULL
 
 #tmp <- censo # duplicate for debug
 censo <- merge(x = censo, y = alt, by = "inegi", all = TRUE)
+# clean
+rm(alt)
 
 # make discrete altitude variables for mapping exploration
 # script mapa-municipios.r draws wsd(alt) etc
@@ -2249,7 +2209,7 @@ rm(list = ls())
 dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
-
+#
 load(paste(wd,"mun-reelection.RData",sep=""))
 options(width = 130)
 rm(vot.dup)
@@ -2261,12 +2221,222 @@ vot$wvaralt <- vot$wsdalt^2 /1000
 vot$wmeanalt2 <- vot$wmeanalt^2
 vot$logptot <- log(vot$ptot)
 # inspect
-plot(vot$wmeanalt, vot$wsdalt, pch = 20, cex = .1)
+#plot(vot$wmeanalt, vot$wsdalt, pch = 20, cex = .1)
 
-# get state-level gob elections (will need to replace with mu-level)
 
-x
+# get state-level gob elections (will need to replace with mu-level when data available)
+# script reads data, cleans, and aggregates coalitions, returning object dat
+source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/go.r")
+#
+# subset post 2004
+sel <- which(dat$yr>2004)
+dat <- dat[sel,]
+#
+# conve to mc
+sel <- grep("l01", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l02", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l03", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l04", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l05", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l06", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l07", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l08", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l09", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l10", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+sel <- grep("l11", colnames(dat)); dat[,sel] <- sub("conver?", "mc", dat[,sel])
+#
+# prepare object with pan pri left morena oth @otes
+v5 <- dat # duplicate
+#sel <- grep("^[vl][0-9]{2}", colnames(v5))
+#v5 <- v5[,sel] # keep @otes and labels only #
+v5 <- within(v5, ord <- mo <- dy <- edo <- win <- ncand <- dcoal <- ncoal <- efec <- lisnom <- imputacion <- distpan <- distpri <- distprd <- seyr <- semo <- sepan <- sepri <- seprd <- seefec <- NULL) # drop cols
+v5$status <- NA
+# narrow v01..v14 into long vector
+v5$n <- 1:nrow(v5) # obs no
+v5$r <- 1          # round
+v5$v <- v5$v01     # @ote
+v5$l <- v5$l01     # label
+#
+tmp.orig <- v5 # duplicate
+tmp <- tmp.orig
+tmp$r <- 2
+tmp$v <- tmp$v02; tmp$l <- tmp$l02;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 3
+tmp$v <- tmp$v03; tmp$l <- tmp$l03;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 4
+tmp$v <- tmp$v04; tmp$l <- tmp$l04;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 5
+tmp$v <- tmp$v05; tmp$l <- tmp$l05;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 6
+tmp$v <- tmp$v06; tmp$l <- tmp$l06;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 7
+tmp$v <- tmp$v07; tmp$l <- tmp$l07;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 8
+tmp$v <- tmp$v08; tmp$l <- tmp$l08;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 9
+tmp$v <- tmp$v09; tmp$l <- tmp$l09;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 10
+tmp$v <- tmp$v10; tmp$l <- tmp$l10;
+v5 <- rbind(v5,tmp)
+tmp <- tmp.orig
+tmp$r <- 11
+tmp$v <- tmp$v11; tmp$l <- tmp$l11;
+v5 <- rbind(v5,tmp)
+#
+v5$v01 <- v5$v02 <- v5$v03 <- v5$v04 <- v5$v05 <- v5$v06 <- v5$v07 <- v5$v08 <- v5$v09 <- v5$v10 <- v5$v11 <- NULL
+v5$l01 <- v5$l02 <- v5$l03 <- v5$l04 <- v5$l05 <- v5$l06 <- v5$l07 <- v5$l08 <- v5$l09 <- v5$l10 <- v5$l11 <- NULL
+#
+v5$oth <- v5$morena <- v5$prd <- v5$pri <- v5$pan <- 0
+v5$dmajcoal <- 0 # will indicate major party coalitions
+#
+rm(tmp, tmp.orig)
+#
+## # change prd/morena to left
+## sel <- which(v5$yr<=2015)
+## v5$l[sel] <- sub("prd","left",v5$l[sel])
+## sel <- which(v5$yr>=2015)
+## v5$l[sel] <- sub("morena","left",v5$l[sel])
+#
+# deal with major-party coalition below
+sel <- grep("(?=.*pan)(?=.*prd)", v5$l, perl = TRUE)
+v5$status[sel] <- "majors"
+## sel <- grep("(?=.*pan)(?=.*pri)", v5$l, perl = TRUE)
+## v5$status[sel] <- "majors"
+## sel <- grep("(?=.*pri)(?=.*prd)", v5$l, perl = TRUE)
+## v5$status[sel] <- "majors"
+#
+sel1 <- which(is.na(v5$status))
+sel <- grep("pan-|-pan|^pan$", v5$l[sel1])
+v5$pan[sel1][sel] <- v5$v[sel1][sel]
+v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+sel1 <- which(is.na(v5$status))
+sel <- grep("pri-|-pri|^pri$", v5$l[sel1])
+v5$pri[sel1][sel] <- v5$v[sel1][sel]
+v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+## sel1 <- which(is.na(v5$status))
+## sel <- grep("left-|-left|^left$", v5$l[sel1])
+## v5$morena[sel1][sel] <- v5$v[sel1][sel]
+## v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+sel1 <- which(is.na(v5$status))
+sel <- grep("prd-|-prd|^prd$", v5$l[sel1])
+v5$prd[sel1][sel] <- v5$v[sel1][sel]
+v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+sel1 <- which(is.na(v5$status))
+sel <- grep("morena-|-morena|^morena$", v5$l[sel1])
+v5$morena[sel1][sel] <- v5$v[sel1][sel]
+v5$v[sel1][sel] <- 0; v5$l[sel1][sel] <- "0"; v5$status[sel1][sel] <- "done"
+#
+# rest are other
+sel1 <- which(is.na(v5$status))
+v5$oth[sel1] <- v5$v[sel1]
+v5$v[sel1] <- 0; v5$l[sel1] <- "0"; v5$status[sel1] <- "done"
+#
+# pan-prd to pan (bc dgo gua nay pue san sin son tam yuc)
+sel <- which(v5$status=="majors" & (v5$edon==2 | v5$edon==10 | v5$edon==11 | v5$edon==18 | v5$edon==21 |  v5$edon==25 | v5$edon==26 | v5$edon==28  | v5$edon==31))
+v5$pan[sel] <- v5$v[sel]; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+# pan-prd split halfway (hgo ver)
+sel <- which(v5$status=="majors" & (v5$edon==13  | v5$edon==30))
+v5$pan[sel] <- v5$v[sel] / 2; 
+v5$prd[sel] <- v5$v[sel] / 2; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+# pan-prd to prd (cps df oax qui tab zac)
+sel <- which(v5$status=="majors" & (v5$edon==7 | v5$edon==9 | v5$edon==20 | v5$edon==23 | v5$edon==27 | v5$edon==32))
+v5$prd[sel] <- v5$v[sel]; v5$v[sel] <- 0; v5$l[sel] <- "0"; v5$status[sel] <- "done"
+v5$dmajcoal[sel] <- 1
+#
+## # used to check by hand
+## sel <- which(v5$status=="majors") 
+## sel1 <- grep("(?=.*pan)(?=.*prd)", v5$l[sel], perl = TRUE) # 
+## table(v5$edon[sel])
+## table(v5$yr[sel])
+## table(v5$emm[sel][sel1], v5$l[sel][sel1])
+## table(v5$emm[sel][sel1], v5$yr[sel][sel1])
+## x
+#
+# consolidate
+tmp <- v5[v5$r==1,] # will receive consolidated data
+for (i in 1:max(v5$n)){
+    #i <- 1 # debug
+    message(sprintf("loop %s of %s", i, max(v5$n)))
+    tmp2 <- v5[v5$n==i, c("pan","pri","prd","morena","oth","dmajcoal")]
+    tmp2 <- colSums(tmp2)
+    tmp[tmp$n==i, c("pan","pri","prd","morena","oth","dmajcoal")] <- tmp2 # plug colsolidated data
+}
+v5 <- tmp
+#
+# debug inspect v5, all vs and ls should be 0
+table(v5$v, v5$l, useNA = "always")
+#
+#
+# clean, data in pan pri morena prd oth
+v5$n <- v5$r <- v5$v <- v5$l <- v5$status <- NULL
+rm(tmp,tmp2)
+# return to dat
+dat <- cbind(dat, v5[,c("pan","pri","prd","morena","oth","dmajcoal")])
+# keep 123 places, drop rest
+dat <- within(dat, v04 <- v05 <- v06 <- v07 <- v08 <- v09 <- v10 <- v11 <- v12 <- v13 <- v14 <- NULL)
+dat <- within(dat, l04 <- l05 <- l06 <- l07 <- l08 <- l09 <- l10 <- l11 <- l12 <- l13 <- l14 <- NULL)
+# inspect
+dat[1,]
+#
+# clean
+rm(i,sel,sel1,v5)
+#
+###################
+## END IMPORT GO ##
+###################
 
+# merge go into vot here
+dat$edoyr <- dat$edon*10000+dat$yr
+vot$edoyr <- vot$edon*10000+vot$yr
+
+vot <- within(vot, gopan <- gopri <- goprd <- gomorena <- goefec <- 0) # will receive dat
+
+for (ey in unique(dat$edoyr)){
+    #ey <- 72018 # debug
+    sel <- which(vot$edoyr==ey)
+    if (length(sel)==0) next
+    vot$gopan   [sel] <- dat$pan   [dat$edoyr==ey]
+    vot$gopri   [sel] <- dat$pri   [dat$edoyr==ey]
+    vot$goprd   [sel] <- dat$prd   [dat$edoyr==ey]
+    vot$gomorena[sel] <- dat$morena[dat$edoyr==ey]
+    vot$goefec  [sel] <- dat$efec  [dat$edoyr==ey]
+}
+# shares
+vot$goefec <- vot$goefec + 1 # avoid indeterminacy
+vot <- within(vot, gopan    <- gopan    / goefec)
+vot <- within(vot, gopri    <- gopri    / goefec)
+vot <- within(vot, goprd    <- goprd    / goefec)
+vot <- within(vot, gomorena <- gomorena / goefec)
+vot$goleft <- vot$goprd
+vot <- within(vot, goleft[yr>2015] <- gomorena[yr>2015])
+#vot[1,] # debug
+# clean
+rm(dat)
+vot$edoyr <- vot$goefec <- NULL
 
 ###################################
 ## function to estimate ols regs ##
@@ -2288,16 +2458,19 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     if (pty == "pan"){
         tmp$vot <- tmp$pan
         tmp$res.pty <- tmp$res.pan
+        tmp$concgovot <- tmp$dconcgo*tmp$gopan
         sel <- grep("pan", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
     }
     if (pty == "pri"){
         tmp$vot <- tmp$pri
         tmp$res.pty <- tmp$res.pri
+        tmp$concgovot <- tmp$dconcgo*tmp$gopri
         sel <- grep("pri", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
     }
     if (pty == "left"){
         tmp$vot <- tmp$left
         tmp$res.pty <- tmp$res.left
+        tmp$concgovot <- tmp$dconcgo*tmp$goleft
         sel <- grep("left", tmp$win.left); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
@@ -2360,18 +2533,35 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     }
 }
 
-form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen - dconcgob + dsamegov + ptot + wmeanalt*wsdalt + dpostref - dtermlim - dcapital - as.factor(edon)"
-form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen            + dsamegov + logptot + wsdalt + dpostref"
-#
-pan.dat05 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE)
-pan.lag05 <- estim.mod(pty = "pan", y = 2005)
-summary(pan.lag05)
-pri.dat05 <- estim.mod(pty = "pri", y = 2005, ret.data = TRUE)
-pri.lag05 <- estim.mod(pty = "pri", y = 2005)
-summary(pri.lag05)
-left.dat05 <- estim.mod(pty = "left", y = 2005, ret.data = TRUE)
-left.lag05 <- estim.mod(pty = "left", y = 2005)
-summary(left.lag05)
+# three models
+# model 1
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen             + dsamegov + logptot + wsdalt + dpostref"
+pan.dat05.m1 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE)
+pan.lag05.m1 <- estim.mod(pty = "pan", y = 2005)
+summary(pan.lag05.m1)
+pri.dat05.m1 <- estim.mod(pty = "pri", y = 2005, ret.data = TRUE)
+pri.lag05.m1 <- estim.mod(pty = "pri", y = 2005)
+summary(pri.lag05.m1)
+left.dat05.m1 <- estim.mod(pty = "left", y = 2005, ret.data = TRUE)
+left.lag05.m1 <- estim.mod(pty = "left", y = 2005)
+summary(left.lag05.m1)
+# model 2
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + dsamegov + logptot + wsdalt + dpostref"
+pan.lag05.m2 <- estim.mod(pty = "pan", y = 2005)
+summary(pan.lag05.m2)
+pri.lag05.m2 <- estim.mod(pty = "pri", y = 2005)
+summary(pri.lag05.m2)
+left.lag05.m2 <- estim.mod(pty = "left", y = 2005)
+summary(left.lag05.m2)
+# model 3
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + dsamegov + logptot + wsdalt + dpostref + as.factor(edon)"
+pan.lag05.m3 <- estim.mod(pty = "pan", y = 2005)
+summary(pan.lag05.m3)
+pri.lag05.m3 <- estim.mod(pty = "pri", y = 2005)
+summary(pri.lag05.m3)
+left.lag05.m3 <- estim.mod(pty = "left", y = 2005)
+summary(left.lag05.m3)
+
 #
 ## pan.lag12 <- estim.mod(pty = "pan", y = 2012)
 ## summary(pan.lag12)
@@ -2392,13 +2582,13 @@ summary(left.lag05)
 
 
 library(stargazer)
-stargazer(pan.lag05, pri.lag05, left.lag05, align=TRUE, report = 'vc*s'
+stargazer(pan.lag05.m2, pri.lag05.m2, left.lag05.m2, pan.lag05.m3, pri.lag05.m3, left.lag05.m3, align=TRUE, report = 'vc*s'
 #          , title = "Regression results"
-          , type = c("text","latex")[1]
+          , type = c("text","latex")[2]
 #          , out = "tmp-tab.txt"
           , digits = 3
           , dep.var.labels = c("Residual")
-          , column.labels = c("PAN", "PRI", "Left")
+          , column.labels = c("PAN", "PRI", "Left", "PAN", "PRI", "Left")
  ##          , covariate.labels=
  ## c("vote share (lagged)",
  ##   "party incumbent",

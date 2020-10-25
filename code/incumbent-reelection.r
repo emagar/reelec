@@ -1740,14 +1740,6 @@ sel <- grep("prd", inc$win)
 sel1 <- which(inc$yr[sel]<=2017)
 inc$win.left[sel][sel1] <- "left"
 #
-## DEPRECATED
-## inc$win.left.prior <- inc$win.prior # duplicate
-## sel <- grep("morena", inc$win.prior)
-## inc$win.left.prior[sel] <- "left"
-## sel <- grep("prd", inc$win.prior)
-## sel1 <- which(inc$yr[sel]<=2017)
-## inc$win.left.prior[sel][sel1] <- "left"
-#
 # re-compute race.after with left recategorization; compute dincran.after, dincwon.after, and dptywon.after; lag for .current
 #inc.dupli <- inc # duplicate for debug
 #inc <- inc.dupli # restore
@@ -2220,9 +2212,16 @@ vot$varalt <- vot$sdalt^2 /1000
 vot$wvaralt <- vot$wsdalt^2 /1000
 vot$wmeanalt2 <- vot$wmeanalt^2
 vot$logptot <- log(vot$ptot)
-# inspect
-#plot(vot$wmeanalt, vot$wsdalt, pch = 20, cex = .1)
 
+## # inspect eric  x
+## sel <- which(vot$yr>2005 & vot$d)
+## colnames(vot)
+## plot(vot$left[sel])
+## his <- read.csv(paste(gd, "dipfed-municipio-vhat-2018.csv", sep = ""), stringsAsFactors = FALSE)
+## plot(his$pan-his$vhat.pan)
+## plot(his$pri-his$vhat.pri)
+## plot(his$left-his$vhat.left)
+## x
 
 # get state-level gob elections (will need to replace with mu-level when data available)
 # script reads data, cleans, and aggregates coalitions, returning object dat
@@ -2438,6 +2437,47 @@ vot <- within(vot, goleft[yr>2015] <- gomorena[yr>2015])
 rm(dat)
 vot$edoyr <- vot$goefec <- NULL
 
+#######################
+## dummy pty had won ##
+#######################
+tmp <- data.frame(ife=vot$ife, yr=vot$yr, win=vot$win, dpanpast=0, dpripast=0, dprdpast=0, dmorenapast=0, dleftpast=0, stringsAsFactors = FALSE)
+tmp$ord <- 1:nrow(tmp)
+tmp <- tmp[order(tmp$ife,tmp$yr),] # sort
+tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win1", slideBy = -1, keepInvalid = TRUE) 
+tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win2", slideBy = -2, keepInvalid = TRUE) 
+tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win3", slideBy = -3, keepInvalid = TRUE) 
+tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win4", slideBy = -4, keepInvalid = TRUE) 
+tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win5", slideBy = -5, keepInvalid = TRUE) 
+tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win6", slideBy = -6, keepInvalid = TRUE) 
+tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win7", slideBy = -7, keepInvalid = TRUE) 
+tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win8", slideBy = -8, keepInvalid = TRUE) 
+#tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win8", slideBy = -9, keepInvalid = TRUE) 
+# fill NAs
+tmp[is.na(tmp)] <- 0
+tmp[100:110,]
+#
+# get past winners
+sel <- grep("win[0-9]", colnames(tmp))
+for (i in 1:nrow(tmp)){
+    #i <- 10 # debug
+    tmp1 <- unique(c(tmp$win1[i],tmp$win2[i],tmp$win3[i],tmp$win4[i],tmp$win5[i],tmp$win6[i],tmp$win7[i],tmp$win8[i]) )
+    if (length(grep("pan", unique(tmp1)))>0) tmp$dpanpast[i] <- 1
+    if (length(grep("pri", unique(tmp1)))>0) tmp$dpripast[i] <- 1
+    if (length(grep("prd", unique(tmp1)))>0) tmp$dprdpast[i] <- 1
+    if (length(grep("morena", unique(tmp1)))>0) tmp$dmorenapast[i] <- 1
+}
+tmp$dleftpast[tmp$dprdpast==1|tmp$dmorenapast==1] <- 1
+#
+# sort back to original order
+tmp <- tmp[order(tmp$ord),]
+# retain new dummies only to cbind them
+tmp <- tmp[,c("dpanpast","dpripast","dleftpast")]
+vot <- cbind(vot,tmp)
+###########################
+## end dummy pty had won ##
+###########################
+
+
 ###################################
 ## function to estimate ols regs ##
 ###################################
@@ -2456,21 +2496,34 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     ## table(tmp$win)
     #
     if (pty == "pan"){
+        # few municipios where pri=0, add 0.001 to avoid indeterminacy in log-ratios
+        sel  <- which(tmp$pri==0)
+        tmp$pri[sel] <- 0.001
+        #
         tmp$vot <- tmp$pan
         tmp$res.pty <- tmp$res.pan
         tmp$concgovot <- tmp$dconcgo*tmp$gopan
+        tmp$dptypast <- tmp$dpanpast
+        tmp$dwin <- as.numeric(tmp$win=="pan")
         sel <- grep("pan", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
     }
     if (pty == "pri"){
         tmp$vot <- tmp$pri
         tmp$res.pty <- tmp$res.pri
         tmp$concgovot <- tmp$dconcgo*tmp$gopri
+        tmp$dptypast <- tmp$dpripast
+        tmp$dwin <- as.numeric(tmp$win=="pri")
         sel <- grep("pri", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
     }
     if (pty == "left"){
+        # few municipios where pri=0, add 0.001 to avoid indeterminacy in log-ratios
+        sel  <- which(tmp$pri==0)
+        tmp$pri[sel] <- 0.001
+        #
         tmp$vot <- tmp$left
         tmp$res.pty <- tmp$res.left
         tmp$concgovot <- tmp$dconcgo*tmp$goleft
+        tmp$dptypast <- tmp$dleftpast
         sel <- grep("left", tmp$win.left); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
@@ -2491,11 +2544,16 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     tmp$dsamegov <- 0
     tmp$dsamegov[tmp$govpty.lag == pty] <- 1
     #
+    # add .001 to vot==0 to avoid indeterminate logs
+    sel <- which(tmp$vot==0)
+    tmp$vot[sel] <- 0.001
+    #
     # lag votes
     tmp <- tmp[order(tmp$emm),] # check sorted for lags
     tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.][0-9]+", "\\1", tmp$emm))
     #tmp[1,]
     tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "ife", Var = "vot", NewVar = "vot.lag", slideBy = -1) # lag by one period
+    tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "ife", Var = "pri", NewVar = "pri.lag", slideBy = -1) # lag by one period
     #
     # alpha
     if (pty=="pan")  tmp$alpha <- tmp$alpha.pan
@@ -2525,6 +2583,9 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     ## table(is.na(tmp$wmeanalt ))
     ## table(is.na(tmp$wsdalt   ))
     ## table(is.na(tmp$dpostref ))
+    ## sel  <- which(tmp$pri==0)
+    ## sel  <- which(tmp$pri.lag==0)
+    ## tmp$emm[sel]
     #
     if (ret.data == TRUE){
         return(tmp)
@@ -2533,7 +2594,7 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     }
 }
 
-# three models
+# three models with residual as DV
 # model 1
 form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen             + dsamegov + logptot + wsdalt + dpostref"
 pan.dat05.m1 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE)
@@ -2554,13 +2615,34 @@ summary(pri.lag05.m2)
 left.lag05.m2 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m2)
 # model 3
-form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + dsamegov + logptot + wsdalt + dpostref + as.factor(edon)"
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + dsamegov + logptot + wsdalt + as.factor(yr) + as.factor(edon)"
 pan.lag05.m3 <- estim.mod(pty = "pan", y = 2005)
 summary(pan.lag05.m3)
 pri.lag05.m3 <- estim.mod(pty = "pri", y = 2005)
 summary(pri.lag05.m3)
 left.lag05.m3 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m3)
+
+# models with log(pan/pri) etc as DV
+# model 4
+form <- "log(vot/pri) ~ vot.lag/pri.lag  + dptyinc + dothinc + dptyopen             + dsamegov + logptot + wsdalt + dpostref + dptypast"
+#form <- "vot ~ vot.lag  + dptyinc + dothinc + dptyopen             + dsamegov + logptot + wsdalt + dpostref"
+pan.lag05.m4 <- estim.mod(pty = "pan", y = 2005)
+summary(pan.lag05.m4)
+left.lag05.m4 <- estim.mod(pty = "left", y = 2005)
+summary(left.lag05.m4)
+x
+
+# inspect eric  x
+sel <- which(vot$win=="prd" & vot$yr>2014)
+table(vot$l01[sel], vot$yr[sel])
+
+colnames(tmp)[grep("inegi",colnames(tmp))]
+tmp <- pan.dat05.m1
+table(tmp$yr)
+summary(tmp$res.pty)
+x
+
 
 #
 ## pan.lag12 <- estim.mod(pty = "pan", y = 2012)

@@ -29,3 +29,11 @@ dinptywon.current # recalculate
 dincran.current   # recalculate
 win.left # ?
 
+
+-------------------
+
+# Morena beat a prd incumbent: win.left into prd in order not to count those as left
+sel <- which(inc$win=="prd" & inc$win.left.lead=="left" & inc$race.after=="Beaten") 
+inc$win.left[sel] <- "prd" #
+
+

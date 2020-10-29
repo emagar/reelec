@@ -26,6 +26,33 @@ setwd(dd)
 inc <- read.csv(file = "aymu1989-present.incumbents.csv", stringsAsFactors = FALSE)
 colnames(inc)
 
+# manipulate cases where incumbent/reelected switched parties so coded as party won/lost accordingly
+sel1 <- grep("Reelected-dif-p", inc$race.after)
+# subtract one round from emm codes
+tmp <- inc$emm[sel1]
+tmp1 <- sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\1", tmp, perl = TRUE)
+tmp2 <- as.numeric(sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\2", tmp, perl = TRUE))
+tmp3 <- sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\3", tmp, perl = TRUE)
+tmp4 <- paste(tmp1, tmp2+1, tmp3, sep = "")
+# select previous round obs
+sel2 <- which(inc$emm %in% tmp4)
+# paste new party as the original
+inc$win[sel1] <- inc$win[sel2]
+# change race.after
+inc$race.after[sel1] <- "Reelected"
+
+# manipulate cases where incumbent/beaten switched parties so coded as party won/lost accordingly
+sel1 <- grep("Beaten-dif-p", inc$race.after)
+# fish party from note
+tmp <- sub("only ", "", inc$note[sel1]) # remove "only"
+tmp1 <- sub("^reran under (.+) and lost$", "\\1", tmp)
+# paste new party as the original
+inc$win[sel1] <- tmp1
+# change race.after
+inc$race.after[sel1] <- "Beaten"
+# clean
+rm(tmp,tmp1,tmp2,tmp3,tmp4,sel,sel1,sel2)
+
 ## # merge a new coalAgg into incumbents
 ## cagg <- read.csv(file = "aymu1997-present.coalAgg.csv", stringsAsFactors = FALSE)
 ## colnames(cagg)
@@ -464,7 +491,7 @@ sel1 <- grep("indep",inc$win.prior[sel])
 sel2 <- grep("indep",inc$win[sel])
 tmp[union(sel1,sel2)] <- 0 # one or the other (or both, changed next)
 sel3 <- intersect(sel1,sel2) # both
-sel4 <- which(inc$race.prior[sel]=="Incumb-remained")
+sel4 <- grep("Incumb-remained", inc$race.prior[sel])
 tmp[intersect(sel3,sel4)] <- 1 # both (independent incumbent reelected coded as party won)
 inc$dpwon.prior[sel] <- tmp # return to data after manipulation 
 #
@@ -1803,14 +1830,14 @@ table(inc$dpwon.prior, inc$dpwon.prior.left)
 
 # incumbent in ballot, incumbent won
 inc$dincran.after <- 0
-sel <- which(inc$race.after=="Beaten" | inc$race.after=="Reelected")
+sel <- grep("Beaten|Reelected", inc$race.after) #sel <- which(inc$race.after=="Beaten" | inc$race.after=="Reelected")
 inc$dincran.after[sel] <- 1
 inc$dincwon.after <- 0
-sel <- which(inc$race.after=="Reelected")
+sel <- grep("Reelected", inc$race.after) #sel <- which(inc$race.after=="Reelected")
 inc$dincwon.after[sel] <- 1
 # party won
 inc$dinptywon.after <- 0
-sel <- grep("p-won|Reelected",inc$race.after)
+sel <- grep("p-won|Reelected$",inc$race.after)
 inc$dinptywon.after[sel] <- 1
 inc$dinptywon.after.left <- inc$dinptywon.after
 sel <- grep("p-won",inc$race.after.left)
@@ -2681,11 +2708,9 @@ colnames(tmp)[grep("win",colnames(tmp))]
 
 # check here:
 # 1. morena nums don't match pdf table
-# 2. Reelectedpan = 119 with dummies but 120 in table
-# 2. Reelectedpri =  97 with dummies but 100 in table
-tmp <- pan.dat05.m1
-## sel <- which(tmp$yr>2014)
-## tmp <- tmp[sel,]
+# 2. openlostpri =  1903 with dummies but 1904 in table
+# 3. openlostleft =  1038 with dummies but 1046 in table
+tmp <- left.dat05.m1
 table(tmp$win,tmp$race.current)
 table(tmp$yr)
 table(tmp$dptyinc, tmp$dinptywon.current)
@@ -2759,7 +2784,7 @@ tmp <- left.dat05
 tmp$status <- NA
 tmp$status[tmp$dtermlim==1] <- "1 term limited"
 tmp$status[tmp$dtermlim==0] <- "3 can reelect next race"
-tmp$status[tmp$race.current=="Reelected"] <- "2 reelected last race (term limited)"
+tmp$status[grep("Reelected", tmp$race.current)] <- "2 reelected last race (term limited)"
 table(tmp$yr,tmp$status, useNA = "ifany")
 tmp2 <- data.frame(
     yr=2005:2020,
@@ -2781,7 +2806,7 @@ vot.dup <- vot # duplicate for debud
 vot$status <- NA
 vot$status[vot$dtermlim==1] <- "1 term limited"
 vot$status[vot$dtermlim==0] <- "3 can reelect next race"
-vot$status[vot$race.current=="Reelected"] <- "2 reelected last race (term limited)"
+vot$status[grep("Reelected", vot$race.current)] <- "2 reelected last race (term limited)"
 #table(vot$yr,vot$status, useNA = "ifany")
 # will receive state/yr sums
 tmp1 <- data.frame(y2014=rep(NA,32),
@@ -2986,7 +3011,7 @@ legend(x=8.5, y=.7,
 # relative population of reelected mayors
 vot$shptot <- vot$ptot/112336539 # rel population
 sel <- which(vot$round==15 | vot$round==16)
-sum(vot$shptot[sel][vot$race.after[sel]=="Reelected"], na.rm = TRUE)
+sum(vot$shptot[sel][grep("Reelected", vot$race.current)], na.rm = TRUE)
 
 colSums(tmp4)
 # clean

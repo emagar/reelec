@@ -4,14 +4,14 @@
 ## ## 1aug2020                                                   ## ##
 ## ################################################################ ##
 ######################################################################
-
+#
 options(width = 120)
-
+#
 rm(list = ls())
 dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
-
+#
 ###########################################
 ## ##################################### ##
 ## ##                                 ## ##
@@ -21,26 +21,34 @@ setwd(dd)
 ## ##      V         V         V      ## ##
 ## ##################################### ##
 ###########################################
-
+#
 # read alcaldes
 inc <- read.csv(file = "aymu1989-present.incumbents.csv", stringsAsFactors = FALSE)
 colnames(inc)
-
+#
 # manipulate cases where incumbent/reelected switched parties so coded as party won/lost accordingly
 sel1 <- grep("Reelected-dif-p", inc$race.after)
+#inc$emm[sel1] # debug
 # subtract one round from emm codes
 tmp <- inc$emm[sel1]
 tmp1 <- sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\1", tmp, perl = TRUE)
 tmp2 <- as.numeric(sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\2", tmp, perl = TRUE))
 tmp3 <- sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\3", tmp, perl = TRUE)
+# select next round obs
 tmp4 <- paste(tmp1, tmp2+1, tmp3, sep = "")
-# select previous round obs
 sel2 <- which(inc$emm %in% tmp4)
-# paste new party as the original
+# paste switched-to party as incumbent's original
 inc$win[sel1] <- inc$win[sel2]
 # change race.after
 inc$race.after[sel1] <- "Reelected"
-
+# select previous round obs
+tmp4 <- paste(tmp1, tmp2-1, tmp3, sep = "")
+sel2 <- which(inc$emm %in% tmp4)
+# change previous race.after when needed to make time-series consistent with above recode BY HAND
+data.frame(emm.pre=inc$emm[sel2], win.pre=inc$win[sel2], race.after.pre=inc$race.after[sel2], win=inc$win[sel1])
+sel <- which(inc$emm=="cps-15.100"); inc$race.after[sel] <- "Term-limited-p-lost"
+sel <- which(inc$emm=="cua-15.004"); inc$race.after[sel] <- "Term-limited-p-won"
+#
 # manipulate cases where incumbent/beaten switched parties so coded as party won/lost accordingly
 sel1 <- grep("Beaten-dif-p", inc$race.after)
 # fish party from note
@@ -52,7 +60,7 @@ inc$win[sel1] <- tmp1
 inc$race.after[sel1] <- "Beaten"
 # clean
 rm(tmp,tmp1,tmp2,tmp3,tmp4,sel,sel1,sel2)
-
+#
 ## # merge a new coalAgg into incumbents
 ## cagg <- read.csv(file = "aymu1997-present.coalAgg.csv", stringsAsFactors = FALSE)
 ## colnames(cagg)
@@ -67,7 +75,7 @@ rm(tmp,tmp1,tmp2,tmp3,tmp4,sel,sel1,sel2)
 ## sel <- grep("[a-z]+[-][0-9]{2}[ab].*", inc$emm) # find anuladas/ballotage
 ## inc <- inc[-sel,] # drop them
 ## write.csv(inc, file = "tmp.csv", row.names = FALSE) # verify what tmp.csv looks like
-
+#
 # simplify parties
 inc$win2 <- inc$win
 inc$win2 <- sub("conve", "mc",   inc$win2, ignore.case = TRUE)
@@ -183,7 +191,7 @@ inc$status <- NULL
 inc$win.long <- inc$win # retain unsimplified version
 inc$win <- inc$win2; inc$win2 <- NULL # keep manipulated version only
 #table(inc$win)
-
+#
 #############################################################
 ## lag race.after & win to generate race.prior & win.prior ##
 #############################################################
@@ -229,7 +237,7 @@ for (e in 1:32){
     }
     inc[sel.e,] <- inc.e
 }
-
+#
 # drop observations that went to usos y costumbres
 sel <- grep("drop-obs", inc$race.after, ignore.case = TRUE)
 if (length(sel)>0) inc <- inc[-sel,]
@@ -238,7 +246,7 @@ if (length(sel)>0) inc <- inc[-sel,]
 # mark election before went uyc as p-lost
 sel <- grep("uyc", inc$race.after, ignore.case = TRUE)
 inc$race.after[sel] <- "Term-limited-p-lost"
-
+#
 # 31jul2020: NEED TO DEAL WITH WIN.PRIOR IN NEW MUNICS... looked at win in parent municipio and used it 
 inc$win.prior[inc$emm=="ags-08.010"] <- inc$win.long.prior[inc$emm=="ags-08.010"] <- "pri"
 inc$win.prior[inc$emm=="ags-08.011"] <- inc$win.long.prior[inc$emm=="ags-08.011"] <- "pri"
@@ -359,7 +367,7 @@ inc$race.prior[sel] <- "pending"
 sel <- which(inc$yr>1993)
 table(inc$race.prior[sel], useNA = "always")
 table(inc$race.prior, useNA = "always")
-
+#
 #############################################
 # subset: cases allowing reelection in 2018 #
 # esto lo reporté en el blog de Nexos       #
@@ -367,55 +375,55 @@ table(inc$race.prior, useNA = "always")
 sel <- which(inc$yr==2018 & inc$edon!=9 & inc$edon!=21)
 inc.sub <- inc[sel,]
 dim(inc.sub)
-
+#
 sel <- which(inc.sub$race.prior=="pending"|inc.sub$race.prior=="")
 inc.sub$emm[sel]
 if (length(sel)>0) inc.sub <- inc.sub[-sel,] # drop cases with pending election
-
+#
 table(inc.sub$edon, inc.sub$race.prior) # by state
 table(              inc.sub$race.prior)
 nrow(inc.sub)
 round(table(inc.sub$race.prior) / nrow(inc.sub),2)
-
+#
 table(inc.sub$win, inc.sub$race.prior) # by incumbent party
 tab <- table(inc.sub$win.prior, inc.sub$race.prior)
 rowSums(tab)
 sum(rowSums(tab))
 round(table(inc.sub$win.prior, inc.sub$race.prior) *100 / rowSums(tab), 1)
 round(colSums(tab) *100 / sum(rowSums(tab)), 1)
-
+#
 # subset: cases NOT allowing reelection in 2018
 sel <- which(inc$yr==2018 & (inc$edon==9 | inc$edon==21))
 inc.sub <- inc[sel,]
-
+#
 table(inc.sub$edon, inc.sub$race.prior) # by state
 table(              inc.sub$race.prior)
 nrow(inc.sub)
 round(table(inc.sub$race.prior) / nrow(inc.sub),2)
-
+#
 table(inc.sub$win, inc.sub$race.prior) # by incumbent party
 tab <- table(inc.sub$win.prior, inc.sub$race.prior)
 rowSums(tab)
 round(table(inc.sub$win.prior, inc.sub$race.prior) *100 / rowSums(tab), 0)
-
+#
 sel <- which(inc$yr==2018 & inc$edon!=16)
 inc.sub <- inc[sel,]
-
+#
 ####################
 ## end blog nexos ##
 ####################
-
-
+#
+#
 ################################################
 ## ########################################## ##
 ## ## SCRIPT FROM incumbents.r *ENDS* HERE ## ##
 ## ########################################## ##
 ################################################
-
+#
 # HOUSECLEANING
 rm(e,inc.e,inc.m,inc.sub,m,M,mm,sel,sel1,sel2,sel.e,sel.m,tab,tmp)
-
-
+#
+#
 # ORDINARY ELECTION YEARS FOR ALL STATES --- INAFED HAS YRIN INSTEAD OF YR
 # 4ago2020: PROBABLY REDUNDANT SINCE emm NOW IDENTIFIES CYCLE REGARDLESS OF YEAR
 # extract election yrs
@@ -460,7 +468,7 @@ for (i in 1:32){
 }
 calendar <- cal # keep data frame only
 rm(cal)
-
+#
 ############################
 ## dummy party reelected  ##
 ############################
@@ -948,7 +956,7 @@ data.frame(inc$emm[sel], inc$note[sel])
 ## sel2 <- grep("pan",inc$win.long[sel])
 ## tmp[intersect(sel1,sel2)] <- 1 # both
 ## inc$dpwon.prior[sel] <- tmp # return to data after manipulation 
-
+#
 # if a party returns after current term, which is it?
 # dpwon.prior==1 if race.prior winner includes incumbent 
 inc$returning.p.prior <- NA
@@ -998,7 +1006,7 @@ table(inc$returning.p.prior, useNA = "always")
 # unlag
 inc <- inc[order(inc$ife),] # verify sorted before lags
 inc <- slide(inc, Var = "returning.p.prior", NewVar = "returning.p", GroupVar = "ife", slideBy = +1) # lead by one period
-
+#
 # clean: drop lags
 #inc <- inc[,-grep("prior", colnames(inc))]
 inc$returning.p.prior <- NULL
@@ -1273,7 +1281,7 @@ inc$fuente <- NULL
 ## ####################################
 ## ## REPEATED NAME SEARCH ENDS HERE ##
 ## ####################################
-
+#
 #########################################
 ## ################################### ##
 ## ##      ^         ^         ^    ## ##
@@ -1283,10 +1291,10 @@ inc$fuente <- NULL
 ## ##                               ## ##
 ## ################################### ##
 #########################################
-
-
-
-
+#
+#
+#
+#
 ###########################################################
 ## ##################################################### ##
 ## ##                                                 ## ##
@@ -1296,9 +1304,9 @@ inc$fuente <- NULL
 ## ##         V         V         V         v         ## ##
 ## ##################################################### ##
 ###########################################################
-
+#
 gd <- "/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/"
-
+#
 # load municipal votes
 vot <- read.csv("aymu1989-present.coalAgg.csv", stringsAsFactors = FALSE)
 #vot[1,]
@@ -1306,11 +1314,11 @@ vot <- within(vot, fuente <- notas <- tot <- nr <- nulos <- NULL)
 # drop before 1997
 sel <- which(vot$yr<1997)
 vot <- vot[-sel,]
-
+#
 # keep runoffs only in cases where first round was held in san luis potosí
 sel <- grep("san-[0-9]+b", vot$emm) # these are first round races that led to runoff
 vot <- vot[-sel,]
-
+#
 ## # drop runoffs in san luis potosí, keeping winner
 ## sel.r1 <- grep("san-[0-9]+b", vot$emm) # these are first round races that led to runoff
 ## # tmp is emm without the "b"
@@ -1343,15 +1351,15 @@ sel <- which(vot$edon==20 & vot$munn %in% tmp)
 ## tmp <- vot$emm[sel]
 ## tmp[order(tmp)]
 if (length(sel)>0) vot <- vot[-sel,]
-
+#
 # drop oxchuc in 2018, went usos y costumbres
 sel <- which(vot$emm=="cps-17.064")
 vot <- vot[-sel,]
-
+#
 # drop hidalgo 2020, will be held 18oct2020
 sel <- grep("hgo-16", vot$emm)
 vot <- vot[-sel,]
-
+#
 # drop void elections
 # 6ago2020: check which don't have extraord data. drop them? would break lags... check in incumbents block too
 sel <- grep("[0-9]+a[.]", vot$emm) # anuladas
@@ -1359,7 +1367,7 @@ tmp <- vot$emm[sel]
 tmp <- sub("(^.+[0-9])+a[.]", "\\1.", tmp) # drop the a from emm, are these obs in data?
 tmp[which(tmp %in% vot$emm)]==tmp # all have extra data if output only TRUEs wo error
 vot <- vot[-sel,]
-
+#
 # re-compute efec
 sel <- grep("v[0-9]+", colnames(vot))
 v <- vot[,sel]
@@ -1372,18 +1380,18 @@ vot$efec[which(vot$efec==0)] <- 1 # put 1 vote to missing races to avoid indeter
 v <- round(v/rowSums(v), digits = 4)
 vot[,sel] <- v
 rm(v)
-
+#
 ## # win matches does not match l01 in san luis runoff cases if those were dropped above, therefore l01 and win should be retained
 ## sel <- which(vot$win != vot$l01)
 ## vot$emm[sel] # all should be san luis potosi
-
+#
 ## # lo usé para detectar casos en aymu.incumbents con info que no correspondía con aymu.coalAgg
 ## sel <- c("emm", "edon", "mun", "munn", "ife", "inegi", "yr", "dy", "mo", "win")
 ## i <- merge(x = inc, y = vot[,sel],
 ##            by = c("emm", "edon", "mun", "munn", "ife", "inegi", "yr", "mo", "dy", "win"),
 ##            all = TRUE)
 ## write.csv(i, file = paste(dd, "tmp.csv", sep = ""), row.names = FALSE)
-
+#
 # prepare object with pan pri left morena oth votes
 # 4ago2020: add pvem?
 v5 <- vot # duplicate
@@ -1586,7 +1594,7 @@ v5$dmajcoal[sel] <- 1
 # consolidate
 tmp <- v5[v5$r==1,] # will receive consolidated data
 dim(tmp)
-
+#
 for (i in 1:max(v5$n)){
     #i <- 1 # debug
     message(sprintf("loop %s of %s", i, max(v5$n)))
@@ -1595,10 +1603,10 @@ for (i in 1:max(v5$n)){
     tmp[tmp$n==i, c("pan","pri","prd","morena","oth","dmajcoal")] <- tmp2 # plug colsolidated data
 }
 v5 <- tmp
-
+#
 # debug inspect v5, all vs and ls should be 0
 table(v5$v, useNA = "always")
-
+#
 #
 # clean, data in pan pri morena prd oth
 v5$n <- v5$r <- v5$v <- v5$l <- v5$status <- NULL
@@ -1613,17 +1621,14 @@ vot[1,]
 #
 # clean
 rm(i,sel,sel1,v5)
-
-
-
-
-
+#
+#
 #############################
 ## GET ELECTORAL HISTORIES ##
 #############################
 vot$vhat.pan <- vot$vhat.pri  <- vot$vhat.left <- vot$alpha.pan  <- vot$alpha.pri <- vot$alpha.left <- NA # open slots
 vot$d.pan <- vot$d.pri  <- vot$d.left <- NA # open slots
-
+#
 # save a copy
 save.image(paste(wd,"tmp.RData",sep=""))
 
@@ -1633,8 +1638,8 @@ dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
 load(paste(wd,"tmp.RData",sep=""))
-
-
+#
+#
 # 2006
 his <- read.csv(paste(gd, "dipfed-municipio-vhat-2006.csv", sep = ""), stringsAsFactors = FALSE)
 # drop unneeded columns
@@ -1774,7 +1779,7 @@ sel <- grep("morena", inc$win.prior)
 inc$win.prior.left[sel] <- "left"
 sel <- grep("prd", inc$win.prior)
 inc$win.prior.left[sel] <- "left"
-
+#
 library(DataCombine) # easy lags with slide
 inc <- inc[order(inc$emm),] # check sorted for lags
 inc$cycle <- as.numeric(sub("^[a-z]?[a-z]{2}[-]([0-9]+)[.][0-9]{3}$", "\\1",inc$emm))
@@ -1824,10 +1829,10 @@ table(inc$dpwon.prior, inc$dpwon.prior.left)
 # re-compute race.after with left recategorization; compute dincran.after, dincwon.after, and dptywon.after; lag for .current
 #inc.dupli <- inc # duplicate for debug
 #inc <- inc.dupli # restore
-
+#
 ### OLD VERSION OF THIS VAR-GENERATION HAD PROBLEMS
 # win.left, win.after.left, race.after.left (overestimates reelection cases, just like race.after misses some where perredista went to morena) 
-
+#
 # incumbent in ballot, incumbent won
 inc$dincran.after <- 0
 sel <- grep("Beaten|Reelected", inc$race.after) #sel <- which(inc$race.after=="Beaten" | inc$race.after=="Reelected")
@@ -1912,7 +1917,6 @@ inc <- inc[,sel]
 inc$round <- inc$cycle
 inc$cycle <- NULL
 #
-
 # paste incumbent data into vot
 vot.dup <- vot # duplicate for debug
 #sel.c <- which(colnames(inc) %in% c("emm", "race.current", "dopenseat", "dptyreel", "dtermlim", "win"))
@@ -1927,11 +1931,11 @@ table(vot$win, vot$win.current)
 #
 # keep inc's version only
 vot <- within(vot, {win <- win.current; win.current <- NULL; win.left <- win.current.left; win.current.left <- NULL})
-
+#
 # clean
 rm(sel,sel1,sel2,sel.c,tmp)
-
-
+#
+#
 #################################
 ## concurrent election dummies ##
 #################################
@@ -1956,7 +1960,7 @@ for (i in 1:32){
     tmp <- as.numeric(cal.ay[i,sel.c]==cal.fed[i,sel.c])
     conc.fed[i, sel.c] <- tmp
 }
-
+#
 conc.fed[cal.ay=="--"] <- 0
 # ay concurs with gob
 conc.gob <- cal.ay
@@ -1975,7 +1979,7 @@ tmp <- apply(tmp, c(1,2), FUN = function(x){as.numeric(x)})
 conc.fed <- tmp
 #
 # plug into vot
-
+#
 vot$dconcgob <- vot$dconcfed <- NA
 for (e in 1:32){ # loop across states
     message(sprintf("loop %s", e))
@@ -1995,7 +1999,7 @@ for (e in 1:32){ # loop across states
 }
 # clean
 rm(cal,cal.ay,cal.fed,cal.gob,conc.fed,conc.gob,e,i,sel,sel.c,sel.e,sel.ey,sel.y,tmp,vot.e,y)
-
+#
 # get governor parties
 tmp <- "../../mxBranches/statesBranches/32stategovts.csv"
 gob <- read.csv(file = tmp, stringsAsFactors = FALSE)
@@ -2028,7 +2032,7 @@ for (e in 1:32){ # loop across states
 }
 # clean
 rm(e,gob,i,sel.e,sel.ey,sel.y,tmp,vot.e,y)
-
+#
 # get municipio altitude variance (from censo 2010 @ loc level)
 library(foreign)
 tmp <- read.dbf("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/2010censo/ITER_NALDBF10.dbf", as.is = TRUE)
@@ -2079,18 +2083,18 @@ tmp$meanalt <- round(tmp$meanalt, 1)
 tmp$sdalt <- round(tmp$sdalt, 1)
 #summary(tmp$sdalt)
 #summary(tmp$wsdalt)
-
+#
 # make discrete altitude variables for mapping exploration
 alt <- tmp
 rm(tmp,sel)
-
+#
 # read sección-municipio equivalencias
 tmp <- read.csv("/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/equivSecc/tablaEquivalenciasSeccionalesDesde1994.csv", stringsAsFactors = FALSE)
 tmp <- tmp[,grep("edon|seccion|inegi|ife|mun[0-9]+",colnames(tmp))] # select columns
 #tmp[1,]
 #tmp[tmp$edon==1 & tmp$inegi==1010,c("seccion","munn")]
 censo <- tmp # rename, will receive state-by-state
-
+#
 # get censo 2010 ptot p5li etc
 edos <- c("ags","bc","bcs","cam","coa","col","cps","cua","df","dgo","gua","gue","hgo","jal","mex","mic",
           "mor","nay","nl","oax","pue","que","qui","san","sin","son","tab","tam","tla","ver","yuc","zac")
@@ -2147,7 +2151,7 @@ censo$VPH_DRENAJ <- ave(censo$VPH_DRENAJ, as.factor(censo$ife), FUN=sum, na.rm=T
 # drop redundant lines cols
 censo <- censo[duplicated(censo$ife)==FALSE,]
 censo <- censo[, -grep("mun[0-9]", colnames(censo))]
-
+#
 ###########################################################################################
 ## go back to censo.sec and fix new municipios and their parents in exact year happened  ##
 ## at present, seccion-mun map taken from 2018 and projected backwards                   ##
@@ -2158,7 +2162,7 @@ censo <- censo[, -grep("mun[0-9]", colnames(censo))]
 ## --> (3) aggregate                                                                     ##
 ## --> (4) paste manipulation in censo                                                   ##
 ###########################################################################################
-          
+#          
 # create census variables
 censo$ptot <- censo$POBTOT
 censo$p5li <- censo$P5_HLI / censo$P_5YMAS
@@ -2187,30 +2191,30 @@ censo <- within(censo, {
 # clean
 censo <- within(censo, POBTOT <- P_5YMAS <- P5_HLI <- PSINDER <- PDER_SS <- PDER_IMSS <- PDER_ISTE <- PDER_ISTEE <- PDER_SEGP <- PCATOLICA <- PSIN_RELIG <- VIVTOT <- VPH_AGUAFV <- VPH_AGUADV <- VPH_C_ELEC <- VPH_DRENAJ  <- NULL)
 censo$seccion <- NULL
-
+#
 # merge altitudes
 dim(censo)
 dim(alt)
 alt$ptot <- NULL
-
+#
 #tmp <- censo # duplicate for debug
 censo <- merge(x = censo, y = alt, by = "inegi", all = TRUE)
 # clean
 rm(alt)
-
+#
 # make discrete altitude variables for mapping exploration
 # script mapa-municipios.r draws wsd(alt) etc
-
+#
 # merge censo into vot
 sel <- which(colnames(censo) %in% c("ife","edon")) # drop towards merge
 vot <- merge(x = vot, y = censo[,-sel], by = "inegi", all.x = TRUE, all.y = FALSE)
 rm(censo, censo.sec, i, sel, tmp, tmp.dat, tmp.file, tmp.dir)
-
+#
 # compute winner's margin
 vot$mg <- round(vot$v01 - vot$v02, 4)
 vot$round <- sub(pattern = "[\\w\\D-]+([0-9]{2})[.][0-9]{3}", replacement = "\\1", vot$emm, perl = TRUE)
 vot$round <- as.numeric(vot$round)
-
+#
 # capital municipalities
 sel <- which(vot$ife  %in%  c( 1001,
                                2002,
@@ -2245,21 +2249,21 @@ sel <- which(vot$ife  %in%  c( 1001,
                               31050,
                               32056))
 vot$dcapital <- 0; vot$dcapital[sel] <- 1
-
+#
 # single-term states after reform
 vot$dhgover <- as.numeric(vot$edon==13 | vot$edon==30)
 # pre-reform dummy
 vot$dpreref  <- as.numeric(vot$yr< 2018)
 vot$dpostref <- as.numeric(vot$yr>=2018)
-
+#
 # left vote is prd pre-2015, morena+prd 2015:17, morena since 2018
 vot <- within(vot, {
     left = prd + morena
     left[yr>=2018] = morena[yr>=2018]
     res.left = left - vhat.left # re-compute residuals w manip left 
 })
-
-
+#
+#
 # save a copy
 save.image(paste(wd,"mun-reelection.RData",sep=""))
 
@@ -2273,13 +2277,13 @@ load(paste(wd,"mun-reelection.RData",sep=""))
 options(width = 130)
 rm(vot.dup)
 rm(inc) # drop to avoid confusion, useful data has been merged into vot
-
+#
 # elevation variance
 vot$varalt <- vot$sdalt^2 /1000
 vot$wvaralt <- vot$wsdalt^2 /1000
 vot$wmeanalt2 <- vot$wmeanalt^2
 vot$logptot <- log(vot$ptot)
-
+#
 ## # inspect eric  x
 ## sel <- which(vot$yr>2005 & vot$d)
 ## colnames(vot)
@@ -2289,7 +2293,7 @@ vot$logptot <- log(vot$ptot)
 ## plot(his$pri-his$vhat.pri)
 ## plot(his$left-his$vhat.left)
 ## x
-
+#
 # get state-level gob elections (will need to replace with mu-level when data available)
 # script reads data, cleans, and aggregates coalitions, returning object dat
 source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/go.r")
@@ -2474,13 +2478,13 @@ rm(i,sel,sel1,v5)
 ###################
 ## END IMPORT GO ##
 ###################
-
+#
 # merge go into vot here
 dat$edoyr <- dat$edon*10000+dat$yr
 vot$edoyr <- vot$edon*10000+vot$yr
-
+#
 vot <- within(vot, gopan <- gopri <- goprd <- gomorena <- goefec <- 0) # will receive dat
-
+#
 for (ey in unique(dat$edoyr)){
     #ey <- 72018 # debug
     sel <- which(vot$edoyr==ey)
@@ -2503,7 +2507,7 @@ vot <- within(vot, goleft[yr>2015] <- gomorena[yr>2015])
 # clean
 rm(dat)
 vot$edoyr <- vot$goefec <- NULL
-
+#
 #######################
 ## dummy pty had won ##
 #######################
@@ -2543,8 +2547,8 @@ vot <- cbind(vot,tmp)
 ###########################
 ## end dummy pty had won ##
 ###########################
-
-
+#
+#
 ###################################
 ## function to estimate ols regs ##
 ###################################
@@ -2710,16 +2714,19 @@ colnames(tmp)[grep("win",colnames(tmp))]
 # 1. morena nums don't match pdf table
 # 2. openlostpri =  1903 with dummies but 1904 in table
 # 3. openlostleft =  1038 with dummies but 1046 in table
-tmp <- left.dat05.m1
-table(tmp$win,tmp$race.current)
+tmp <- pan.dat05.m1
+table(tmp$win, tmp$race.after)
 table(tmp$yr)
 table(tmp$dptyinc, tmp$dinptywon.current)
 table(tmp$dptyopen, tmp$dinptywon.current)
 table(tmp$dothinc, tmp$dinptywon.current)
 table(tmp$dothopen, tmp$dinptywon.current)
 summary(tmp$res.pty)
-x
+#
+sel <- which(tmp$win=="morena" & tmp$race.current=="Beaten")
+tmp$emm[sel]
 
+x
 
 #
 ## pan.lag12 <- estim.mod(pty = "pan", y = 2012)

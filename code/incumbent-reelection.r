@@ -5,8 +5,6 @@
 ## ################################################################ ##
 ######################################################################
 #
-options(width = 120)
-#
 rm(list = ls())
 dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
@@ -1247,7 +1245,6 @@ inc$fuente <- NULL
 ## setwd(wd)
 ## load(file = "drep-cut1.RData")
 ## ls()
-## options(width = 130)
 ## 
 ## table(inc$drep)
 ## sel <- which(inc$drep==15)
@@ -1862,6 +1859,11 @@ inc <- slide(inc, Var = "dincran.after",        NewVar = "dincran.current",     
 inc <- slide(inc, Var = "dincwon.after",        NewVar = "dincwon.current",        GroupVar = "ife", TimeVar = "cycle", slideBy = -1) # lag by one period
 inc <- slide(inc, Var = "dinptywon.after",      NewVar = "dinptywon.current",      GroupVar = "ife", TimeVar = "cycle", slideBy = -1) # lag by one period
 inc <- slide(inc, Var = "dinptywon.after.left", NewVar = "dinptywon.current.left", GroupVar = "ife", TimeVar = "cycle", slideBy = -1) # lag by one period
+#
+# new municipalities, fill in dincran.current
+sel <- which(inc$emm %in% c("gue-12.077", "gue-13.078", "gue-13.079", "gue-13.080", "gue-13.081", "jal-13.125", "mex-12.125", "qui-13.009", "qui-15.010", "qui-16.011", "zac-13.058", "cps-15.120", "cps-15.121", "cps-15.122", "cps-15.123", "cps-17.124", "cps-17.125"))
+inc$dincran.current[sel] <- 0
+#
 # rename current vars
 inc$win.current <- inc$win; inc$win <- NULL
 inc$win.current.left <- inc$win.left; inc$win.left <- NULL
@@ -2274,7 +2276,6 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
 #
 load(paste(wd,"mun-reelection.RData",sep=""))
-options(width = 130)
 rm(vot.dup)
 rm(inc) # drop to avoid confusion, useful data has been merged into vot
 #
@@ -2548,13 +2549,13 @@ vot <- cbind(vot,tmp)
 ## end dummy pty had won ##
 ###########################
 #
-#
+
 ###################################
 ## function to estimate ols regs ##
 ###################################
 library(DataCombine) # easy lags with slide
 #
-estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
+estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE){
     # duplicate vot for analysis
     tmp <- vot
     #
@@ -2621,10 +2622,9 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
     #
     # lag votes
     tmp <- tmp[order(tmp$emm),] # check sorted for lags
-    tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.][0-9]+", "\\1", tmp$emm))
     #tmp[1,]
-    tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "ife", Var = "vot", NewVar = "vot.lag", slideBy = -1) # lag by one period
-    tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "ife", Var = "pri", NewVar = "pri.lag", slideBy = -1) # lag by one period
+    tmp <- slide(data = tmp, TimeVar = "round", GroupVar = "ife", Var = "vot", NewVar = "vot.lag", slideBy = -1) # lag by one period
+    tmp <- slide(data = tmp, TimeVar = "round", GroupVar = "ife", Var = "pri", NewVar = "pri.lag", slideBy = -1) # lag by one period
     #
     # alpha
     if (pty=="pan")  tmp$alpha <- tmp$alpha.pan
@@ -2641,6 +2641,16 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
         wsdalt <-  wsdalt/1000;
         ptot <- ptot/100000
     })
+    #
+    # drop cases with NAs observations---sould be new municialities (missing agged vote) and void races (zapatista muns)
+    tmp2 <- gsub(" ", "", form)
+    tmp2 <- strsplit(tmp2, split = "[~+]", perl = TRUE)
+    tmp2 <- tmp2[[1]]
+    tmp2 <- tmp[, which(colnames(tmp) %in% tmp2)]
+    sel <- which(! complete.cases(tmp2))
+    #cbind(tmp$emm[sel], tmp2[sel,])
+    if (list.NAs==TRUE) print(c("Cases with NAs dropped from lm", tmp$emm[sel])) # list of missing cases
+    tmp <- tmp[-sel,] 
     #
     tmp.mod <- lm(formula = form, data = tmp, subset = (dhgover==0))
     #
@@ -2668,13 +2678,13 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE){
 # three models with residual as DV
 # model 1
 form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen             + dsamegov + logptot + wsdalt + dpostref"
-pan.dat05.m1 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE)
+pan.dat05.m1 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE, list.NAs = TRUE)
 pan.lag05.m1 <- estim.mod(pty = "pan", y = 2005)
 summary(pan.lag05.m1)
-pri.dat05.m1 <- estim.mod(pty = "pri", y = 2005, ret.data = TRUE)
+pri.dat05.m1 <- estim.mod(pty = "pri", y = 2005, ret.data = TRUE, list.NAs = TRUE)
 pri.lag05.m1 <- estim.mod(pty = "pri", y = 2005)
 summary(pri.lag05.m1)
-left.dat05.m1 <- estim.mod(pty = "left", y = 2005, ret.data = TRUE)
+left.dat05.m1 <- estim.mod(pty = "left", y = 2005, ret.data = TRUE, list.NAs = TRUE)
 left.lag05.m1 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m1)
 # model 2
@@ -2704,9 +2714,22 @@ left.lag05.m4 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m4)
 x
 
-# inspect eric  x
-sel <- which(vot$win=="prd" & vot$yr>2014)
-table(vot$l01[sel], vot$yr[sel])
+# inspect find missing cases eric  x
+tmp <- vot # duplicate
+sel <- which(tmp$win %in% c("anulada","consejoMunic","litigio"))
+tmp <- tmp[-sel,]
+tmp <- tmp[order(tmp$emm),] # check sorted for lags
+tmp <- slide(data = tmp, TimeVar = "round", GroupVar = "ife", Var = "pan", NewVar = "pan.lag", slideBy = -1) # lag by one period
+tmp <- slide(data = tmp, TimeVar = "round", GroupVar = "ife", Var = "pri", NewVar = "pri.lag", slideBy = -1) # lag by one period
+    #
+sel <- which(tmp$yr>=2005)
+tmp <- tmp[sel,]
+sel <- which(colnames(tmp) %in% c("emm", "pan", "res.pan", "pan.lag", "win", "dincran.current", "govpty.lag", "logptot", "wsdalt", "dpostref"))
+tmp <- tmp[,sel]
+#
+sel <- which(! complete.cases(tmp))
+tmp[sel,]
+x
 
 colnames(tmp)[grep("win",colnames(tmp))]
 
@@ -2771,7 +2794,6 @@ stargazer(pan.lag05.m2, pri.lag05.m2, left.lag05.m2, pan.lag05.m3, pri.lag05.m3,
 ## apsrtable(fit1, fit2)
 
 # some descriptives
-#options(width = 90)
 tmp <- pan.dat05
 colnames(tmp)
 

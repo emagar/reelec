@@ -2700,11 +2700,12 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
         ## DROP tmp$dpty[tmp$yr>=2015] <- tmp$dtmp[tmp$yr>=2015]; tmp$dtmp <- NULL # morena since 2015
     }
     if (pty == "oth"){
-        # few municipios where pri=0, add 0.001 to avoid indeterminacy in log-ratios
+        tmp$vot <- 1- tmp$pan - tmp$pri - tmp$left
+        tmp$vot[tmp$vot<0] <- 0 # rounding produces negatives, fix them
+        # few municipios where pri=0, add 0.001 to avoid indeterminacy in log-ratios (after computing oth's vot)
         sel  <- which(tmp$pri==0)
         tmp$pri[sel] <- 0.001
         #
-        tmp$vot <- 1- tmp$pan - tmp$pri - tmp$left
         # where oth=0, add 0.001 to avoid indeterminacy in log-ratios
         sel  <- which(tmp$vot==0)
         tmp$vot[sel] <- 0.001
@@ -2743,6 +2744,7 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
     if (pty=="pan")  tmp$alpha <- tmp$alpha.pan
     if (pty=="pri")  tmp$alpha <- tmp$alpha.pri
     if (pty=="left") tmp$alpha <- tmp$alpha.left
+    #if (pty=="oth")  tmp$alpha <- tmp$alpha.oth # i believe this is not in distributed data
     #
     # years to retain in estimation (vhat histories after 2004 only) --- do after lag to avoid losing obs
     sel <- which(tmp$yr>=y)

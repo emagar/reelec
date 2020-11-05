@@ -1739,6 +1739,7 @@ vot$res.pan <- vot$pan - vot$vhat.pan
 vot$res.pri <- vot$pri - vot$vhat.pri
 vot$res.prd <- vot$prd - vot$vhat.left
 vot$res.morena <- vot$morena - vot$vhat.left
+vot$res.oth <- (1 - vot$pan - vot$pri - vot$prd - vot$morena) - (1 - vot$vhat.pan - vot$vhat.pri - vot$vhat.left)
 sel <- which(vot$yr<2015)
 vot$res.morena[sel] <- NA
 
@@ -2502,6 +2503,7 @@ vot <- within(vot, gopan    <- gopan    / goefec)
 vot <- within(vot, gopri    <- gopri    / goefec)
 vot <- within(vot, goprd    <- goprd    / goefec)
 vot <- within(vot, gomorena <- gomorena / goefec)
+vot <- within(vot, gooth    <- 1 - gopan - gopri - goprd - gomorena)
 vot$goleft <- vot$goprd
 vot <- within(vot, goleft[yr>2015] <- gomorena[yr>2015])
 #vot[1,] # debug
@@ -2509,10 +2511,101 @@ vot <- within(vot, goleft[yr>2015] <- gomorena[yr>2015])
 rm(dat)
 vot$edoyr <- vot$goefec <- NULL
 #
+#####################################################################
+## get municipio-level pres elections to interact with concurrence ##
+#####################################################################
+pr06 <- read.csv("/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/municipios/pre2006.csv", stringsAsFactors = FALSE)
+pr12 <- read.csv("/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/municipios/pre2012.csv", stringsAsFactors = FALSE)
+pr18 <- read.csv("/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/municipios/pre2018.csv", stringsAsFactors = FALSE)
+pr06 <- within(pr06, {
+    efec <- fch + rmp + amlo + pna + asdc # recompute efec
+    fch <- round(fch / efec, 3) # shares
+    rmp  <- round(rmp / efec, 3)
+    amlo <- round(amlo / efec, 3)
+    pna <- round(pna / efec, 3)
+    asdc <- round(asdc / efec, 3)
+    oth <- pna + asdc # particize
+    prd <- amlo
+    pri <- rmp
+    pan <- fch
+    fch <- rmp <- amlo <- pna <- asdc <- efec <- lisnom <- NULL # clean
+    left <- prd # duplicate to import when left is used
+})
+pr12 <- within(pr12, {
+    efec <- pena + jvm + amlo + pna # recompute efec
+    pena <- round(pena / efec, 3) # shares
+    jvm  <- round(jvm / efec, 3)
+    amlo <- round(amlo / efec, 3)
+    pna <- round(pna / efec, 3)
+    oth <- pna # particize
+    prd <- amlo
+    pri <- pena
+    pan <- jvm
+    jvm <- pena <- amlo <- pna <- mun <- efec <- lisnom <- NULL # clean
+    left <- prd # duplicate to import when left is used
+})
+pr18 <- within(pr18, {
+    efec <- rac + jam + amlo + bronco # recompute efec
+    rac <- round(rac / efec, 3) # shares
+    jam  <- round(jam / efec, 3)
+    amlo <- round(amlo / efec, 3)
+    bronco <- round(bronco / efec, 3)
+    oth <- bronco # particize
+    morena <- amlo
+    pri <- jam
+    pan <- rac
+    rac <- jam <- amlo <- bronco <- efec <- lisnom <- NULL # clean
+    left <- morena # duplicate to import when left is used
+})
+#
+# merge pr into vot here
+pr06 <- within(pr06, ifeyr <- ife*10000 + 2006)
+pr12 <- within(pr12, ifeyr <- ife*10000 + 2012)
+pr18 <- within(pr18, ifeyr <- ife*10000 + 2018)
+vot$ifeyr <- vot$ife*10000+vot$yr
+#
+vot <- within(vot, prleft <- prmorena <- prprd <- prpri <- prpan <- 0) # will receive dat
+#
+for (ey in unique(pr06$ifeyr)){
+    #ey <- 220012006 # debug
+    sel <- which(vot$ifeyr==ey)
+    sel2 <- which(pr06$ifeyr==ey)
+    if (length(sel)==0) next
+    vot$prpan   [sel] <- pr06$pan   [sel2]
+    vot$prpri   [sel] <- pr06$pri   [sel2]
+    vot$prprd   [sel] <- pr06$prd   [sel2]
+    vot$prleft  [sel] <- pr06$left  [sel2]
+}
+#
+for (ey in unique(pr12$ifeyr)){
+    #ey <- 220012012 # debug
+    sel <- which(vot$ifeyr==ey)
+    sel2 <- which(pr12$ifeyr==ey)
+    if (length(sel)==0) next
+    vot$prpan   [sel] <- pr12$pan   [sel2]
+    vot$prpri   [sel] <- pr12$pri   [sel2]
+    vot$prprd   [sel] <- pr12$prd   [sel2]
+    vot$prleft  [sel] <- pr12$left  [sel2]
+}
+#
+for (ey in unique(pr18$ifeyr)){
+    #ey <- 220012018 # debug
+    sel <- which(vot$ifeyr==ey)
+    sel2 <- which(pr18$ifeyr==ey)
+    if (length(sel)==0) next
+    vot$prpan   [sel] <- pr18$pan   [sel2]
+    vot$prpri   [sel] <- pr18$pri   [sel2]
+    vot$prmorena[sel] <- pr18$morena[sel2]
+    vot$prleft  [sel] <- pr18$left  [sel2]
+}
+############################################
+## End get municipio-level pres elections ##
+############################################
+#
 #######################
 ## dummy pty had won ##
 #######################
-tmp <- data.frame(ife=vot$ife, yr=vot$yr, win=vot$win, dpanpast=0, dpripast=0, dprdpast=0, dmorenapast=0, dleftpast=0, stringsAsFactors = FALSE)
+tmp <- data.frame(ife=vot$ife, yr=vot$yr, win=vot$win, dpanpast=0, dpripast=0, dprdpast=0, dmorenapast=0, dleftpast=0, dothpast=0, stringsAsFactors = FALSE)
 tmp$ord <- 1:nrow(tmp)
 tmp <- tmp[order(tmp$ife,tmp$yr),] # sort
 tmp <- slide(data = tmp, Var = "win", TimeVar = "yr", GroupVar = "ife", NewVar = "win1", slideBy = -1, keepInvalid = TRUE) 
@@ -2537,13 +2630,14 @@ for (i in 1:nrow(tmp)){
     if (length(grep("pri", unique(tmp1)))>0) tmp$dpripast[i] <- 1
     if (length(grep("prd", unique(tmp1)))>0) tmp$dprdpast[i] <- 1
     if (length(grep("morena", unique(tmp1)))>0) tmp$dmorenapast[i] <- 1
+    if (length(grep("indep|loc/oth|mc|pes|pna|pt|pvem", unique(tmp1)))>0) tmp$dothpast[i] <- 1
 }
 tmp$dleftpast[tmp$dprdpast==1|tmp$dmorenapast==1] <- 1
 #
 # sort back to original order
 tmp <- tmp[order(tmp$ord),]
 # retain new dummies only to cbind them
-tmp <- tmp[,c("dpanpast","dpripast","dleftpast")]
+tmp <- tmp[,c("dpanpast","dpripast","dleftpast","dothpast")]
 vot <- cbind(vot,tmp)
 ###########################
 ## end dummy pty had won ##
@@ -2560,7 +2654,7 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
     tmp <- vot
     #
     # drop indetermined races
-    sel <- which(tmp$win %in% c("anulada","consejoMunic","litigio"))
+    sel <- which(tmp$win %in% c("anulada","consejoMunic","consejoMun","litigio"))
     tmp <- tmp[-sel,]
     #
     ## # change prd/morena to left in win ## DONE IN OBJECTS VOT AND INC
@@ -2575,6 +2669,7 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
         tmp$vot <- tmp$pan
         tmp$res.pty <- tmp$res.pan
         tmp$concgovot <- tmp$dconcgo*tmp$gopan
+        tmp$concprvot <- tmp$dconcfed*tmp$prpan # prpan is 0 in midterms, so same as using dconcpr
         tmp$dptypast <- tmp$dpanpast
         tmp$dwin <- as.numeric(tmp$win=="pan")
         sel <- grep("pan", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
@@ -2583,6 +2678,7 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
         tmp$vot <- tmp$pri
         tmp$res.pty <- tmp$res.pri
         tmp$concgovot <- tmp$dconcgo*tmp$gopri
+        tmp$concprvot <- tmp$dconcfed*tmp$prpri
         tmp$dptypast <- tmp$dpripast
         tmp$dwin <- as.numeric(tmp$win=="pri")
         sel <- grep("pri", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
@@ -2595,12 +2691,29 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
         tmp$vot <- tmp$left
         tmp$res.pty <- tmp$res.left
         tmp$concgovot <- tmp$dconcgo*tmp$goleft
+        tmp$concprvot <- tmp$dconcfed*tmp$prleft
         tmp$dptypast <- tmp$dleftpast
         sel <- grep("left", tmp$win.left); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
         ## DROP tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
         ## DROP sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1
         ## DROP tmp$dpty[tmp$yr>=2015] <- tmp$dtmp[tmp$yr>=2015]; tmp$dtmp <- NULL # morena since 2015
+    }
+    if (pty == "oth"){
+        # few municipios where pri=0, add 0.001 to avoid indeterminacy in log-ratios
+        sel  <- which(tmp$pri==0)
+        tmp$pri[sel] <- 0.001
+        #
+        tmp$vot <- 1- tmp$pan - tmp$pri - tmp$left
+        # where oth=0, add 0.001 to avoid indeterminacy in log-ratios
+        sel  <- which(tmp$vot==0)
+        tmp$vot[sel] <- 0.001
+        tmp$res.pty <- tmp$res.oth
+        tmp$concgovot <- tmp$dconcgo*tmp$gooth
+        tmp$concprvot <- tmp$dconcfed * (1 - tmp$prpan - tmp$prpri - tmp$prleft)
+        tmp$dptypast <- tmp$dothpast
+        tmp$dwin <- as.numeric(tmp$win!="pan" & tmp$win!="pri" & tmp$win!="prd" & tmp$win!="morena")
+        sel <- grep("pan|pri|prd|morena", tmp$win); tmp$dpty <- 1; tmp$dpty[sel] <- 0
     }
     #
     # incumbent x pty dummies (complement is open seat)
@@ -2688,7 +2801,7 @@ left.dat05.m1 <- estim.mod(pty = "left", y = 2005, ret.data = TRUE, list.NAs = T
 left.lag05.m1 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m1)
 # model 2
-form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + dsamegov + logptot + wsdalt + dpostref"
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + concprvot + dsamegov + logptot + wsdalt + dpostref"
 pan.lag05.m2 <- estim.mod(pty = "pan", y = 2005)
 summary(pan.lag05.m2)
 pri.lag05.m2 <- estim.mod(pty = "pri", y = 2005)
@@ -2696,7 +2809,7 @@ summary(pri.lag05.m2)
 left.lag05.m2 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m2)
 # model 3
-form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + dsamegov + logptot + wsdalt + as.factor(yr) + as.factor(edon)"
+form <- "res.pty ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + concprvot + dsamegov + logptot + wsdalt + as.factor(yr) + as.factor(edon)"
 pan.lag05.m3 <- estim.mod(pty = "pan", y = 2005)
 summary(pan.lag05.m3)
 pri.lag05.m3 <- estim.mod(pty = "pri", y = 2005)
@@ -2704,14 +2817,19 @@ summary(pri.lag05.m3)
 left.lag05.m3 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m3)
 
-# models with log(pan/pri) etc as DV
+# models with log(pan/pri) etc as DV --- need oth.lag05.m4 in order to deduce pri
 # model 4
-form <- "log(vot/pri) ~ vot.lag/pri.lag  + dptyinc + dothinc + dptyopen             + dsamegov + logptot + wsdalt + dpostref + dptypast"
+form <- "log(vot/pri) ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + concprvot  + dsamegov + logptot + wsdalt + dpostref + as.factor(yr) + as.factor(edon)"
 #form <- "vot ~ vot.lag  + dptyinc + dothinc + dptyopen             + dsamegov + logptot + wsdalt + dpostref"
+pan.dat05.m4 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE)
 pan.lag05.m4 <- estim.mod(pty = "pan", y = 2005)
 summary(pan.lag05.m4)
 left.lag05.m4 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m4)
+oth.lag05.m4 <- estim.mod(pty = "oth", y = 2005)
+
+tmp <- pan.dat05.m4
+tmp[1,]
 x
 
 # inspect find missing cases eric  x
@@ -2734,9 +2852,8 @@ x
 colnames(tmp)[grep("win",colnames(tmp))]
 
 # check here:
-# 1. morena nums don't match pdf table
-# 2. openlostpri =  1903 with dummies but 1904 in table
-# 3. openlostleft =  1038 with dummies but 1046 in table
+# 1. openlostpri =  1903 with dummies but 1904 in table
+# 2. openlostleft =  1038 with dummies but 1046 in table
 tmp <- pan.dat05.m1
 table(tmp$win, tmp$race.after)
 table(tmp$yr)
@@ -2770,14 +2887,16 @@ x
 ## summary(left.alpha)
 
 
+
+
 library(stargazer)
-stargazer(pan.lag05.m2, pri.lag05.m2, left.lag05.m2, pan.lag05.m3, pri.lag05.m3, left.lag05.m3, align=TRUE, report = 'vc*s'
+stargazer(pan.lag05.m1, pan.lag05.m2, pan.lag05.m3, pri.lag05.m1, pri.lag05.m2, pri.lag05.m3, left.lag05.m1, left.lag05.m2, left.lag05.m3, align=TRUE, report = 'vc*s'
 #          , title = "Regression results"
           , type = c("text","latex")[2]
 #          , out = "tmp-tab.txt"
           , digits = 3
           , dep.var.labels = c("Residual")
-          , column.labels = c("PAN", "PRI", "Left", "PAN", "PRI", "Left")
+          , column.labels = c(rep("PAN",3), rep("PRI",3), rep("Left",3))
  ##          , covariate.labels=
  ## c("vote share (lagged)",
  ##   "party incumbent",
@@ -2785,7 +2904,7 @@ stargazer(pan.lag05.m2, pri.lag05.m2, left.lag05.m2, pan.lag05.m3, pri.lag05.m3,
  ##   "party open seat",
  ##   "governor",
  ##   "population (log, 10k)",
- ##   "sd elev. (pop. weigthed)",
+ ##   "sd elev. (pop. weighted)",
  ##   "post reform",
  ##   "Constant")
           )

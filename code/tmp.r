@@ -32,5 +32,6 @@ win.left # ?
 
 -------------------
 
-
+    sel <- which(1 - vot$pan - vot$pri - vot$left < 0)
+vot[sel[1],]
 

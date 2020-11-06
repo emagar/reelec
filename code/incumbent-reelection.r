@@ -2643,6 +2643,9 @@ vot <- cbind(vot,tmp)
 ## end dummy pty had won ##
 ###########################
 #
+# re-check shares add to 1
+table(with(vot, pan + pri + prd + morena + oth)) # rounding messed some
+vot <- within(vot, oth <- 1 - pan - pri - prd - morena) # fix them thru oth
 
 ###################################
 ## function to estimate ols regs ##
@@ -2819,9 +2822,10 @@ summary(pri.lag05.m3)
 left.lag05.m3 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m3)
 
+
 # models with log(pan/pri) etc as DV --- need oth.lag05.m4 in order to deduce pri
 # model 4
-form <- "log(vot/pri) ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + concprvot  + dsamegov + logptot + wsdalt + dpostref + as.factor(yr) + as.factor(edon)"
+form <- "log(vot/pri) ~ vot.lag  + dptyinc + dothinc + dptyopen + concgovot + concprvot  + dsamegov + logptot + wsdalt + dpostref" #  + as.factor(yr) + as.factor(edon)
 #form <- "vot ~ vot.lag  + dptyinc + dothinc + dptyopen             + dsamegov + logptot + wsdalt + dpostref"
 pan.dat05.m4 <- estim.mod(pty = "pan", y = 2005, ret.data = TRUE)
 pan.lag05.m4 <- estim.mod(pty = "pan", y = 2005)
@@ -2829,6 +2833,26 @@ summary(pan.lag05.m4)
 left.lag05.m4 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m4)
 oth.lag05.m4 <- estim.mod(pty = "oth", y = 2005)
+
+# predict
+tmp <- data.frame(vot.lag = seq(0,1,.01),
+                  dptyinc = 1,
+                  dothinc = 0,
+                  dptyopen = 0,
+                  concgovot = 0,
+                  concprvot = 0,
+                  dsamegov = 1,
+                  logptot = 10, # mean
+                  wsdalt = 10,  # low
+                  dpostref = 1)
+r <- data.frame(pan =  predict(pan.lag05.m4,  newdata = tmp),
+                left = predict(left.lag05.m4, newdata = tmp), 
+                oth =  predict(oth.lag05.m4,  newdata = tmp))
+v <- data.frame(pan  = p$pan  / (1 + p$pan + p$left + p$oth),
+                left = p$left / (1 + p$pan + p$left + p$oth),
+                oth  = p$oth  / (1 + p$pan + p$left + p$oth))
+v <- within(v, pri <-  1 - pan - left - oth)
+
 
 tmp <- pan.dat05.m4
 tmp[1,]

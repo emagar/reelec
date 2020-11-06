@@ -2646,6 +2646,8 @@ vot <- cbind(vot,tmp)
 # re-check shares add to 1
 table(with(vot, pan + pri + prd + morena + oth)) # rounding messed some
 vot <- within(vot, oth <- 1 - pan - pri - prd - morena) # fix them thru oth
+table(with(vot, pan + pri + prd + morena + oth)) # rounding messed some
+
 
 ###################################
 ## function to estimate ols regs ##
@@ -2665,9 +2667,9 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
     ## table(tmp$win)
     #
     if (pty == "pan"){
-        # few municipios where pri=0, add 0.001 to avoid indeterminacy in log-ratios
-        sel  <- which(tmp$pri==0)
-        tmp$pri[sel] <- 0.001
+        # municipios where pan=0 or pri=0, add 0.001 to avoid indeterminacy in log-ratios
+        sel  <- which(tmp$pan==0); tmp$pan[sel] <- 0.001
+        sel  <- which(tmp$pri==0); tmp$pri[sel] <- 0.001
         #
         tmp$vot <- tmp$pan
         tmp$res.pty <- tmp$res.pan
@@ -2687,9 +2689,9 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
         sel <- grep("pri", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
     }
     if (pty == "left"){
-        # few municipios where pri=0, add 0.001 to avoid indeterminacy in log-ratios
-        sel  <- which(tmp$pri==0)
-        tmp$pri[sel] <- 0.001
+        # municipios where left=0 or pri=0, add 0.001 to avoid indeterminacy in log-ratios
+        sel  <- which(tmp$left==0); tmp$left[sel] <- 0.001
+        sel  <- which(tmp$pri==0); tmp$pri[sel] <- 0.001
         #
         tmp$vot <- tmp$left
         tmp$res.pty <- tmp$res.left
@@ -2697,29 +2699,21 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
         tmp$concprvot <- tmp$dconcfed*tmp$prleft
         tmp$dptypast <- tmp$dleftpast
         sel <- grep("left", tmp$win.left); tmp$dpty <- 0; tmp$dpty[sel] <- 1
-        ## DROP sel <- grep("prd", tmp$win); tmp$dpty <- 0; tmp$dpty[sel] <- 1
-        ## DROP tmp$dpty[tmp$yr>=2015] <- 0 # prd before 2015
-        ## DROP sel <- grep("morena", tmp$win); tmp$dtmp <- 0; tmp$dtmp[sel] <- 1
-        ## DROP tmp$dpty[tmp$yr>=2015] <- tmp$dtmp[tmp$yr>=2015]; tmp$dtmp <- NULL # morena since 2015
     }
     if (pty == "oth"){
-        tmp$vot <- 1- tmp$pan - tmp$pri - tmp$left
-        tmp$vot[tmp$vot<0] <- 0 # rounding produces negatives, fix them
-        # few municipios where pri=0, add 0.001 to avoid indeterminacy in log-ratios (after computing oth's vot)
-        sel  <- which(tmp$pri==0)
-        tmp$pri[sel] <- 0.001
+        # municipios where oth=0 or pri=0, add 0.001 to avoid indeterminacy in log-ratios
+        sel  <- which(tmp$oth<=0); tmp$oth[sel] <- 0.001
+        sel  <- which(tmp$pri==0); tmp$pri[sel] <- 0.001
         #
-        # where oth=0, add 0.001 to avoid indeterminacy in log-ratios
-        sel  <- which(tmp$vot==0)
-        tmp$vot[sel] <- 0.001
+        tmp$vot <- tmp$oth
         tmp$res.pty <- tmp$res.oth
+        tmp$log.vot <- log(tmp$oth/tmp$pri)
         tmp$concgovot <- tmp$dconcgo*tmp$gooth
         tmp$concprvot <- tmp$dconcfed * (1 - tmp$prpan - tmp$prpri - tmp$prleft)
         tmp$dptypast <- tmp$dothpast
         tmp$dwin <- as.numeric(tmp$win!="pan" & tmp$win!="pri" & tmp$win!="prd" & tmp$win!="morena")
         sel <- grep("pan|pri|prd|morena", tmp$win); tmp$dpty <- 1; tmp$dpty[sel] <- 0
     }
-    #
     # incumbent x pty dummies (complement is open seat)
     tmp$dptyinc  <-      tmp$dpty  *      tmp$dincran.current #(1 - tmp$dopenseat)
     tmp$dothinc  <- (1 - tmp$dpty) *      tmp$dincran.current
@@ -2729,13 +2723,12 @@ estim.mod <- function(pty = "left", y = 2005, ret.data = FALSE, list.NAs = FALSE
     # manipulate prd/morena govpty for left
     sel <- which( tmp$govpty.lag=="prd" | tmp$govpty.lag=="morena" )
     tmp$govpty.lag[sel] <- "left"
+    # code govpty oth
+    sel <- which(tmp$govpty.lag=="pvem" | tmp$govpty.lag=="mc" | tmp$govpty.lag=="ind")
+    tmp$govpty.lag[sel] <- "oth"
     # own party governor dummy
     tmp$dsamegov <- 0
     tmp$dsamegov[tmp$govpty.lag == pty] <- 1
-    #
-    # add .001 to vot==0 to avoid indeterminate logs
-    sel <- which(tmp$vot==0)
-    tmp$vot[sel] <- 0.001
     #
     # lag votes
     tmp <- tmp[order(tmp$emm),] # check sorted for lags
@@ -2832,7 +2825,13 @@ pan.lag05.m4 <- estim.mod(pty = "pan", y = 2005)
 summary(pan.lag05.m4)
 left.lag05.m4 <- estim.mod(pty = "left", y = 2005)
 summary(left.lag05.m4)
+oth.dat05.m4 <- estim.mod(pty = "oth", y = 2005, ret.data = TRUE)
 oth.lag05.m4 <- estim.mod(pty = "oth", y = 2005)
+summary(oth.lag05.m4)
+
+tmp <- oth.dat05.m4
+table(tmp$dsamegov)
+x
 
 # predict
 tmp <- data.frame(vot.lag = seq(0,1,.01),
@@ -2848,9 +2847,9 @@ tmp <- data.frame(vot.lag = seq(0,1,.01),
 r <- data.frame(pan =  predict(pan.lag05.m4,  newdata = tmp),
                 left = predict(left.lag05.m4, newdata = tmp), 
                 oth =  predict(oth.lag05.m4,  newdata = tmp))
-v <- data.frame(pan  = p$pan  / (1 + p$pan + p$left + p$oth),
-                left = p$left / (1 + p$pan + p$left + p$oth),
-                oth  = p$oth  / (1 + p$pan + p$left + p$oth))
+v <- data.frame(pan  = r$pan  / (1 + r$pan + r$left + r$oth),
+                left = r$left / (1 + r$pan + r$left + r$oth),
+                oth  = r$oth  / (1 + r$pan + r$left + r$oth))
 v <- within(v, pri <-  1 - pan - left - oth)
 
 

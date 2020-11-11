@@ -2844,14 +2844,14 @@ tmp <- data.frame(vot.lag = seq(0,1,.01),
                   logptot = 10, # mean
                   wsdalt = 10,  # low
                   dpostref = 1)
-r <- data.frame(pan =  predict(pan.lag05.m4,  newdata = tmp),
-                left = predict(left.lag05.m4, newdata = tmp), 
-                oth =  predict(oth.lag05.m4,  newdata = tmp))
+r <- data.frame(pan =  exp(predict(pan.lag05.m4,  newdata = tmp)),
+                left = exp(predict(left.lag05.m4, newdata = tmp)), 
+                oth =  exp(predict(oth.lag05.m4,  newdata = tmp)))
 v <- data.frame(pan  = r$pan  / (1 + r$pan + r$left + r$oth),
+                pri  = 1      / (1 + r$pan + r$left + r$oth),
                 left = r$left / (1 + r$pan + r$left + r$oth),
                 oth  = r$oth  / (1 + r$pan + r$left + r$oth))
-v <- within(v, pri <-  1 - pan - left - oth)
-
+v
 
 tmp <- pan.dat05.m4
 tmp[1,]

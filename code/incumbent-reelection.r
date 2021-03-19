@@ -23,7 +23,20 @@ setwd(dd)
 # read alcaldes
 inc <- read.csv(file = "aymu1989-present.incumbents.csv", stringsAsFactors = FALSE)
 colnames(inc)
-#
+
+# keep dead incumbent info
+sel <- grep("Dead", inc$race.after, ignore.case = TRUE)
+inc$ddead <- 0
+inc$ddead[sel] <- 1
+# recode race.after
+inc$race.after[sel] <- gsub("Dead-term-limited", "Term-limited", inc$race.after[sel])
+inc$race.after[sel] <- gsub("Dead-pending", "Pending", inc$race.after[sel])
+inc$race.after[sel] <- gsub("Dead-reran", "Out", inc$race.after[sel])
+inc$race.after[sel] <- gsub("Dead-p-", "Out-p-", inc$race.after[sel])
+## table(inc$race.after[sel])
+## table(inc$race.after)
+rm(sel)
+
 # manipulate cases where incumbent/reelected switched parties so coded as party won/lost accordingly
 sel1 <- grep("Reelected-dif-p", inc$race.after)
 #inc$emm[sel1] # debug
@@ -83,7 +96,7 @@ inc$win2 <- sub("pucd", "pudc", inc$win2, ignore.case = TRUE) # typo
 ## inc$win2[sel] <- "indep"                                                                 # deprecated
 inc$win <- inc$win2 # register changes above in original win to remove false negatives
 #
-# assign panc to pan, then pric to pri, then prdc to prd; will deal with major party coalitions next as exceptions
+# assign panc to pan, then pric to pri, then prdc to prd; major party coalitions dealt as exceptions below
 sel <- grep("pan-", inc$win2, ignore.case = TRUE)
 inc$win2[sel] <- "pan"
 sel <- grep("pri-", inc$win2, ignore.case = TRUE)
@@ -102,7 +115,7 @@ sel <- grep("mas|paz|pcp|phm|pmr|ppg|psd1|psi|pudc|pup|via_|pchu|pmch|pver|prs|p
 inc$win2[sel] <- "loc/oth"
 #
 #####################################
-## deal with major-party coalition ##
+## deal with major-party coalition ## OJO 11mar21: 2021 will have many pan-pri-prd coalitions, need a decisions on how to code those!!!
 #####################################
 #############
 ## winners ##
@@ -118,7 +131,7 @@ inc$status[sel] <- "majors"
 # 3-majors coalition in mun split in thirds
 sel <- which(inc$status=="majors") 
 sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", inc$win[sel], perl = TRUE) # 
-inc$inegi[sel][sel1]; inc$mun[sel][sel1]; inc$yr[sel][sel1] # which?
+data.frame(inegi = inc$inegi[sel][sel1], mun=inc$mun[sel][sel1], yr=inc$yr[sel][sel1]) # which?
 # assign to strong party (coal vs narco it seems)
 inc$win2[which(inc$inegi==16056 & inc$yr==2015)] <- "pri"  # Nahuatzén to pri
 inc$win2[which(inc$inegi==16083 & inc$yr==2015)] <- "pan"  # Tancítaro to pan
@@ -322,11 +335,114 @@ inc$win.prior[sel] <- inc$win.long.prior[sel] <- "prd"
 # there are NAs before 1993 ignored
 # because analysis drops those years
 # fix them in future when needed
-table(is.na(inc$win.prior), inc$yr, useNA = "always")
+table(is.na(inc$win.prior), inc$yr)
+#
+# missing cases post 1994
+sel <- which(is.na(inc$win.prior) & inc$yr>1994)
+with(inc[sel,], data.frame(inegi, ife, munn, mun, yr, win.prior, race.prior, win))
 
-# 31jul2020: NEED TO DEAL WITH RACE.PRIOR IN NEW MUNICS... code as new category "new mun"
-# deals with post 1993 only
+# fill by hand
+sel <- which(inc$ife==7121 & inc$yr==2012) # mezcalapa 2012 to pri (won secciones in 2010)
+inc$win.prior [sel] <- "pri" ; inc$race.prior[sel] <- "new mun"
+sel <- which(inc$ife==7119 & inc$yr==2012) # belisario dominguez 2012 to pri (won in 2010)
+inc$win.prior [sel] <- "pri" ; inc$race.prior[sel] <- "new mun"
+sel <- which(inc$ife==7123 & inc$yr==2018) # cap luis a vidal 2018 to pvem (won secciones in 2015)
+inc$win.prior [sel] <- "pvem"; inc$race.prior[sel] <- "new mun"
+sel <- which(inc$ife==7124 & inc$yr==2018) # rincon chamula 2018 to pvem (won secciones in 2015)
+inc$win.prior [sel] <- "pvem"; inc$race.prior[sel] <- "new mun"
+
+#                                            ################################
+# new municipalities and years to manipulate # OJO will need to check 2021s #
+#                                            ################################ 
+#        inegi,created,muelyr
+tmp <- c(2005,1998,1998,
+         2006,2021,2021,
+         4010,1997,1997,
+         4011,2000,2000,
+         4012,2020,2021,
+         7113,2001,2001,
+         7114,2001,2001,
+         7115,2001,2001,
+         7116,2001,2001,
+         7117,2001,2001,
+         7118,2001,2001,
+         7119,2001,2001,
+         7120,2018,2018,
+         7121,2018,2018,
+         7122,2015,2012,
+         7123,2015,2012,
+         7124,2015,2012,
+         7125,2020,2021,
+         12076,1996,1996,
+         12077,2005,2005,
+         12078,2008,2008,
+         12079,2008,2008,
+         12080,2008,2008,
+         12081,2008,2008,
+         14125,2006,2006,
+         14126,NA,2021,
+         15123,2003,2003,
+         15124,2003,2003,
+         15125,2006,2006,
+         17034,2020,2021,
+         17035,2020,2021,
+         17036,2020,2021,
+         23008,1996,1996,
+         23009,2009,2009,
+         23010,2013,2013,
+         23011,2016,2016,
+         24057,1997,1997,
+         24058,1997,1997,
+         26071,1997,1997,
+         26072,1997,1997,
+         29045,1996,1996,
+         29046,1996,1996,
+         29047,1996,1996,
+         29048,1996,1996,
+         29049,1996,1996,
+         29050,1996,1996,
+         29051,1996,1996,
+         29052,1996,1996,
+         29053,1996,1996,
+         29054,1996,1996,
+         29055,1996,1996,
+         29056,1996,1996,
+         29057,1996,1996,
+         29058,1996,1996,
+         29059,1996,1996,
+         29060,1996,1996,
+         30208,1997,1997,
+         30209,1997,1997,
+         30210,1997,1997,
+         30211,2004,2004,
+         30212,2004,2004,
+         32057,2001,2001,
+         32058,2007,2007)
+tmp <- matrix(tmp, ncol=3, byrow = TRUE)
+tmp <- as.data.frame(tmp)
+colnames(tmp) <- c("inegi","created","muelyr")
+tmp$sel <- NA
+#
+for (i in 1:nrow(tmp)){
+    if (length(which(inc$inegi==tmp$inegi[i] & inc$yr==tmp$muelyr[i]))) tmp$sel[i] <- which(inc$inegi==tmp$inegi[i] & inc$yr==tmp$muelyr[i])
+    }
+# add belisario dominguez, used once only (has ife code only)
+tmp$ife <- NA
+tmp <- rbind(tmp, c(NA,2012,2012,NA,7119))
+i <- nrow(tmp)
+if (length(which(inc$ife==tmp$ife[i] & inc$yr==tmp$muelyr[i]))) tmp$sel[i] <- which(inc$ife==tmp$ife[i] & inc$yr==tmp$muelyr[i])
+# select all new muns
+sel <- tmp$sel;
+sel <- sel[!is.na(sel)]
+# code new municipalities
+inc$race.prior[sel] <- "new-mun"
+inc$win.prior[sel] <- paste("new-mun", inc$win.prior[sel], sep = "-")
+# debug
+# data.frame(inc$race.prior[sel], inc$race.after[sel], inc$win.prior[sel], inc$win[sel], inc$mun[sel])
+
+# deals with df 2000
 sel <- which(is.na(inc$race.prior)==TRUE & inc$yr>1993)
+data.frame(inc$race.prior[sel], inc$race.after[sel], inc$win.prior[sel], inc$win[sel], inc$mun[sel]) # all cases should be df
 tmp <- inc[sel,] # subset data for manipulation
 sel1 <- grep("pan", tmp$win.prior)
 sel2 <- grep("pan", tmp$win)
@@ -410,7 +526,7 @@ inc.sub <- inc[sel,]
 ####################
 ## end blog nexos ##
 ####################
-#
+
 #
 ################################################
 ## ########################################## ##
@@ -418,15 +534,15 @@ inc.sub <- inc[sel,]
 ## ########################################## ##
 ################################################
 #
-# HOUSECLEANING
-rm(e,inc.e,inc.m,inc.sub,m,M,mm,sel,sel1,sel2,sel.e,sel.m,tab,tmp)
-#
+# CLEAN MESS
+rm(e,inc.e,inc.m,inc.sub,i,m,M,mm,sel,sel1,sel2,sel.e,sel.m,tab,tmp)
 #
 # ORDINARY ELECTION YEARS FOR ALL STATES --- INAFED HAS YRIN INSTEAD OF YR
 # 4ago2020: PROBABLY REDUNDANT SINCE emm NOW IDENTIFIES CYCLE REGARDLESS OF YEAR
 # extract election yrs
 tmp <- inc[, c("edon","yr","dextra")]
-tmp <- tmp[tmp$dextra==0,] # drop extraordinaria years
+sel <- which(tmp$dextra==0)
+tmp <- tmp[sel,] # drop extraordinaria years
 tmp$dextra <- NULL
 tmp$tmp <- paste(tmp$edon, tmp$yr, sep = "-")
 tmp$tmp2 <- duplicated(tmp$tmp)
@@ -471,17 +587,16 @@ rm(cal)
 ## dummy party reelected  ##
 ############################
 #
-#
 # dichotomize
 inc$dpwon.prior <- NA # will receive info
 #
 sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
 sel1 <- which(is.na(inc$win.long.prior[sel])==TRUE)
 sel2 <- which(is.na(inc$win.long[sel])==TRUE)
-tmp[union(sel1,sel2)] <- 99 # either is NA (will be returned to NA later, easier to debug)
+if (length(union(sel1,sel2))>0) tmp[union(sel1,sel2)] <- 99 # either is NA (will be returned to NA later, easier to debug)
 sel1 <- which(inc$win.long.prior[sel]=="0")
 sel2 <- which(inc$win.long[sel]=="0")
-tmp[union(sel1,sel2)] <- 99 # either
+if (length(union(sel1,sel2))>0) tmp[union(sel1,sel2)] <- 99 # either
 inc$dpwon.prior[sel] <- tmp # return to data after manipulation 
 #
 # uses win not win.long
@@ -501,424 +616,32 @@ sel4 <- grep("Incumb-remained", inc$race.prior[sel])
 tmp[intersect(sel3,sel4)] <- 1 # both (independent incumbent reelected coded as party won)
 inc$dpwon.prior[sel] <- tmp # return to data after manipulation 
 #
-##############################################################################################################
-## if following block covers all individual winning parties (solo or in coalition), then NAs must be zeroes ##
-##############################################################################################################
-# list winners (break to individual parties separately by hand)
-tmp <- unique(inc$win.long)
-tmp[order(tmp)]
-#
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("adc",inc$win.long.prior[sel])
-sel2 <- grep("adc",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("ave",inc$win.long.prior[sel])
-sel2 <- grep("ave",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("cc1",inc$win.long.prior[sel])
-sel2 <- grep("cc1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("cp",inc$win.long.prior[sel])
-sel2 <- grep("cp",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("cpp",inc$win.long.prior[sel])
-sel2 <- grep("cpp",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("dsppn",inc$win.long.prior[sel])
-sel2 <- grep("dsppn",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("fc1",inc$win.long.prior[sel])
-sel2 <- grep("fc1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("fdn",inc$win.long.prior[sel])
-sel2 <- grep("fdn",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("indep",inc$win.long.prior[sel])
-sel2 <- grep("indep",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("mas",inc$win.long.prior[sel])
-sel2 <- grep("mas",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("^mc$|-mc|mc-",inc$win.long.prior[sel])
-sel2 <- grep("^mc$|-mc|mc-",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("morena",inc$win.long.prior[sel])
-sel2 <- grep("morena",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-## sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-## sel1 <- grep("left",inc$win.long.prior[sel])
-## sel2 <- grep("left",inc$win.long[sel])
-## tmp[intersect(sel1,sel2)] <- 1 # both
-## inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("npp",inc$win.long.prior[sel])
-sel2 <- grep("npp",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pac1",inc$win.long.prior[sel])
-sel2 <- grep("pac1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pan",inc$win.long.prior[sel])
-sel2 <- grep("pan",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("parm",inc$win.long.prior[sel])
-sel2 <- grep("parm",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pasd",inc$win.long.prior[sel])
-sel2 <- grep("pasd",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("paz",inc$win.long.prior[sel])
-sel2 <- grep("paz",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pcc",inc$win.long.prior[sel])
-sel2 <- grep("pcc",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pcd1",inc$win.long.prior[sel])
-sel2 <- grep("pcd1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pcdt",inc$win.long.prior[sel])
-sel2 <- grep("pcdt",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pchu",inc$win.long.prior[sel])
-sel2 <- grep("pchu",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pcm2",inc$win.long.prior[sel])
-sel2 <- grep("pcm2",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pcp",inc$win.long.prior[sel])
-sel2 <- grep("pcp",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pcpp",inc$win.long.prior[sel])
-sel2 <- grep("pcpp",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pebc",inc$win.long.prior[sel])
-sel2 <- grep("pebc",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pec",inc$win.long.prior[sel])
-sel2 <- grep("pec",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pes",inc$win.long.prior[sel])
-sel2 <- grep("pes",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pfcrn",inc$win.long.prior[sel])
-sel2 <- grep("pfcrn",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pfd1",inc$win.long.prior[sel])
-sel2 <- grep("pfd1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("ph",inc$win.long.prior[sel])
-sel2 <- grep("ph",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("ph_bcs",inc$win.long.prior[sel])
-sel2 <- grep("ph_bcs",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pj1",inc$win.long.prior[sel])
-sel2 <- grep("pj1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pjs",inc$win.long.prior[sel])
-sel2 <- grep("pjs",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pl1",inc$win.long.prior[sel])
-sel2 <- grep("pl1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("plm",inc$win.long.prior[sel])
-sel2 <- grep("plm",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pmch",inc$win.long.prior[sel])
-sel2 <- grep("pmch",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pmp",inc$win.long.prior[sel])
-sel2 <- grep("pmp",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pmr",inc$win.long.prior[sel])
-sel2 <- grep("pmr",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pmt",inc$win.long.prior[sel])
-sel2 <- grep("pmt",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pna",inc$win.long.prior[sel])
-sel2 <- grep("pna",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("poc",inc$win.long.prior[sel])
-sel2 <- grep("poc",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("ppc",inc$win.long.prior[sel])
-sel2 <- grep("ppc",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("ppg",inc$win.long.prior[sel])
-sel2 <- grep("ppg",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("ppro",inc$win.long.prior[sel])
-sel2 <- grep("ppro",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pps",inc$win.long.prior[sel])
-sel2 <- grep("pps",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pps",inc$win.long.prior[sel])
-sel2 <- grep("pps",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("ppt",inc$win.long.prior[sel])
-sel2 <- grep("ppt",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("prc",inc$win.long.prior[sel])
-sel2 <- grep("prc",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("prd",inc$win.long.prior[sel])
-sel2 <- grep("prd",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pri",inc$win.long.prior[sel])
-sel2 <- grep("pri",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("prs",inc$win.long.prior[sel])
-sel2 <- grep("prs",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("prt",inc$win.long.prior[sel])
-sel2 <- grep("prt",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("prv",inc$win.long.prior[sel])
-sel2 <- grep("prv",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("ps1",inc$win.long.prior[sel])
-sel2 <- grep("ps1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("psd1",inc$win.long.prior[sel])
-sel2 <- grep("psd1",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("psdc",inc$win.long.prior[sel])
-sel2 <- grep("psdc",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("psi",inc$win.long.prior[sel])
-sel2 <- grep("psi",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("psn",inc$win.long.prior[sel])
-sel2 <- grep("psn",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("^pt$|-pt|pt-",inc$win.long.prior[sel])
-sel2 <- grep("^pt$|-pt|pt-",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pudc",inc$win.long.prior[sel])
-sel2 <- grep("pudc",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pup",inc$win.long.prior[sel])
-sel2 <- grep("pup",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pvem",inc$win.long.prior[sel])
-sel2 <- grep("pvem",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("pver",inc$win.long.prior[sel])
-sel2 <- grep("pver",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("si",inc$win.long.prior[sel])
-sel2 <- grep("si",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("trans",inc$win.long.prior[sel])
-sel2 <- grep("trans",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-# 
-sel <- which(is.na(inc$dpwon.prior)==TRUE); tmp <- inc$dpwon.prior[sel] # extract for manipulation
-sel1 <- grep("via_radical",inc$win.long.prior[sel])
-sel2 <- grep("via_radical",inc$win.long[sel])
-tmp[intersect(sel1,sel2)] <- 1 # both
-inc$dpwon.prior[sel] <- tmp # return to data after manipulation
-#####################
-## block ends here ##
-#####################
-#
+#########################################################################################################
+## by covering all individual winning parties (solo or in coalition), all remaining NAs must be zeroes ##
+#########################################################################################################
+# all winners
+indiv.pties <- unique(inc$win.long)
+indiv.pties <- unlist(strsplit(indiv.pties, split = "-")) # split coalition constituent parties
+indiv.pties <- unique(indiv.pties)
+indiv.pties <- indiv.pties[order(indiv.pties)] # all these must be individually processed with my.fun 
+# define function to process dpwon.prior
+my.fun <- function(target = NA){
+    #target <- "pri" # debug
+    target <- paste("^", target, "$|-", target, "|", target, "-", sep = "") # target solo or in coalition
+    sel <- which(is.na(inc$dpwon.prior)==TRUE);
+    manip <- inc$dpwon.prior[sel]                 # extract for manipulation
+    sel1 <- grep(target, inc$win.long.prior[sel])
+    sel2 <- grep(target, inc$win.long      [sel])
+    manip[intersect(sel1,sel2)] <- 1              # both
+    inc$dpwon.prior[sel] <- manip                 # return to data after manipulation
+    return(inc$dpwon.prior)
+}
+# run my.fun in each element of indiv.pties (individual party list)
+for (i in 1:length(indiv.pties)){
+    # my.fun("prd") # debug
+    inc$dpwon.prior <- my.fun(indiv.pties[i])
+}
+rm(indiv.pties, my.fun)
 # remaining NAs must be zeroes
 ## sel <- which(is.na(inc$dpwon.prior)==TRUE & inc$win.prior=="pan") # debug
 ## table(inc$win.long[sel], inc$win.long.prior[sel]) # debug
@@ -932,14 +655,18 @@ inc$dpwon.prior[sel] <- NA
 #
 # unlag
 library(DataCombine) # easy lags with slide
-inc <- inc[order(inc$ife),] # verify sorted before lags ## 6oct2020 ojo: should it be by inc$emm??
+table(is.na(inc$ife)) # 18mar2021: if NAs were present, next lines might use inc$emm instead
+inc <- inc[order(inc$ife, inc$emm),] # verify sorted before lags
 inc <- slide(inc, Var = "dpwon.prior", NewVar = "dpwon", GroupVar = "ife", slideBy = +1) # lead by one period
 # these lag NAs can be filled with current info
 sel <- which(is.na(inc$dpwon) & inc$race.after=="uyc")
 inc$dpwon[sel] <- 0
-#
+
 # verify
+inc[1:5,]
 table(inc$race.after, inc$dpwon, useNA = "always")
+sel <- which(inc$race.after=="Term-limited-p-won" & inc$dpwon==0)
+inc[sel,]
 #
 # the dpwon dummy identifies cases where Beaten but party won
 sel <- which(inc$race.after=="Beaten" & inc$dpwon==1)
@@ -1045,7 +772,7 @@ inc$fuente <- NULL
 ## ## dip <- dip[,c("emm","yr","mun","ord","inegi","edon","munn","ife","mo","dy","win","incumbent","race.after","note","fuente","dpwin","returning.p","dgob")]
 ## ## ## head(dip)
 ## ## ## head(inc)
-## ## # add dummy to drop dipernadores after names have been searched
+## ## # add dummy to drop gobernadores after names have been searched
 ## ## dip$ddip <- 1; inc$ddip <- 0
 ## ## # merge
 ## ## inc <- rbind(inc, dip) # paste governors into incumbents to search for their names too (eg. Monreal was zac governor)

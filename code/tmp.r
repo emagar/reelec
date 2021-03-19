@@ -1,37 +1,75 @@
-###################################################################################################################
-## invert ife and inegi locations to avoid confusion (inegi had some 0 codes in cps still in 2018) ##            ##
-## See https://stackoverflow.com/questions/5724419/is-it-possible-to-swap-columns-around-in-a-data-frame-using-r ##
-## answer by https://stackoverflow.com/users/13549245/kh%c3%b4ra-willis                                          ##
-###################################################################################################################
-swap <- function(DF, n, m){
-    n <- if (class(n)=="character" & is.na(suppressWarnings(as.integer(n)))) which(colnames(DF)==n) else as.integer(n)
-    m <- if (class(m)=="character" & is.na(suppressWarnings(as.integer(m)))) which(colnames(DF)==m) else as.integer(m)
-    if (!(1<=n & n<=length(DF))) stop( "`n` represents invalid index!" )
-    if (!(1<=m & m<=length(DF))) stop( "`m` represents invalid index!" )
-    return (DF[ if (n==m) 1:length(DF) else c( (if (min(n,m)==1) c() else 1:(min(n,m)-1) ), (if (min(n,m)+1 == max(n,m)) (min(n,m)+1):(max(n,m)-1) else c( max(n,m), (min(n,m)+1):(max(n,m)-1), min(n,m))), (if (max(n,m)==length(DF)) c() else (max(n,m)+1):length(DF) ) ) ])
+my.fun <- function(target = NA){
+    sel <- which(is.na(inc$dpwon.prior)==TRUE); manip <- inc$dpwon.prior[sel] # extract for manipulation
+    sel1 <- grep(target, inc$win.long.prior[sel])
+    sel2 <- grep(target, inc$win.long      [sel])
+    manip[intersect(sel1,sel2)] <- 1 # both
+    inc$dpwon.prior[sel] <- manip # return to data after manipulation
 }
-vot <- swap(vot,"ife","inegi")
-rm(swap)
-
-##################################
-## reconstruct morena backwards ##
-##################################
-# add prd + morena up to 2017
-colnames(vot)
-sel <- which(vot$yr < 2018)
-vot$morena[sel] <- vot$morena[sel] + vot$prd[sel]
-vot$win[sel] <- "morena"
-
-left # done elsewhere with dipfed prd + morena in 2015 but not in 2018, which seems right thing to do
-res.morena # recalculate
-race.current.morena # recalculate
-dinptywon.current # recalculate
-dincran.current   # recalculate
-win.left # ?
-
-
--------------------
-
-    sel <- which(1 - vot$pan - vot$pri - vot$left < 0)
-vot[sel[1],]
-
+my.fun("adc")
+my.fun("ave")
+my.fun("cc1")
+my.fun("cp")
+my.fun("cpp")
+my.fun("dsppn")
+my.fun("fc1")
+my.fun("fdn")
+my.fun("indep")
+my.fun("mas")
+my.fun("^mc$|-mc|mc-")
+my.fun("morena")
+my.fun("left")
+my.fun("npp")
+my.fun("pac1")
+my.fun("pan")
+my.fun("parm")
+my.fun("pasd")
+my.fun("paz")
+my.fun("pcc")
+my.fun("pcd1")
+my.fun("pcdt")
+my.fun("pchu")
+my.fun("pcm2")
+my.fun("pcp")
+my.fun("pcpp")
+my.fun("pebc")
+my.fun("pec")
+my.fun("pes")
+my.fun("pfcrn")
+my.fun("pfd1")
+my.fun("ph")
+my.fun("ph_bcs")
+my.fun("pj1")
+my.fun("pjs")
+my.fun("pl1")
+my.fun("plm")
+my.fun("pmch")
+my.fun("pmp")
+my.fun("pmr")
+my.fun("pmt")
+my.fun("pna")
+my.fun("poc")
+my.fun("ppc")
+my.fun("ppg")
+my.fun("ppro")
+my.fun("pps")
+my.fun("pps")
+my.fun("ppt")
+my.fun("prc")
+my.fun("prd")
+my.fun("pri")
+my.fun("prs")
+my.fun("prt")
+my.fun("prv")
+my.fun("ps1")
+my.fun("psd1")
+my.fun("psdc")
+my.fun("psi")
+my.fun("psn")
+my.fun("^pt$|-pt|pt-")
+my.fun("pudc")
+my.fun("pup")
+my.fun("pvem")
+my.fun("pver")
+my.fun("si")
+my.fun("trans")
+my.fun("via_radical")

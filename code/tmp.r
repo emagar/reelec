@@ -1,4 +1,5 @@
 my.fun <- function(target = NA){
+    target <- paste("^", target, "$|-", target, "|", target, "-", sep = "")
     sel <- which(is.na(inc$dpwon.prior)==TRUE); manip <- inc$dpwon.prior[sel] # extract for manipulation
     sel1 <- grep(target, inc$win.long.prior[sel])
     sel2 <- grep(target, inc$win.long      [sel])
@@ -15,7 +16,7 @@ my.fun("fc1")
 my.fun("fdn")
 my.fun("indep")
 my.fun("mas")
-my.fun("^mc$|-mc|mc-")
+my.fun("mc")
 my.fun("morena")
 my.fun("left")
 my.fun("npp")
@@ -65,7 +66,7 @@ my.fun("psd1")
 my.fun("psdc")
 my.fun("psi")
 my.fun("psn")
-my.fun("^pt$|-pt|pt-")
+my.fun("pt")
 my.fun("pudc")
 my.fun("pup")
 my.fun("pvem")
@@ -73,3 +74,7 @@ my.fun("pver")
 my.fun("si")
 my.fun("trans")
 my.fun("via_radical")
+
+tmp2 <- inc$dpwon.prior
+
+table(tmp1, tmp2, useNA = "always")

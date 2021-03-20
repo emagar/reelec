@@ -205,6 +205,7 @@ inc$win <- inc$win2; inc$win2 <- NULL # keep manipulated version only
 #
 #############################################################
 ## lag race.after & win to generate race.prior & win.prior ##
+## lead win to generate race.prior & win.prior ##
 #############################################################
 # check that no cycles are missing in any municipio
 tmp <- data.frame(emm=inc$emm, cycle=NA)
@@ -222,8 +223,11 @@ inc <- inc[order(inc$emm),] # sort munn-chrono
 # open slots for lagged variables
 inc$race.prior <- NA
 inc$win.prior <- NA
-inc$win.long.prior <- NA # to code pty won dummy
+inc$win.long.prior <- NA # to code pty won dummy (lag)
+inc$win.post <- NA
+inc$win.long.post <- NA # to code pty won dummy (lead)
 #
+## HABRIA QUE CAMBIAR ESTE LOOP POR LA FUNCION SLIDE...
 for (e in 1:32){
     #e <- 8 #debug
     sel.e <- which(inc$edon==e)
@@ -236,15 +240,25 @@ for (e in 1:32){
         M <- nrow(inc.m)
         if (M==1) next
         tmp <- inc.m$race.after
-        tmp <- c(NA, tmp[-M])
+        tmp <- c(NA, tmp[-M])    # lag one period
         inc.m$race.prior <- tmp
         tmp <- inc.m$win
-        tmp <- c(NA, tmp[-M])
+        tmp <- c(NA, tmp[-M])    # lag one period
         inc.m$win.prior <- tmp
         tmp <- inc.m$win.long
-        tmp <- c(NA, tmp[-M])
+        tmp <- c(NA, tmp[-M])    # lag one period
         inc.m$win.long.prior <- tmp
-        inc.e[sel.m,] <- inc.m
+        ## tmp <- inc.m$race.after
+        ## tmp <- c(tmp[-1], NA)    # lead one period
+        ## inc.m$race.post <- tmp
+        tmp <- inc.m$win
+        tmp <- c(tmp[-1], NA)    # lead one period
+        inc.m$win.post <- tmp
+        tmp <- inc.m$win.long
+        tmp <- c(tmp[-1], NA)    # lead one period
+        inc.m$win.long.post <- tmp
+        #
+        inc.e[sel.m,] <- inc.m   # return manipulation to state data
     }
     inc[sel.e,] <- inc.e
 }
@@ -653,7 +667,7 @@ indiv.pties <- indiv.pties[order(indiv.pties)] # all these must be individually 
 ## define function to process dpty.same.as.last ##
 ##################################################
 my.fun <- function(target = NA){
-    #target <- "pri" # debug
+    #target <- "pt" # debug
     target <- paste("^", target, "$|-", target, "|", target, "-", sep = "") # target solo or in coalition
     sel <- which(is.na(inc$dpty.same.as.last)==TRUE) # only NAs need manipulation
     manip <- inc$dpty.same.as.last[sel]              # extract for manipulation
@@ -669,17 +683,25 @@ for (i in 1:length(indiv.pties)){
     inc$dpty.same.as.last <- my.fun(indiv.pties[i])
 }
 rm(indiv.pties, my.fun)
-# remaining NAs must be zeroes
-## sel <- which(is.na(inc$dpty.same.as.last)==TRUE & inc$win.prior=="pan") # debug
-## table(inc$win.long[sel], inc$win.long.prior[sel]) # debug
-## table(inc$win.long.prior[sel]) # debug
+##################################
+## remaining NAs must be zeroes ##
+##################################
 sel <- which(is.na(inc$dpty.same.as.last)==TRUE);
 inc$dpty.same.as.last[sel] <- 0
 #
 # return 99s to NA
 sel <- which(inc$dpty.same.as.last==99);
 inc$dpty.same.as.last[sel] <- NA
-#
+
+# clean
+rm(i,min.cal,sel,sel1,sel2,sel3,sel4,tmp,tmp2)
+sel <- which(colnames(inc) %in% c("race.prior","win.prior","win.long.prior"))
+inc <- inc[,-sel]
+
+colnames(inc)
+ls()
+x
+
 # unlag
 library(DataCombine) # easy lags with slide
 table(is.na(inc$ife)) # 18mar2021: if NAs were present, next lines might use inc$emm (without cycle) instead
@@ -690,12 +712,12 @@ sel <- which(is.na(inc$dpty.same.as.next) & inc$race.after=="uyc")
 inc$dpty.same.as.next[sel] <- 0
 
 # verify
-table(inc$race.after, inc$dpty.same.as.next, useNA = "always")
+table(inc$race.after, factor(inc$dpty.same.as.next, labels=c("dift","same")), useNA = "always")
 # prd incumbent reelected as indep
 sel <- which(inc$race.after=="Reelected" & inc$dpty.same.as.next==0)
 inc[inc$inegi==inc$inegi[sel],c("yr","win","incumbent")]
 
-sel <- which(inc$race.after=="Out-p-lost" & inc$dpty.same.as.next==1)
+sel <- which(inc$race.after=="Term-limited-p-won" & inc$dpty.same.as.next==0)
 inc[sel,]
 #
 # the dpwon dummy identifies cases where Beaten but party won

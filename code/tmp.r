@@ -1,3 +1,6 @@
+
+
+
 my.fun <- function(target = NA){
     target <- paste("^", target, "$|-", target, "|", target, "-", sep = "")
     sel <- which(is.na(inc$dpwon.prior)==TRUE); manip <- inc$dpwon.prior[sel] # extract for manipulation

@@ -631,7 +631,17 @@ if (length(union(sel1,sel2))>0) manip[union(sel1,sel2)] <- 99 # either is NA
 sel1 <- which(inc$win.long.prior[sel]=="0")
 sel2 <- which(inc$win.long[sel]=="0")
 if (length(union(sel1,sel2))>0) manip[union(sel1,sel2)] <- 99 # either is 0
-inc$dpty.same.as.last[sel] <- manip # return to data after manipulation 
+inc$dpty.same.as.last[sel] <- manip # return to data after manipulation
+#
+sel  <- which(is.na(inc$dpty.same.as.next)==TRUE)  # only NAs need manipulation
+manip <- inc$dpty.same.as.next[sel]                # extract for manipulation
+sel1 <- which(is.na(inc$win.long.post[sel])==TRUE)
+sel2 <- which(is.na(inc$win.long[sel])==TRUE)
+if (length(union(sel1,sel2))>0) manip[union(sel1,sel2)] <- 99 # either is NA
+sel1 <- which(inc$win.long.post[sel]=="0")
+sel2 <- which(inc$win.long[sel]=="0")
+if (length(union(sel1,sel2))>0) manip[union(sel1,sel2)] <- 99 # either is 0
+inc$dpty.same.as.next[sel] <- manip # return to data after manipulation 
 ################################
 ## unelected authorities to 0 ##
 ## uses win not win.long      ##
@@ -642,6 +652,13 @@ sel1 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win.prior[sel])
 sel2 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win[sel])
 if (length(union(sel1,sel2))>0) manip[union(sel1,sel2)] <- 0 # either
 inc$dpty.same.as.last[sel] <- manip # return to data after manipulation
+#
+sel <- which(is.na(inc$dpty.same.as.next)==TRUE)  # only NAs need manipulation
+manip <- inc$dpty.same.as.next[sel]               # extract for manipulation
+sel1 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win.post[sel])
+sel2 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win[sel])
+if (length(union(sel1,sel2))>0) manip[union(sel1,sel2)] <- 0 # either
+inc$dpty.same.as.next[sel] <- manip # return to data after manipulation
 ###########################
 ## independents to 0     ##
 ## uses win not win.long ##
@@ -655,6 +672,16 @@ sel3 <- intersect(sel1,sel2) # both
 sel4 <- grep("Incumb-remained", inc$race.prior[sel])
 manip[intersect(sel3,sel4)] <- 1 # both (independent incumbent reelected coded as party won)
 inc$dpty.same.as.last[sel] <- manip # return to data after manipulation 
+#
+sel <- which(is.na(inc$dpty.same.as.next)==TRUE)  # only NAs need manipulation
+manip <- inc$dpty.same.as.next[sel]               # extract for manipulation
+sel1 <- grep("indep",inc$win.post[sel])
+sel2 <- grep("indep",inc$win[sel])
+manip[union(sel1,sel2)] <- 0 # one or the other (or both, changed next)
+sel3 <- intersect(sel1,sel2) # both
+sel4 <- grep("Reelected", inc$race.after[sel])
+manip[intersect(sel3,sel4)] <- 1 # both (independent incumbent reelected coded as party won)
+inc$dpty.same.as.next[sel] <- manip # return to data after manipulation
 #
 #####################################################################################################
 ## by covering all individual winning parties (solo or in coalition), remaining NAs must be zeroes ##
@@ -682,31 +709,58 @@ for (i in 1:length(indiv.pties)){
     # my.fun("prd") # debug
     inc$dpty.same.as.last <- my.fun(indiv.pties[i])
 }
+##################################################
+## define function to process dpty.same.as.next ##
+##################################################
+my.fun <- function(target = NA){
+    #target <- "pt" # debug
+    target <- paste("^", target, "$|-", target, "|", target, "-", sep = "") # target solo or in coalition
+    sel <- which(is.na(inc$dpty.same.as.next)==TRUE) # only NAs need manipulation
+    manip <- inc$dpty.same.as.next[sel]              # extract for manipulation
+    sel1 <- grep(target, inc$win.long.post[sel])     # is target in win.long.prior? indexes?
+    sel2 <- grep(target, inc$win.long      [sel])    # is target in win.long? indexes?
+    manip[intersect(sel1,sel2)] <- 1                 # in both
+    inc$dpty.same.as.next[sel] <- manip              # return to data after manipulation
+    return(inc$dpty.same.as.next)                    # function does not modify inc, so send as output
+}
+# run my.fun in each element of indiv.pties (individual party list)
+for (i in 1:length(indiv.pties)){
+    # my.fun("prd") # debug
+    inc$dpty.same.as.next <- my.fun(indiv.pties[i])
+}
+
 rm(indiv.pties, my.fun)
 ##################################
 ## remaining NAs must be zeroes ##
 ##################################
 sel <- which(is.na(inc$dpty.same.as.last)==TRUE);
 inc$dpty.same.as.last[sel] <- 0
+sel <- which(is.na(inc$dpty.same.as.next)==TRUE);
+inc$dpty.same.as.next[sel] <- 0
 #
 # return 99s to NA
 sel <- which(inc$dpty.same.as.last==99);
 inc$dpty.same.as.last[sel] <- NA
+#
+sel <- which(inc$dpty.same.as.next==99);
+inc$dpty.same.as.next[sel] <- NA
 
 # clean
-rm(i,min.cal,sel,sel1,sel2,sel3,sel4,tmp,tmp2)
-sel <- which(colnames(inc) %in% c("race.prior","win.prior","win.long.prior"))
+rm(i,min.cal,sel,sel1,sel2,sel3,sel4,tmp,tmp2,manip)
+sel <- which(colnames(inc) %in% c("race.prior","win.prior","win.long.prior","win.post","win.long.post"))
 inc <- inc[,-sel]
 
 colnames(inc)
 ls()
 x
 
-# unlag
-library(DataCombine) # easy lags with slide
-table(is.na(inc$ife)) # 18mar2021: if NAs were present, next lines might use inc$emm (without cycle) instead
-inc <- inc[order(inc$ife, inc$emm),] # verify sorted before lags
-inc <- slide(inc, Var = "dpty.same.as.last", NewVar = "dpty.same.as.next", GroupVar = "ife", slideBy = +1) # lead by one period
+## DEPRECATED: dpty.same.as.next NOW CODED ABOVE
+## # unlag
+## library(DataCombine) # easy lags with slide
+## table(is.na(inc$ife)) # 18mar2021: if NAs were present, next lines might use inc$emm (without cycle) instead
+## inc <- inc[order(inc$ife, inc$emm),] # verify sorted before lags
+## inc <- slide(inc, Var = "dpty.same.as.last", NewVar = "dpty.same.as.next", GroupVar = "ife", slideBy = +1) # lead by one period
+#
 # these lag NAs can be filled with current info
 sel <- which(is.na(inc$dpty.same.as.next) & inc$race.after=="uyc")
 inc$dpty.same.as.next[sel] <- 0
@@ -715,7 +769,7 @@ inc$dpty.same.as.next[sel] <- 0
 table(inc$race.after, factor(inc$dpty.same.as.next, labels=c("dift","same")), useNA = "always")
 # prd incumbent reelected as indep
 sel <- which(inc$race.after=="Reelected" & inc$dpty.same.as.next==0)
-inc[inc$inegi==inc$inegi[sel],c("yr","win","incumbent")]
+inc[inc$inegi==inc$inegi[sel[1]],c("emm", "yr","win","incumbent", "race.after")]
 
 sel <- which(inc$race.after=="Term-limited-p-won" & inc$dpty.same.as.next==0)
 inc[sel,]

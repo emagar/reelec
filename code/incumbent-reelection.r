@@ -9,6 +9,9 @@ rm(list = ls())
 dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data/"
 setwd(dd)
+
+# get useful functions
+source("~/Dropbox/data/useful-functions/myxtab.r")
 #
 ###########################################
 ## ##################################### ##
@@ -22,7 +25,8 @@ setwd(dd)
 #
 # read alcaldes
 inc <- read.csv(file = "aymu1989-present.incumbents.csv", stringsAsFactors = FALSE)
-colnames(inc)
+library(plyr)
+inc$edo <- mapvalues(inc$edon, from = 1:32, to = c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic", "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac"))
 
 # keep dead incumbent info
 sel <- grep("Dead", inc$race.after, ignore.case = TRUE)
@@ -30,14 +34,14 @@ inc$ddead <- 0
 inc$ddead[sel] <- 1
 # recode race.after
 inc$race.after[sel] <- gsub("Dead-term-limited", "Term-limited", inc$race.after[sel])
-inc$race.after[sel] <- gsub("Dead-pending", "Pending", inc$race.after[sel])
-inc$race.after[sel] <- gsub("Dead-reran", "Out", inc$race.after[sel])
-inc$race.after[sel] <- gsub("Dead-p-", "Out-p-", inc$race.after[sel])
-## table(inc$race.after[sel])
-## table(inc$race.after)
+inc$race.after[sel] <- gsub("Dead-reran-"      , "Out-", inc$race.after[sel])
+inc$race.after[sel] <- gsub("Dead-"            , "Out-", inc$race.after[sel])
+#table(inc$race.after[sel])
+#table(inc$race.after)
 rm(sel)
 
 # manipulate cases where incumbent/reelected switched parties so coded as party won/lost accordingly
+table(inc$race.after)
 sel1 <- grep("Reelected-dif-p", inc$race.after)
 #inc$emm[sel1] # debug
 # subtract one round from emm codes
@@ -59,16 +63,23 @@ sel2 <- which(inc$emm %in% tmp4)
 data.frame(emm.pre=inc$emm[sel2], win.pre=inc$win[sel2], race.after.pre=inc$race.after[sel2], win=inc$win[sel1])
 sel <- which(inc$emm=="cps-15.100"); inc$race.after[sel] <- "Term-limited-p-lost"
 sel <- which(inc$emm=="cua-15.004"); inc$race.after[sel] <- "Term-limited-p-won"
+sel <- which(inc$emm=="cua-15.004"); inc$race.after[sel] <- "Term-limited-p-won"
+sel <- which(inc$emm=="nl-15.028");  inc$race.after[sel] <- "Term-limited-p-won"
+sel <- which(inc$emm=="nl-15.031");  inc$race.after[sel] <- "Term-limited-p-won"
+sel <- which(inc$emm=="oax-15.187"); inc$race.after[sel] <- "Term-limited-p-won"
+sel <- which(inc$emm=="jal-15.026"); inc$race.after[sel] <- "Term-limited-p-lost"
 #
 # manipulate cases where incumbent/beaten switched parties so coded as party won/lost accordingly
-sel1 <- grep("Beaten-dif-p", inc$race.after)
+sel1 <- grep("Reran-beaten-dif-p", inc$race.after)
 # fish party from note
+inc$emm[sel1]
+inc$note[sel1]
 tmp <- sub("only ", "", inc$note[sel1]) # remove "only"
-tmp1 <- sub("^reran under (.+) and lost$", "\\1", tmp)
+tmp1 <- sub("^reran under (.+) and lost.*$", "\\1", tmp)
 # paste new party as the original
 inc$win[sel1] <- tmp1
 # change race.after
-inc$race.after[sel1] <- "Beaten"
+inc$race.after[sel1] <- "Reran-beaten"
 # clean
 rm(tmp,tmp1,tmp2,tmp3,tmp4,sel,sel1,sel2)
 #
@@ -120,6 +131,9 @@ inc$win2[sel] <- "loc/oth"
 #############
 ## winners ##
 #############
+
+#OLD WAY OF DEALING WITH MAJOR PTY COALS SPLIT CASE-BY-CASE
+#DIFT METHOD IMMEDIATELY BELOW
 inc$status <- NA
 sel <- grep("(?=.*pan)(?=.*prd)", inc$win, perl = TRUE)
 inc$status[sel] <- "majors"
@@ -131,25 +145,59 @@ inc$status[sel] <- "majors"
 # 3-majors coalition in mun split in thirds
 sel <- which(inc$status=="majors") 
 sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", inc$win[sel], perl = TRUE) # 
+table(inc$edon[sel][sel1])
 data.frame(inegi = inc$inegi[sel][sel1], mun=inc$mun[sel][sel1], yr=inc$yr[sel][sel1]) # which?
 # assign to strong party (coal vs narco it seems)
 inc$win2[which(inc$inegi==16056 & inc$yr==2015)] <- "pri"  # Nahuatzén to pri
 inc$win2[which(inc$inegi==16083 & inc$yr==2015)] <- "pan"  # Tancítaro to pan
+#
+inc$win2[which(inc$edon==3  & inc$yr==2021)] <- "pan"  # bcs to pan
+inc$win2[which(inc$edon==4  & inc$yr==2021)] <- "pri"  # cam to pri
+inc$win2[which(inc$edon==6  & inc$yr==2021)] <- "pri"  # col to pri
+inc$win2[which(inc$edon==9  & inc$yr==2021)] <- "pan"  # df  to pan
+inc$win2[which(inc$edon==15 & inc$yr==2021)] <- "pri"  # mex to pri
+inc$win2[which(inc$edon==16 & inc$yr==2021)] <- "pri"  # mic to pri
+inc$win2[which(inc$edon==23 & inc$yr==2021)] <- "pri"  # qui to pri
+inc$win2[which(inc$edon==24 & inc$yr==2021)] <- "pan"  # san to pan
+inc$win2[which(inc$edon==26 & inc$yr==2021)] <- "pri"  # son to pri
+inc$win2[which(inc$edon==32 & inc$yr==2021)] <- "pri"  # zac to pri
+#
 inc$status[sel][sel1] <- "done"
 #
-# pan-pri to pri (19 cases in mic07 mic11 mic15)
+# pan-pri to pri (19 cases in mic07 mic11 mic15 tab21)
 sel <- which(inc$status=="majors" & inc$edon==16) 
 sel1 <- grep("(?=.*pan)(?=.*pri)", inc$win[sel], perl = TRUE) # 
 inc$win2[sel][sel1] <- "pri"
 inc$status[sel][sel1] <- "done"
 #
-# pri-prd to pri (chihuahua and guanajuato)
+# pri-prd to pri (cua and gua before 2021, gua mor nl yuc in 2021)
 sel <- which(inc$status=="majors") 
 sel1 <- grep("(?=.*pri)(?=.*prd)", inc$win[sel], perl = TRUE) # 
 inc$win2[sel][sel1] <- "pri"
 inc$status[sel][sel1] <- "done"
 #
+# pan-pri to pan (san in 2021)
+sel <- which(inc$status=="majors") 
+sel1 <- grep("(?=.*pan)(?=.*pri)", inc$win[sel], perl = TRUE) # 
+inc$win2[sel][sel1] <- "pan"
+inc$status[sel][sel1] <- "done"
+#
 # rest are pan-prd
+#
+# pan-prd in 2021 to pan (ags bcs col cua que)
+sel <- which(inc$status=="majors" & inc$yr==2021) 
+inc$win2[sel] <- "pan"
+inc$status[sel] <- "done"
+#
+# pan-prd in 2020 to pan (hgo mex)
+sel <- which(inc$status=="majors" & inc$yr==2020) 
+inc$win2[sel] <- "pan"
+inc$status[sel] <- "done"
+#
+# pan-prd to pan (mex2015)
+sel <- which(inc$status=="majors" & inc$edon==15 & inc$yr==2015) 
+inc$win2[sel] <- "pan"
+inc$status[sel] <- "done"
 #
 # pan-prd to pan (bc coa2009 coa col00 col18 cua dgo jal que san sin son tam yuc)
 sel <- which(inc$status=="majors" & (inc$edon==2 | inc$edon==5 | inc$edon==6 | inc$edon==8 | inc$edon==10 | inc$edon==14 | inc$edon==22 | inc$edon==24 | inc$edon==25 | inc$edon==26 | inc$edon==28  | inc$edon==31)) 
@@ -196,28 +244,169 @@ sel <- which(inc$status=="majors" & inc$edon==15 & inc$yr==2006)
 inc$win2[sel] <- "pan"
 inc$status[sel] <- "done"
 #
+# verify
+table(inc$status)
+#inc$edon[which(inc$status=="majors")]
+#
 # clean
 inc$status <- NULL
-#
-inc$win.long <- inc$win # retain unsimplified version
+
+## #THIS IS ANOTHER WAY: GIVES VOTE TO PAN WHEN PAN IS MEMBER, TO PRI WHEN PAN ABSENT
+## inc$status <- NA
+## sel <- grep("(?=.*pan)(?=.*prd)", inc$win, perl = TRUE)
+## inc$status[sel] <- "majors"
+## sel <- grep("(?=.*pan)(?=.*pri)", inc$win, perl = TRUE)
+## inc$status[sel] <- "majors"
+## sel <- grep("(?=.*pri)(?=.*prd)", inc$win, perl = TRUE)
+## inc$status[sel] <- "majors"
+## #
+## # 3-majors coalition in mun to pan
+## sel <- which(inc$status=="majors") 
+## sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", inc$win[sel], perl = TRUE)
+## data.frame(inegi = inc$inegi[sel][sel1], mun=inc$mun[sel][sel1], yr=inc$yr[sel][sel1]) # which?
+## inc$win2[sel[sel1]] <- "pan"
+## inc$status[sel][sel1] <- "done"
+## #
+## # pan-pri to pan
+## sel <- which(inc$status=="majors" & inc$edon==16) 
+## sel1 <- grep("(?=.*pan)(?=.*pri)", inc$win[sel], perl = TRUE) # 
+## inc$win2[sel][sel1] <- "pan"
+## inc$status[sel][sel1] <- "done"
+## #
+## # pri-prd to pri
+## sel <- which(inc$status=="majors") 
+## sel1 <- grep("(?=.*pri)(?=.*prd)", inc$win[sel], perl = TRUE) # 
+## inc$win2[sel][sel1] <- "pri"
+## inc$status[sel][sel1] <- "done"
+## #
+## # rest are pan-prd
+## #
+## # pan-prd to pan (bc coa2009 coa col00 col18 cua dgo jal que san sin son tam yuc)
+## sel <- which(inc$status=="majors") 
+## inc$win2[sel] <- "pan"
+## inc$status[sel] <- "done"
+## #
+## # pan-prd in 2018 to pan (bcs cps df gue mex mic oax pue qui tab zac)
+## # clean
+## inc$status <- NULL
+
+#inc$win.long <- inc$win # retain unsimplified version
 inc$win <- inc$win2; inc$win2 <- NULL # keep manipulated version only
 #table(inc$win)
 #
+# recode race.after categories
+library(plyr)
+table(inc$race.after)
+sel <- which(inc$race.after=="Reran-")
+inc$emm[sel]
+inc$race.after <- mapvalues(inc$race.after, from = c("Reelected","Reran-beaten","Term-limited-p-won","Term-limited-p-lost","Out-p-won","Out-p-lost"), to = c("1Reel","2Beaten","3Term-pwon","4Term-plost","5Out-pwon","6Out-plost"))
+table(inc$race.after)
+## sel <- grep("^Reran-$", inc$race.after)
+## inc$emm[sel]
+
+#########################################
+## this block inspects reelection 2021 ##
+#########################################
+tmp <- inc[inc$sel==1,]
+# drop litigios uyc anuladas
+sel <- grep("uyc|litigio|anulada", tmp$race.after)
+if (length(sel)>0) tmp <- tmp[-sel,] # drop one uyc munic 
+sel <- grep("consejo", tmp$win, ignore.case=TRUE)
+if (length(sel)>0) tmp <- tmp[-sel,] # drop consejos municipales
+# 10 and 13 had no els in 2021, 18 29 and 30 had term limits still in place
+tmp <- tmp[tmp$edon %in% c(1:9,11:12,14:17,19:28,31:32),] # keep states with race.after coded only
+table(tmp$race.after)
+# drop 6 pending cases
+sel <- grep("[?]", tmp$race.after)
+tmp <- tmp[-sel,]
+table(tmp$win)
+sel <- which(tmp$win %in% c("hagamos", "indep","loc/oth","pes","pna","pt","rsp"))
+tmp$win[sel] <- "other"
+#tmp$win <- factor(tmp$win, levels=    c("pan","pri","prd","morena","pvem","mc","other"))
+tmp$win <- factor(tmp$win, levels=rev(c("pan","pri","prd","morena","pvem","mc","other")), labels=rev(c("PAN","PRI","PRD","MORENA","PVEM","MC","Otros")))
+
+tmp[1,]
+colnames(tmp)
+## # debug
+## sel <- grep("^Reran-out$", tmp$race.after)
+## tmp$emm[sel]
+
+tmp2 <- myxtab(tmp$win, tmp$race.after, pct=TRUE, rel=TRUE, digits=2, marginals = 1)
+tmp2
+#
+tmp3 <- myxtab(tmp$win,tmp$race.after, pct=FALSE, rel=FALSE, digits=0, marginals = 1)
+colSums(tmp3)
+tmp4 <- c(round(colSums(tmp3)*100/colSums(tmp3)[7]), colSums(tmp3)[7])
+tmp2 <- rbind(Todos=tmp4, tmp2)
+tmp2
+
+tmp2 <- tmp2[order(-tmp2[,1]),] # sort by reelected
+x
+
+library(RColorBrewer)
+#pdf(file =     "../graph/reel-munic2021.pdf", width = 7, height = 6)
+#png(filename = "../graph/reel-munic2021.png", width = 700, height = 480)
+clr <- brewer.pal(n=6, name = 'Paired'); clr <- clr[c(4,3,6,5,2,1)]
+par(mar = c(2,0,1.2,0)+.1) # bottom, left, top, right 
+plot(x = c(-9,105), y = c(0.4,nrow(tmp2)+1), type = "n", main = "Municipios con reelección 2021", axes = FALSE)
+axis(1, at=seq(0,100,10),label=FALSE)
+axis(1, at=seq(0,100,20),labels=c(seq(0,80,20),"100%"),cex.axis=.9)
+polygon(x=c(-20,-20,120,120), y=c(3,4,4,3),col="gray85",border="gray85")
+abline(h=1:(nrow(tmp2)+1), lty = 3)
+#abline(h=5:6)
+for (i in 1:nrow(tmp2)){
+    #i <- 1
+    l <- c(0,0); r <- rep(tmp2[i,1],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[1], border = clr[1])
+    if (tmp2[i,1]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,1]),"%"), cex = .67, col = "white")
+    l <- r; r <- r+rep(tmp2[i,2],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[2], border = clr[2])
+    if (tmp2[i,2]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,2]),"%"), cex = .67, col = "gray50")
+    l <- r; r <- r+rep(tmp2[i,3],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[3], border = clr[3])
+    if (tmp2[i,3]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,3]),"%"), cex = .67, col = "white")
+    l <- r; r <- r+rep(tmp2[i,4],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[4], border = clr[4])
+    if (tmp2[i,4]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,4]),"%"), cex = .67, col = "gray50")
+    l <- r; r <- r+rep(tmp2[i,5],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[5], border = clr[5])
+    if (tmp2[i,5]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,5]),"%"), cex = .67, col = "white")
+    l <- r; r <- r+rep(tmp2[i,6],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[6], border = clr[6])
+    if (tmp2[i,6]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,6]),"%"), cex = .67, col = "gray50")
+}
+text(x=-7 , y=c(1:nrow(tmp2))+.5, labels = rownames(tmp2), cex = .85)#, srt = 90)
+text(x=105, y=c(1:nrow(tmp2))+.5, labels = paste0("N=", tmp2[,8]), cex = .75)
+#legend(x = 0, y = 0.75, legend = c("Ocupante reelecto","derrotado","Silla vacía ganó","perdió","Term limit ganó","perdió"), fill = clr, cex = .67, border = clr, bty = "n", horiz = TRUE)
+legend(x = -2,  y = 0.85, legend = c("reelecto","derrotado"), title = "Ocupante contendió"  , fill = clr[1:2], cex = .85, border = clr[1:2], bty = "n", horiz = TRUE)
+legend(x = 40, y = 0.85, legend = c("ganó","perdió")       , title = "Term limit, partido", fill = clr[3:4], cex = .85, border = clr[3:4], bty = "n", horiz = TRUE)
+legend(x = 72, y = 0.85, legend = c("ganó","perdió")       , title = "Silla vacía, partido" , fill = clr[5:6], cex = .85, border = clr[5:6], bty = "n", horiz = TRUE)
+text(x = 105, y = .9, "@emagar", col = "gray", cex = .7)
+#dev.off()
+
+
 #############################################################
 ## lag race.after & win to generate race.prior & win.prior ##
-## lead win to generate race.prior & win.prior ##
+## lead win to generate race.prior & win.prior             ##
 #############################################################
-# check that no cycles are missing in any municipio
+# check for missing cycles in any municipio
 tmp <- data.frame(emm=inc$emm, cycle=NA)
+tail(tmp)
 tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.][0-9]+", "\\1", tmp$emm))
 tmp$id <- sub("^(.+)-[0-9]{2}[.]([0-9]+)", "\\1\\2", tmp$emm)
 library(DataCombine) # easy lags with slide
 tmp <- tmp[order(tmp$emm),] # check sorted for lags
-tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "id", Var = "cycle", NewVar = "cycle.lag",    slideBy = -1) # lag by one period
+tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "id", Var = "cycle", NewVar = "cycle.lag", slideBy = -1) # lag by 1 period
 tmp$dif <- tmp$cycle - tmp$cycle.lag - 1 # zeroes indicate time series ok
 tmp$dif[is.na(tmp$dif)] <- 0
+# drop last round with many missing data still unreported
+tmp$max <- ave(tmp$cycle, as.factor(tmp$id), FUN=max, na.rm=TRUE)
+sel <- which(tmp$cycle==tmp$max)
+tmp <- tmp[-sel,]
 tmp$suma <- ave(tmp$dif, as.factor(tmp$id), FUN=sum, na.rm=TRUE)
 table(tmp$suma) # all zeroes implies no gaps
+sel <- which(tmp$suma>0)
+unique(tmp$id[sel])
 #
 inc <- inc[order(inc$emm),] # sort munn-chrono
 # open slots for lagged variables
@@ -229,13 +418,13 @@ inc$win.long.post <- NA # to code pty won dummy (lead)
 #
 ## HABRIA QUE CAMBIAR ESTE LOOP POR LA FUNCION SLIDE...
 for (e in 1:32){
-    #e <- 8 #debug
+    #e <- 4 #debug
     sel.e <- which(inc$edon==e)
     inc.e <- inc[sel.e,]
-    mm <- unique(inc.e$munn)
+    mm <- unique(inc.e$inegi)
     for (m in mm){
-        #m <- 5 #debug
-        sel.m <- which(inc.e$munn==m)
+        #m <- "4003" #debug
+        sel.m <- which(inc.e$inegi==m)
         inc.m <- inc.e[sel.m,]
         M <- nrow(inc.m)
         if (M==1) next
@@ -270,232 +459,214 @@ sel <- grep("uyc", inc$win, ignore.case = TRUE)
 if (length(sel)>0) inc <- inc[-sel,]
 # mark election before went uyc as p-lost
 sel <- grep("uyc", inc$race.after, ignore.case = TRUE)
+inc$emm[sel]
 inc$race.after[sel] <- "Term-limited-p-lost"
+
+
+DROP CONSEJOS MUNICIPALES HERE TOO?
+
+    
+##########################################################################################
+## MANIPULATE WIN.PRIOR IN NEW MUNICS... looked at win in parent municipio and used it  ##
+##########################################################################################
+#    
+## # read master list of municipal parents/offspring in case needed for debugging
+## tmp <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/ancillary/new-mun-parents-1989on.csv"
+## tmp <- read.csv(tmp, stringsAsFactors = FALSE)
+## head(tmp)
 #
-# 31jul2020: NEED TO DEAL WITH WIN.PRIOR IN NEW MUNICS... looked at win in parent municipio and used it 
-inc$win.prior[inc$emm=="ags-08.010"] <- inc$win.long.prior[inc$emm=="ags-08.010"] <- "pri"
-inc$win.prior[inc$emm=="ags-08.011"] <- inc$win.long.prior[inc$emm=="ags-08.011"] <- "pri"
-inc$win.prior[inc$emm=="bc-10.005"]  <- inc$win.long.prior[inc$emm=="bc-10.005"]  <- "pan"
-inc$win.prior[inc$emm=="bcs-08.009"] <- inc$win.long.prior[inc$emm=="bcs-08.009"] <- "pri"
-inc$win.prior[inc$emm=="cam-08.009"] <- inc$win.long.prior[inc$emm=="cam-08.009"] <- "pri"
-inc$win.prior[inc$emm=="cam-10.010"] <- inc$win.long.prior[inc$emm=="cam-10.010"] <- "pri"
-inc$win.prior[inc$emm=="cam-11.011"] <- inc$win.long.prior[inc$emm=="cam-11.011"] <- "pri"
-inc$win.prior[inc$emm=="cps-08.112"] <- inc$win.long.prior[inc$emm=="cps-08.112"] <- "pri"
-inc$win.prior[inc$emm=="cps-11.113"] <- inc$win.long.prior[inc$emm=="cps-11.113"] <- "pri"
-inc$win.prior[inc$emm=="cps-11.114"] <- inc$win.long.prior[inc$emm=="cps-11.114"] <- "pri"
-inc$win.prior[inc$emm=="cps-11.115"] <- inc$win.long.prior[inc$emm=="cps-11.115"] <- "pri"
-inc$win.prior[inc$emm=="cps-11.116"] <- inc$win.long.prior[inc$emm=="cps-11.116"] <- "pri"
-inc$win.prior[inc$emm=="cps-11.117"] <- inc$win.long.prior[inc$emm=="cps-11.117"] <- "pri"
-inc$win.prior[inc$emm=="cps-11.118"] <- inc$win.long.prior[inc$emm=="cps-11.118"] <- "pri"
-inc$win.prior[inc$emm=="cps-11.119"] <- inc$win.long.prior[inc$emm=="cps-11.119"] <- "pri"
-inc$win.prior[inc$emm=="cps-15.120"] <- "prd"; inc$win.long.prior[inc$emm=="cps-15.120"] <- "pan-prd-mc-pna"
-inc$win.prior[inc$emm=="cps-15.121"] <- inc$win.long.prior[inc$emm=="cps-15.121"] <- "pvem"
-inc$win.prior[inc$emm=="cps-15.122"] <- inc$win.long.prior[inc$emm=="cps-15.122"] <- "pri" # me lo saqué de la manga
-inc$win.prior[inc$emm=="cps-15.123"] <- inc$win.long.prior[inc$emm=="cps-15.123"] <- "pvem"
-inc$win.prior[inc$emm=="cps-17.124"] <- inc$win.long.prior[inc$emm=="cps-17.124"] <- "pvem"
-inc$win.prior[inc$emm=="cps-17.125"] <- inc$win.long.prior[inc$emm=="cps-17.125"] <- "prd"
-inc$win.prior[inc$emm=="dgo-07.039"] <- inc$win.long.prior[inc$emm=="dgo-07.039"] <- "pri"
-inc$win.prior[inc$emm=="gue-09.076"] <- inc$win.long.prior[inc$emm=="gue-09.076"] <- "pri"
-inc$win.prior[inc$emm=="gue-12.077"] <- inc$win.long.prior[inc$emm=="gue-12.077"] <- "pri" # pan en cuajinicualapa
-inc$win.prior[inc$emm=="gue-13.078"] <- inc$win.long.prior[inc$emm=="gue-13.078"] <- "prd"
-inc$win.prior[inc$emm=="gue-13.079"] <- inc$win.long.prior[inc$emm=="gue-13.079"] <- "pri"
-inc$win.prior[inc$emm=="gue-13.080"] <- inc$win.long.prior[inc$emm=="gue-13.080"] <- "pri"
-inc$win.prior[inc$emm=="gue-13.081"] <- inc$win.long.prior[inc$emm=="gue-13.081"] <- "prd" # pri en san luis acatlan
-inc$win.prior[inc$emm=="jal-13.125"] <- inc$win.long.prior[inc$emm=="jal-13.125"] <- "pan"
-inc$win.prior[inc$emm=="mex-08.122"] <- inc$win.long.prior[inc$emm=="mex-08.122"] <- "pri"
-inc$win.prior[inc$emm=="mex-11.123"] <- inc$win.long.prior[inc$emm=="mex-11.123"] <- "pri"
-inc$win.prior[inc$emm=="mex-11.124"] <- inc$win.long.prior[inc$emm=="mex-11.124"] <- "pri"
-inc$win.prior[inc$emm=="mex-12.125"] <- "pri"; inc$win.long.prior[inc$emm=="mex-12.125"] <- "pri-pvem"
-inc$win.prior[inc$emm=="nay-07.020"] <- inc$win.long.prior[inc$emm=="nay-07.020"] <- "pri"
-inc$win.prior[inc$emm=="qui-09.008"] <- inc$win.long.prior[inc$emm=="qui-09.008"] <- "pri"
-inc$win.prior[inc$emm=="qui-13.009"] <- "prd"; inc$win.long.prior[inc$emm=="qui-13.009"] <- "prd-pt"
-inc$win.prior[inc$emm=="qui-15.010"] <- inc$win.long.prior[inc$emm=="qui-15.010"] <- "pri"
-inc$win.prior[inc$emm=="qui-16.011"] <- "pri"; inc$win.long.prior[inc$emm=="qui-16.011"] <- "pri-pvem-pna"
-inc$win.prior[inc$emm=="san-10.057"] <- inc$win.long.prior[inc$emm=="san-10.057"] <- "pri"
-inc$win.prior[inc$emm=="san-10.058"] <- inc$win.long.prior[inc$emm=="san-10.058"] <- "pan"
-inc$win.prior[inc$emm=="son-08.070"] <- inc$win.long.prior[inc$emm=="son-08.070"] <- "pri" # usé puerto peñasco
-inc$win.prior[inc$emm=="son-10.071"] <- inc$win.long.prior[inc$emm=="son-10.071"] <- "pri"
-inc$win.prior[inc$emm=="son-10.072"] <- inc$win.long.prior[inc$emm=="son-10.072"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.045"] <- inc$win.long.prior[inc$emm=="tla-09.045"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.046"] <- inc$win.long.prior[inc$emm=="tla-09.046"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.047"] <- inc$win.long.prior[inc$emm=="tla-09.047"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.048"] <- inc$win.long.prior[inc$emm=="tla-09.048"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.049"] <- inc$win.long.prior[inc$emm=="tla-09.049"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.050"] <- inc$win.long.prior[inc$emm=="tla-09.050"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.051"] <- inc$win.long.prior[inc$emm=="tla-09.051"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.052"] <- inc$win.long.prior[inc$emm=="tla-09.052"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.053"] <- inc$win.long.prior[inc$emm=="tla-09.053"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.054"] <- inc$win.long.prior[inc$emm=="tla-09.054"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.055"] <- inc$win.long.prior[inc$emm=="tla-09.055"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.056"] <- inc$win.long.prior[inc$emm=="tla-09.056"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.057"] <- inc$win.long.prior[inc$emm=="tla-09.057"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.058"] <- inc$win.long.prior[inc$emm=="tla-09.058"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.059"] <- inc$win.long.prior[inc$emm=="tla-09.059"] <- "pri"
-inc$win.prior[inc$emm=="tla-09.060"] <- inc$win.long.prior[inc$emm=="tla-09.060"] <- "pri"
-inc$win.prior[inc$emm=="ver-08.204"] <- inc$win.long.prior[inc$emm=="ver-08.204"] <- "pri"
-inc$win.prior[inc$emm=="ver-08.205"] <- inc$win.long.prior[inc$emm=="ver-08.205"] <- "pri"
-inc$win.prior[inc$emm=="ver-08.206"] <- inc$win.long.prior[inc$emm=="ver-08.206"] <- "pri"
-inc$win.prior[inc$emm=="ver-08.207"] <- inc$win.long.prior[inc$emm=="ver-08.207"] <- "pri"
-inc$win.prior[inc$emm=="ver-10.208"] <- inc$win.long.prior[inc$emm=="ver-10.208"] <- "pri"
-inc$win.prior[inc$emm=="ver-10.209"] <- inc$win.long.prior[inc$emm=="ver-10.209"] <- "pri"
-inc$win.prior[inc$emm=="ver-10.210"] <- inc$win.long.prior[inc$emm=="ver-10.210"] <- "pri"
-inc$win.prior[inc$emm=="ver-12.211"] <- inc$win.long.prior[inc$emm=="ver-12.211"] <- "pan"
-inc$win.prior[inc$emm=="ver-12.212"] <- inc$win.long.prior[inc$emm=="ver-12.212"] <- "pri"
-inc$win.prior[inc$emm=="zac-11.057"] <- inc$win.long.prior[inc$emm=="zac-11.057"] <- "prd"
-inc$win.prior[inc$emm=="zac-13.058"] <- inc$win.long.prior[inc$emm=="zac-13.058"] <- "prd"
-# make prd incumbent party in all df2000 (first municipal election)
-sel <- grep("df-11", inc$emm)
-inc$win.prior[sel] <- inc$win.long.prior[sel] <- "prd"
-# there are NAs before 1993 ignored
-# because analysis drops those years
+sel <- which(inc$emm=="ags-08.010");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ags-08.011");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="bc-10.005");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+#sel <- which(inc$emm=="bc-19.006"); # san quintin might be ready for 2024
+#inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "morena" ; inc$win.prior[sel] <- "new mun morena"
+sel <- which(inc$emm=="bcs-08.009");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-08.009");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-10.010");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-11.011");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-18.xxx"); # ojo: need codigo inegi
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-18.012");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+sel <- which(inc$emm=="cps-08.112");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.113");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.114");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.115");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.116");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.117");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.118");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.119");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-15.122"); # me lo saqué de la manga
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-15.123");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pvem" ; inc$win.prior[sel] <- "new mun pvem"
+sel <- which(inc$emm=="cps-15.124"); # mezcalapa 2012 to pri (won secciones in 2010)
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-17.120"); # cap luis vidal 2018 to pvem (won secciones in 2015, pchu had won mun)
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pvem" ; inc$win.prior[sel] <- "new mun pvem"
+sel <- which(inc$emm=="cps-17.121"); # rincon chamula 2018 to pvem (won secciones in 2015, prd had won mun)
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pvem" ; inc$win.prior[sel] <- "new mun pvem"
+sel <- which(inc$emm=="cps-18.125");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-15.xxx"); # ojo needs inegi code
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.002", inc$emm) # df2000 (first municipal election)
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.003", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.004", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.005", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.006", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.007", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.008", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.009", inc$emm) # milpa alta to pri
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri"; inc$win.prior[sel] <- "new mun pri"
+sel <- grep("df-11.010", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.011", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.012", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.013", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.014", inc$emm) # benito juarez to pan
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan"; inc$win.prior[sel] <- "new mun pan"
+sel <- grep("df-11.015", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11.016", inc$emm) # miguel hidalgo to pan
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan"; inc$win.prior[sel] <- "new mun pan"
+sel <- grep("df-11.017", inc$emm) # 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="dgo-07.039");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-09.076");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-12.077"); # pan en cuajinicualapa
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-13.078");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="gue-13.079");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-13.080");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-13.081"); # pri en san luis acatlan
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="jal-13.125");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+#sel <- which(inc$emm=="jal-xx.xxx"); # capilla de guadalupe might eventually appear
+#inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "" ; inc$win.prior[sel] <- "new mun "
+sel <- which(inc$emm=="mex-08.122");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="mex-11.123");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="mex-11.124");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="mex-12.125");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri-pvem"; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="nay-07.020");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="qui-09.008");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="qui-13.009");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd-pt"; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="qui-15.010");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="qui-16.011");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri-pvem-pna"; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="san-10.057");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="san-10.058");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+sel <- which(inc$emm=="son-08.070"); # usé puerto peñasco
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="son-10.071");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="son-10.072");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.045");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.046");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.047");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.048");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.049");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.050");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.051");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.052");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.053");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.054");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.055");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.056");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.057");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.058");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.059");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.060");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-08.204");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-08.205");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-08.206");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-08.207");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-10.208");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-10.209");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-10.210");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-12.211");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+sel <- which(inc$emm=="ver-12.212");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="zac-11.057");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="zac-13.058");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+#
+# there are NAs before 1993 ignored because analysis drops those years
 # fix them in future when needed
 table(is.na(inc$win.prior), inc$yr)
 #
-# missing cases post 1994
+# spot missing cases post 1994, if any
 sel <- which(is.na(inc$win.prior) & inc$yr>1994)
-with(inc[sel,], data.frame(inegi, ife, munn, mun, yr, win.prior, race.prior, win))
+with(inc[sel,], data.frame(emm, inegi, ife, mun, yr, win.prior, race.prior, win))
 
-# fill by hand
-sel <- which(inc$ife==7121 & inc$yr==2012) # mezcalapa 2012 to pri (won secciones in 2010)
-inc$win.prior [sel] <- "pri" ; inc$race.prior[sel] <- "new mun"
-sel <- which(inc$ife==7119 & inc$yr==2012) # belisario dominguez 2012 to pri (won in 2010)
-inc$win.prior [sel] <- "pri" ; inc$race.prior[sel] <- "new mun"
-sel <- which(inc$ife==7123 & inc$yr==2018) # cap luis a vidal 2018 to pvem (won secciones in 2015)
-inc$win.prior [sel] <- "pvem"; inc$race.prior[sel] <- "new mun"
-sel <- which(inc$ife==7124 & inc$yr==2018) # rincon chamula 2018 to pvem (won secciones in 2015)
-inc$win.prior [sel] <- "pvem"; inc$race.prior[sel] <- "new mun"
 
-#                                            ################################
-# new municipalities and years to manipulate # OJO will need to check 2021s #
-#                                            ################################ 
-#        inegi,created,muelyr
-tmp <- c(2005,1998,1998,
-         2006,2021,2021,
-         4010,1997,1997,
-         4011,2000,2000,
-         4012,2020,2021,
-         7113,2001,2001,
-         7114,2001,2001,
-         7115,2001,2001,
-         7116,2001,2001,
-         7117,2001,2001,
-         7118,2001,2001,
-         7119,2001,2001,
-         7120,2018,2018,
-         7121,2018,2018,
-         7122,2015,2012,
-         7123,2015,2012,
-         7124,2015,2012,
-         7125,2020,2021,
-         12076,1996,1996,
-         12077,2005,2005,
-         12078,2008,2008,
-         12079,2008,2008,
-         12080,2008,2008,
-         12081,2008,2008,
-         14125,2006,2006,
-         14126,NA,2021,
-         15123,2003,2003,
-         15124,2003,2003,
-         15125,2006,2006,
-         17034,2020,2021,
-         17035,2020,2021,
-         17036,2020,2021,
-         23008,1996,1996,
-         23009,2009,2009,
-         23010,2013,2013,
-         23011,2016,2016,
-         24057,1997,1997,
-         24058,1997,1997,
-         26071,1997,1997,
-         26072,1997,1997,
-         29045,1996,1996,
-         29046,1996,1996,
-         29047,1996,1996,
-         29048,1996,1996,
-         29049,1996,1996,
-         29050,1996,1996,
-         29051,1996,1996,
-         29052,1996,1996,
-         29053,1996,1996,
-         29054,1996,1996,
-         29055,1996,1996,
-         29056,1996,1996,
-         29057,1996,1996,
-         29058,1996,1996,
-         29059,1996,1996,
-         29060,1996,1996,
-         30208,1997,1997,
-         30209,1997,1997,
-         30210,1997,1997,
-         30211,2004,2004,
-         30212,2004,2004,
-         32057,2001,2001,
-         32058,2007,2007)
-tmp <- matrix(tmp, ncol=3, byrow = TRUE)
-tmp <- as.data.frame(tmp)
-colnames(tmp) <- c("inegi","created","muelyr")
-tmp$sel <- NA
-#
-for (i in 1:nrow(tmp)){
-    if (length(which(inc$inegi==tmp$inegi[i] & inc$yr==tmp$muelyr[i]))) tmp$sel[i] <- which(inc$inegi==tmp$inegi[i] & inc$yr==tmp$muelyr[i])
-    }
-# add belisario dominguez, used once only (has ife code only)
-tmp$ife <- NA
-tmp <- rbind(tmp, c(NA,2012,2012,NA,7119))
-i <- nrow(tmp)
-if (length(which(inc$ife==tmp$ife[i] & inc$yr==tmp$muelyr[i]))) tmp$sel[i] <- which(inc$ife==tmp$ife[i] & inc$yr==tmp$muelyr[i])
-# select all new muns
-sel <- tmp$sel;
-sel <- sel[!is.na(sel)]
-# code new municipalities
-inc$race.prior[sel] <- "new-mun"
-inc$win.prior[sel] <- paste("new-mun", inc$win.prior[sel], sep = "-")
-# debug
-# data.frame(inc$race.prior[sel], inc$race.after[sel], inc$win.prior[sel], inc$win[sel], inc$mun[sel])
-
-# deals with df 2000
-sel <- which(is.na(inc$race.prior)==TRUE & inc$yr>1993)
-data.frame(inc$race.prior[sel], inc$race.after[sel], inc$win.prior[sel], inc$win[sel], inc$mun[sel]) # all cases should be df
-tmp <- inc[sel,] # subset data for manipulation
-sel1 <- grep("pan", tmp$win.prior)
-sel2 <- grep("pan", tmp$win)
-tmp$race.prior[intersect(sel1,sel2)] <- "Term-limited-p-won"
-sel1 <- grep("pri", tmp$win.prior)
-sel2 <- grep("pri", tmp$win)
-tmp$race.prior[intersect(sel1,sel2)] <- "Term-limited-p-won"
-sel1 <- grep("prd", tmp$win.prior)
-sel2 <- grep("prd", tmp$win)
-tmp$race.prior[intersect(sel1,sel2)] <- "Term-limited-p-won"
-sel1 <- grep("pvem", tmp$win.prior)
-sel2 <- grep("pvem", tmp$win)
-tmp$race.prior[intersect(sel1,sel2)] <- "Term-limited-p-won"
-inc[sel,] <- tmp  # return to data after manipulation
-# repeat subset for defeats (easier debugging)
-sel <- which(is.na(inc$race.prior)==TRUE & inc$yr>1993)
-tmp <- inc[sel,] # subset data for manipulation
-#table(tmp$win, tmp$win.prior, useNA = "always")
-#data.frame(tmp$win.prior, tmp$win, tmp$race.prior) # check that all remaining are defeats
-tmp$race.prior <- "Term-limited-p-lost"
-inc[sel,] <- tmp  # return to data after manipulation
-# check coding
-sel <- which(inc$yr>1993)
-table(inc$race.prior[sel], useNA = "always")
-# rename categories
-sel <- which(inc$race.prior=="Reelected")
-inc$race.prior[sel] <- "Incumb-remained"
-sel <- which(inc$race.prior=="Beaten")
-inc$race.prior[sel] <- "Incumb-ousted"
-sel <- grep("p-won", inc$race.prior, ignore.case = TRUE) 
-inc$race.prior[sel] <- "Open-same-pty"
-sel <- grep("p-lost", inc$race.prior, ignore.case = TRUE) 
-inc$race.prior[sel] <- "Open-dif-pty"
-sel <- grep("pending|out-p-[?]", inc$race.prior, ignore.case = TRUE) 
-inc$race.prior[sel] <- "pending"
-sel <- which(inc$yr>1993)
-table(inc$race.prior[sel], useNA = "always")
-table(inc$race.prior, useNA = "always")
-#
 #############################################
 # subset: cases allowing reelection in 2018 #
 # esto lo reporté en el blog de Nexos       #
@@ -549,7 +720,7 @@ inc.sub <- inc[sel,]
 ################################################
 #
 # CLEAN MESS
-rm(e,inc.e,inc.m,inc.sub,i,m,M,mm,sel,sel1,sel2,sel.e,sel.m,tab,tmp)
+rm(e,inc.e,inc.sub,i,m,mm,sel,sel1,sel2,sel.e,tab,tmp)
 #
 # ORDINARY ELECTION YEARS FOR ALL STATES --- INAFED HAS YRIN INSTEAD OF YR
 # 4ago2020: PROBABLY REDUNDANT SINCE emm NOW IDENTIFIES CYCLE REGARDLESS OF YEAR
@@ -646,17 +817,18 @@ inc$dpty.same.as.next[sel] <- manip # return to data after manipulation
 ## unelected authorities to 0 ##
 ## uses win not win.long      ##
 ################################
+
 sel <- which(is.na(inc$dpty.same.as.last)==TRUE)  # only NAs need manipulation
 manip <- inc$dpty.same.as.last[sel]               # extract for manipulation
-sel1 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win.prior[sel])
-sel2 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win[sel])
+sel1 <- grep("anulada|consejoMun|litigio|uyc|0",inc$win.prior[sel])
+sel2 <- grep("anulada|consejoMun|litigio|uyc|0",inc$win[sel])
 if (length(union(sel1,sel2))>0) manip[union(sel1,sel2)] <- 0 # either
 inc$dpty.same.as.last[sel] <- manip # return to data after manipulation
 #
 sel <- which(is.na(inc$dpty.same.as.next)==TRUE)  # only NAs need manipulation
 manip <- inc$dpty.same.as.next[sel]               # extract for manipulation
-sel1 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win.post[sel])
-sel2 <- grep("anulada|consejoMunic|litigio|uyc|0",inc$win[sel])
+sel1 <- grep("anulada|consejoMun|litigio|uyc|0",inc$win.post[sel])
+sel2 <- grep("anulada|consejoMun|litigio|uyc|0",inc$win[sel])
 if (length(union(sel1,sel2))>0) manip[union(sel1,sel2)] <- 0 # either
 inc$dpty.same.as.next[sel] <- manip # return to data after manipulation
 ###########################
@@ -734,16 +906,16 @@ rm(indiv.pties, my.fun)
 ## remaining NAs must be zeroes ##
 ##################################
 sel <- which(is.na(inc$dpty.same.as.last)==TRUE);
-inc$dpty.same.as.last[sel] <- 0
+if (length(sel)>0) inc$dpty.same.as.last[sel] <- 0
 sel <- which(is.na(inc$dpty.same.as.next)==TRUE);
-inc$dpty.same.as.next[sel] <- 0
+if (length(sel)>0) inc$dpty.same.as.next[sel] <- 0
 #
 # return 99s to NA
 sel <- which(inc$dpty.same.as.last==99);
-inc$dpty.same.as.last[sel] <- NA
+if (length(sel)>0) inc$dpty.same.as.last[sel] <- NA
 #
 sel <- which(inc$dpty.same.as.next==99);
-inc$dpty.same.as.next[sel] <- NA
+if (length(sel)>0) inc$dpty.same.as.next[sel] <- NA
 
 # clean
 rm(i,min.cal,sel,sel1,sel2,sel3,sel4,tmp,tmp2,manip)
@@ -752,7 +924,6 @@ inc <- inc[,-sel]
 
 colnames(inc)
 ls()
-x
 
 ## DEPRECATED: dpty.same.as.next NOW CODED ABOVE
 ## # unlag
@@ -763,13 +934,14 @@ x
 #
 # these lag NAs can be filled with current info
 sel <- which(is.na(inc$dpty.same.as.next) & inc$race.after=="uyc")
-inc$dpty.same.as.next[sel] <- 0
+if (length(sel)>0) inc$dpty.same.as.next[sel] <- 0
 
 # verify
+table(inc$race.after)
 table(inc$race.after, factor(inc$dpty.same.as.next, labels=c("dift","same")), useNA = "always")
 # prd incumbent reelected as indep
 sel <- which(inc$race.after=="Reelected" & inc$dpty.same.as.next==0)
-inc[inc$inegi==inc$inegi[sel[1]],c("emm", "yr","win","incumbent", "race.after")]
+inc[inc$inegi==inc$inegi[sel],c("emm", "yr","win","incumbent", "race.after")]
 
 sel <- which(inc$race.after=="Term-limited-p-won" & inc$dpty.same.as.next==0)
 inc[sel,]
@@ -1127,10 +1299,10 @@ colnames(inc)[sel] <- "incumbent.pty"
 ## ##                               ## ##
 ## ################################### ##
 #########################################
-#
-#
-#
-#
+
+
+
+
 ###########################################################
 ## ##################################################### ##
 ## ##                                                 ## ##

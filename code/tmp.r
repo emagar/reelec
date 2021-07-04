@@ -1,83 +1,174 @@
 
 
 
-my.fun <- function(target = NA){
-    target <- paste("^", target, "$|-", target, "|", target, "-", sep = "")
-    sel <- which(is.na(inc$dpwon.prior)==TRUE); manip <- inc$dpwon.prior[sel] # extract for manipulation
-    sel1 <- grep(target, inc$win.long.prior[sel])
-    sel2 <- grep(target, inc$win.long      [sel])
-    manip[intersect(sel1,sel2)] <- 1 # both
-    inc$dpwon.prior[sel] <- manip # return to data after manipulation
-}
-my.fun("adc")
-my.fun("ave")
-my.fun("cc1")
-my.fun("cp")
-my.fun("cpp")
-my.fun("dsppn")
-my.fun("fc1")
-my.fun("fdn")
-my.fun("indep")
-my.fun("mas")
-my.fun("mc")
-my.fun("morena")
-my.fun("left")
-my.fun("npp")
-my.fun("pac1")
-my.fun("pan")
-my.fun("parm")
-my.fun("pasd")
-my.fun("paz")
-my.fun("pcc")
-my.fun("pcd1")
-my.fun("pcdt")
-my.fun("pchu")
-my.fun("pcm2")
-my.fun("pcp")
-my.fun("pcpp")
-my.fun("pebc")
-my.fun("pec")
-my.fun("pes")
-my.fun("pfcrn")
-my.fun("pfd1")
-my.fun("ph")
-my.fun("ph_bcs")
-my.fun("pj1")
-my.fun("pjs")
-my.fun("pl1")
-my.fun("plm")
-my.fun("pmch")
-my.fun("pmp")
-my.fun("pmr")
-my.fun("pmt")
-my.fun("pna")
-my.fun("poc")
-my.fun("ppc")
-my.fun("ppg")
-my.fun("ppro")
-my.fun("pps")
-my.fun("pps")
-my.fun("ppt")
-my.fun("prc")
-my.fun("prd")
-my.fun("pri")
-my.fun("prs")
-my.fun("prt")
-my.fun("prv")
-my.fun("ps1")
-my.fun("psd1")
-my.fun("psdc")
-my.fun("psi")
-my.fun("psn")
-my.fun("pt")
-my.fun("pudc")
-my.fun("pup")
-my.fun("pvem")
-my.fun("pver")
-my.fun("si")
-my.fun("trans")
-my.fun("via_radical")
 
-tmp2 <- inc$dpwon.prior
+## # read master list of municipal parents/offspring in case needed for debugging
+## tmp <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/ancillary/new-mun-parents-1989on.csv"
+## tmp <- read.csv(tmp, stringsAsFactors = FALSE)
+## head(tmp)
 
-table(tmp1, tmp2, useNA = "always")
+# NEED TO DEAL WITH WIN.PRIOR IN NEW MUNICS... looked at win in parent municipio and used it 
+sel <- which(inc$emm=="ags-08.010");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ags-08.011");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="bc-10.005");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+#sel <- which(inc$emm=="bc-19.006"); # san quintin might be ready for 2024
+#inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "morena" ; inc$win.prior[sel] <- "new mun morena"
+sel <- which(inc$emm=="bcs-08.009");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-08.009");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-10.010");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-11.011");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-18.xxx"); # ojo: need codigo inegi
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cam-18.012");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+sel <- which(inc$emm=="cps-08.112");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.113");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.114");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.115");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.116");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.117");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.118");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-11.119");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-15.122"); # me lo saqué de la manga
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-15.123");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pvem" ; inc$win.prior[sel] <- "new mun pvem"
+sel <- which(inc$emm=="cps-15.124"); # mezcalapa 2012 to pri (won secciones in 2010)
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-17.120"); # cap luis vidal 2018 to pvem (won secciones in 2015, pchu had won mun)
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pvem" ; inc$win.prior[sel] <- "new mun pvem"
+sel <- which(inc$emm=="cps-17.121"); # rincon chamula 2018 to pvem (won secciones in 2015, prd had won mun)
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pvem" ; inc$win.prior[sel] <- "new mun pvem"
+sel <- which(inc$emm=="cps-18.125");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="cps-15.xxx"); # ojo needs inegi code
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+sel <- grep("df-11", inc$emm) # make prd incumbent party in all 
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd"; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="dgo-07.039");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-09.076");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-12.077"); # pan en cuajinicualapa
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-13.078");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="gue-13.079");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-13.080");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="gue-13.081"); # pri en san luis acatlan
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="jal-13.125");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+#sel <- which(inc$emm=="jal-xx.xxx"); # capilla de guadalupe might eventually appear
+#inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "" ; inc$win.prior[sel] <- "new mun "
+sel <- which(inc$emm=="mex-08.122");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="mex-11.123");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="mex-11.124");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="mex-12.125");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri-pvem"; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="nay-07.020");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="qui-09.008");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="qui-13.009");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd-pt"; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="qui-15.010");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="qui-16.011");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri-pvem-pna"; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="san-10.057");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="san-10.058");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+sel <- which(inc$emm=="son-08.070"); # usé puerto peñasco
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="son-10.071");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="son-10.072");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.045");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.046");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.047");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.048");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.049");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.050");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.051");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.052");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.053");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.054");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.055");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.056");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.057");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.058");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.059");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="tla-09.060");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-08.204");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-08.205");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-08.206");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-08.207");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-10.208");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-10.209");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-10.210");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="ver-12.211");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pan" ; inc$win.prior[sel] <- "new mun pan"
+sel <- which(inc$emm=="ver-12.212");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "pri" ; inc$win.prior[sel] <- "new mun pri"
+sel <- which(inc$emm=="zac-11.057");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="zac-13.058");
+inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "prd" ; inc$win.prior[sel] <- "new mun prd"
+
+# there are NAs before 1993 ignored
+# because analysis drops those years
+# fix them in future when needed
+table(is.na(inc$win.prior), inc$yr)
+#
+# missing cases post 1994
+sel <- which(is.na(inc$win.prior) & inc$yr>1994)
+with(inc[sel,], data.frame(emm, inegi, ife, mun, yr, win.prior, race.prior, win))
+
+
+

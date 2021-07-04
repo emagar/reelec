@@ -1,6 +1,0 @@
-\beamer@endinputifotherversion {3.36pt}
-\select@language {spanish}
-\beamer@sectionintoc {1}{Electoral reform}{5}{0}{1}
-\beamer@sectionintoc {2}{Relevance}{15}{0}{2}
-\beamer@sectionintoc {3}{Coahuila 2017}{22}{0}{3}
-\beamer@sectionintoc {4}{Conclusion}{29}{0}{4}

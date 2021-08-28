@@ -27,32 +27,9 @@ source("~/Dropbox/data/useful-functions/myxtab.r")
 ## read alcaldes ##
 ###################
 inc <- read.csv(file = "aymu1989-present.incumbents.csv", stringsAsFactors = FALSE)
+inc <- inc[order(inc$ord),]
 library(plyr)
 inc$edo <- mapvalues(inc$edon, from = 1:32, to = c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic", "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac"))
-#
-###################
-## pending cases ##
-###################
-sel <- grep("^[0-9]+$", inc$race.after)
-table(inc$race.after[sel])
-inc$race.after[sel] <- "Pending"
-# code missing race.after as pending (drop this bit of code once all case are known)
-OJO CHECK WHO WON ife=7010 7081 7106 7122 7121 13051 13058 13066 15053 18020 20005 20109 20072 20115 20306 20422 20442 21030 21053 21122 21130 21146 21159 in 2021
-sel <- grep("[?]", inc$race.after)
-table(inc$race.after[sel])
-inc$race.after[sel] <- "Pending"
-#
-##############
-## drop uyc ##
-##############
-sel <- grep("uyc", inc$race.after)
-inc <- inc[-sel,]
-#
-####################################
-## code litigio as incumbent lost ##
-####################################
-sel <- grep("litigio", inc$race.after)
-inc$race.after[sel] <- "Out-p-lost"
 #
 ##############################
 ## keep dead incumbent info ##
@@ -67,58 +44,83 @@ inc$race.after[sel] <- gsub("Dead-reran-"      , "Out-", inc$race.after[sel])
 inc$race.after[sel] <- gsub("Dead-2024|Dead-$" , "Out-?", inc$race.after[sel])
 inc$race.after[sel] <- gsub("Dead-"            , "Out-", inc$race.after[sel])
 #
-# manipulate cases where incumbent/reelected switched parties so coded as party won/lost accordingly
-table(inc$race.after)
-sel1 <- grep("Reelected-dif-p", inc$race.after)
+#############################################
+## verify time series' structure (for lags) ##
+#############################################
+library(DataCombine) # easy lags
+tmp <- inc[,c("ord","inegi","emm")]
+tmp$cycle <- as.numeric(sub("^[a-z]+[-]([0-9]+)[.].+$", "\\1", tmp$emm))
+tmp <- tmp[order(tmp$ord),] # verify sorted before lags
+tmp <- slide(tmp, Var = "cycle", NewVar = "cycle.lag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+tmp$verif <- tmp$cycle - tmp$cycle.lag
+table(tmp$verif) # verify: all should be 1 then ok to lag
+# 
+full.xsts <- tmp # keep as list of all observations (to recover them after they were drop to ease code/analysis)
+# 
+###################
+## pending cases ##
+###################
+sel <- grep("^[0-9]+$", inc$race.after)
+table(inc$race.after[sel])
+inc$race.after[sel] <- "Pending"
+# code missing race.after as pending (drop this bit of code once all case are known)
+#inc[inc$ife==20442, c("mun","yr","ife","inegi","win","incumbent","race.after")] # used to debug
+sel <- grep("[?]", inc$race.after)
+inc$race.after[sel] <- "Pending"
 #
-# subtract one round from emm codes
+################################################################
+## recode race after of munic that turned usos in next round  ##
+################################################################
+sel <- grep("uyc", inc$race.after)
+inc$race.after[sel] <- "Out-p-lost"
+########################################################
+## drop observations that became to usos y costumbres ##
+########################################################
+sel <- grep("uyc", inc$win, ignore.case = TRUE)
+if (length(sel)>0) inc <- inc[-sel,]
+################################################
+## drop consejos municipales (void elections) ##
+################################################
+sel <- grep("consejo", inc$win, ignore.case = TRUE)
+if (length(sel)>0) inc <- inc[-sel,]
+##########################################
+## drop new municipio in border dispute ##
+##########################################
+sel <- grep("7xxx", inc$inegi)
+if (length(sel)>0) inc <- inc[-sel,]
+
+##############################################################################################
+## manipulate cases where incumbent switched parties so coded as party won/lost accordingly ##
+##############################################################################################
+#table(inc$race.after)
+sel1 <- grep("-dif-p", inc$race.after) # round t
+#
+# add one round to emm codes to select next round obs
 tmp <- inc$emm[sel1]
-tmp1 <- sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\1", tmp, perl = TRUE)
+tmp1 <-            sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\1", tmp, perl = TRUE)
 tmp2 <- as.numeric(sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\2", tmp, perl = TRUE))
-tmp3 <- sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\3", tmp, perl = TRUE)
-#
-# select next round obs
+tmp3 <-            sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\3", tmp, perl = TRUE)
 tmp4 <- paste(tmp1, tmp2+1, tmp3, sep = "")
-sel2 <- which(inc$emm %in% tmp4)
+sel2 <- which(inc$emm %in% tmp4)       # round t+1
 #
-# paste switched-to party as incumbent's original
-inc$win[sel1] <- inc$win[sel2]
-#
-# change race.after
-inc$race.after[sel1] <- "Reelected"
-#
-# select previous round obs
-tmp4 <- paste(tmp1, tmp2-1, tmp3, sep = "")
-sel2 <- which(inc$emm %in% tmp4)
-#
-# change previous race.after when needed to make time-series consistent with above recode BY HAND
-data.frame(emm.pre=inc$emm[sel2], win.pre=inc$win[sel2], race.after.pre=inc$race.after[sel2], win=inc$win[sel1])
-sel <- which(inc$emm=="cps-15.100"); inc$race.after[sel] <- "Term-limited-p-lost"
-sel <- which(inc$emm=="cua-15.004"); inc$race.after[sel] <- "Term-limited-p-won"
-sel <- which(inc$emm=="cua-15.004"); inc$race.after[sel] <- "Term-limited-p-won"
-sel <- which(inc$emm=="nl-15.028");  inc$race.after[sel] <- "Term-limited-p-won"
-sel <- which(inc$emm=="nl-15.031");  inc$race.after[sel] <- "Term-limited-p-won"
-sel <- which(inc$emm=="oax-15.187"); inc$race.after[sel] <- "Term-limited-p-won"
-sel <- which(inc$emm=="jal-15.026"); inc$race.after[sel] <- "Term-limited-p-lost"
-#
-# manipulate cases where incumbent/beaten switched parties so coded as party won/lost accordingly
-sel1 <- grep("Reran-beaten-dif-p", inc$race.after)
-#
-# fish party from note
-inc$emm[sel1]
-inc$note[sel1]
+# fish switched-to party from note
+#data.frame(emm=inc$emm[sel1], note=inc$note[sel1])
 tmp <- sub("only ", "", inc$note[sel1]) # remove "only"
-tmp1 <- sub("^reran under (.+) and lost.*$", "\\1", tmp)
+tmp1 <- sub("^(?:re)?ran under ([a-z-]+) .*", "\\1", tmp, perl = TRUE)
 #
-# paste new party as the original
+# paste switched-to party as the original
 inc$win[sel1] <- tmp1
-#
-# change race.after
-inc$race.after[sel1] <- "Reran-beaten"
-#
+# 
+# recode race.after given swithed-to party
+#data.frame(emm.pre=inc$emm[sel1], win.pre=inc$win[sel1], race.after.pre=inc$race.after[sel1], win.post=inc$win[sel2]) # debug: verify that race.after will be ok by just dropping -dif-p
+tmp <- inc$race.after[sel1]
+tmp <- sub("-dif-p", "", tmp)
+inc$race.after[sel1] <- tmp
+# verify
+table(inc$race.after)
 # clean
 rm(tmp,tmp1,tmp2,tmp3,tmp4,sel,sel1,sel2)
-#
+
 ## # merge a new coalAgg into incumbents
 ## cagg <- read.csv(file = "aymu1997-present.coalAgg.csv", stringsAsFactors = FALSE)
 ## colnames(cagg)
@@ -160,7 +162,7 @@ sel <- grep("mc-|-mc", inc$win2, ignore.case = TRUE)
 inc$win2[sel] <- "mc"
 sel <- grep("-pes", inc$win2, ignore.case = TRUE)
 inc$win2[sel] <- "pes"
-sel <- grep("mas|paz|pcp|phm|pmr|ppg|psd1|psi|pudc|pup|via_|pchu|pmch|pver|prs|prv|ps1|poc|pjs|pd1|pec|pasd|pac1|npp|pcu|pcdt|pmac|pcm2|pdm|pps|ppt|ph|pmp|fc1|pcd1|psn|ave", inc$win2, ignore.case = TRUE)
+sel <- grep("mas|paz|pcp|phm|pmr|ppg|psd1|psi|pudc|pup|via_|pchu|pmch|pver|prs|prv|ps1|poc|pjs|pd1|pec|pasd|pac1|npp|pcu|pcdt|pmac|pcm2|pdm|pps|ppt|ph|pmp|fc1|pcd1|psn|ave|hagamos|rsp|somos|indep", inc$win2, ignore.case = TRUE)
 inc$win2[sel] <- "loc/oth"
 #
 #####################################
@@ -172,8 +174,6 @@ inc$win2[sel] <- "loc/oth"
 
 # explore
 table(inc$race.after, useNA = "always")
-x
-
 
 
 #OLD WAY OF DEALING WITH MAJOR PTY COALS SPLIT CASE-BY-CASE
@@ -354,7 +354,7 @@ tmp <- tmp[tmp$edon %in% c(1:9,11:12,14:17,19:28,31:32),] # keep states with rac
 # recode race.after categories
 library(plyr)
 table(tmp$race.after)
-sel <- grep("[?]", tmp$race.after) # drop cases pending after election
+sel <- grep("pending", tmp$race.after, ignore.case = TRUE) # drop cases pending after election
 tmp$emm[sel] # which?
 tmp <- tmp[-sel,] 
 tmp$race.after <- mapvalues(tmp$race.after, from = c("Reelected","Reran-beaten","Term-limited-p-won","Term-limited-p-lost","Out-p-won","Out-p-lost"), to = c("1Reel","2Beaten","3Term-pwon","4Term-plost","5Out-pwon","6Out-plost"))
@@ -385,7 +385,7 @@ par(mar = c(2,0,1.2,0)+.1) # bottom, left, top, right
 plot(x = c(-9,105), y = c(0.4,nrow(tmp2)+1), type = "n", main = "Municipios con reelección 2021", axes = FALSE)
 axis(1, at=seq(0,100,10),label=FALSE)
 axis(1, at=seq(0,100,20),labels=c(seq(0,80,20),"100%"),cex.axis=.9)
-polygon(x=c(-20,-20,120,120), y=c(3,4,4,3),col="gray85",border="gray85")
+polygon(x=c(-20,-20,120,120), y=c(5,6,6,5),col="gray85",border="gray85")
 abline(h=1:(nrow(tmp2)+1), lty = 3)
 #abline(h=5:6)
 for (i in 1:nrow(tmp2)){
@@ -418,88 +418,84 @@ legend(x = 72, y = 0.85, legend = c("ganó","perdió")       , title = "Silla va
 text(x = 105, y = .9, "@emagar", col = "gray", cex = .7)
 #dev.off()
 
-
-#############################################################
-## lag race.after & win to generate race.prior & win.prior ##
-## lead win to generate race.prior & win.prior             ##
-#############################################################
-# check for missing cycles in any municipio
-tmp <- data.frame(emm=inc$emm, cycle=NA)
-#tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.][0-9]+", "\\1", tmp$emm)) # NAs correspond to municipios with no inegi code yet
-tmp$cycle <- as.numeric(sub("^.+-([0-9]{2})[.].+", "\\1", tmp$emm)) # prevents NAs by not specifying nums after period
-table(tmp$cycle, useNA = "always")
-#tmp$id <- sub("^(.+)-[0-9]{2}[.]([0-9]+)", "\\1\\2", tmp$emm)
-tmp$id <- sub("^(.+)-[0-9]{2}[.](.+)", "\\1\\2", tmp$emm) # prevents NAs by not specifying nums after period
-library(DataCombine) # easy lags with slide
-tmp <- tmp[order(tmp$emm),] # check sorted for lags
-tmp <- slide(data = tmp, TimeVar = "cycle", GroupVar = "id", Var = "cycle", NewVar = "cycle.lag", slideBy = -1) # lag by 1 period
-tmp$dif <- tmp$cycle - tmp$cycle.lag - 1 # zeroes indicate time series ok
-tmp$dif[is.na(tmp$dif)] <- 0
-# drop last round with many missing data still unreported
-tmp$max <- ave(tmp$cycle, as.factor(tmp$id), FUN=max, na.rm=TRUE)
-sel <- which(tmp$cycle==tmp$max)
-tmp <- tmp[-sel,]
-tmp$suma <- ave(tmp$dif, as.factor(tmp$id), FUN=sum, na.rm=TRUE)
-table(tmp$suma) # all zeroes implies no gaps
-sel <- which(tmp$suma>0)
-unique(tmp$id[sel])
+##########################################
+## Get municipality electoral histories ##
+##########################################
+hd <- "/home/eric/Downloads/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/" # where histories are stored
 #
-inc <- inc[order(inc$emm),] # sort munn-chrono
-# open slots for lagged variables
-inc$race.prior <- NA
-inc$win.prior <- NA
-inc$win.long.prior <- NA # to code pty won dummy (lag)
-inc$win.post <- NA
-inc$win.long.post <- NA # to code pty won dummy (lead)
-#
-## HABRIA QUE CAMBIAR ESTE LOOP POR LA FUNCION SLIDE...
-for (e in 1:32){
-    #e <- 4 #debug
-    sel.e <- which(inc$edon==e)
-    inc.e <- inc[sel.e,]
-    mm <- unique(inc.e$inegi)
-    for (m in mm){
-        #m <- "4003" #debug
-        sel.m <- which(inc.e$inegi==m)
-        inc.m <- inc.e[sel.m,]
-        M <- nrow(inc.m)
-        if (M==1) next
-        tmp <- inc.m$race.after
-        tmp <- c(NA, tmp[-M])    # lag one period
-        inc.m$race.prior <- tmp
-        tmp <- inc.m$win
-        tmp <- c(NA, tmp[-M])    # lag one period
-        inc.m$win.prior <- tmp
-        tmp <- inc.m$win.long
-        tmp <- c(NA, tmp[-M])    # lag one period
-        inc.m$win.long.prior <- tmp
-        ## tmp <- inc.m$race.after
-        ## tmp <- c(tmp[-1], NA)    # lead one period
-        ## inc.m$race.post <- tmp
-        tmp <- inc.m$win
-        tmp <- c(tmp[-1], NA)    # lead one period
-        inc.m$win.post <- tmp
-        tmp <- inc.m$win.long
-        tmp <- c(tmp[-1], NA)    # lead one period
-        inc.m$win.long.post <- tmp
-        #
-        inc.e[sel.m,] <- inc.m   # return manipulation to state data
-    }
-    inc[sel.e,] <- inc.e
+# function to translate ife to inegi
+ife2inegi <- function(x){
+    tmp <- inc[,c("inegi","ife")]
+    tmp <- tmp[duplicated(tmp$ife)==FALSE,]
+    tmp1 <- mapvalues(x, from = tmp$ife, to = tmp$inegi, warn_missing = FALSE)
+    return(tmp1)
 }
+# wrap reading in a function
+tmp <- function(y){
+    v <- read.csv(file = paste0(hd,"dipfed-municipio-vhat-",y,".csv"), stringsAsFactors = FALSE)
+    v$inegi <- ife2inegi(v$ife)
+    v$yr <- y
+    return(v)
+}
+vhis <- data.frame()
+vhis <- rbind(vhis, tmp(2006))
+vhis <- rbind(vhis, tmp(2009))
+vhis <- rbind(vhis, tmp(2012))
+vhis <- rbind(vhis, tmp(2015))
+vhis <- rbind(vhis, tmp(2018))
+vhis <- rbind(vhis, tmp(2021))
+tail(vhis)
+
+#####################
+## add emm to vhis ##
+#####################
+tmp <- inc[,c("emm","ife","yr")]
+tmp <- tmp[tmp$yr>=2005,] # will use dipfed2006 hat for ay els 2005:2007, etc so drop prior to 2005
+tmp$dfyr <-   ifelse(tmp$yr>=2005 & tmp$yr<=2007, 2006 # which dipfed closest to ayuntamiento election?
+            , ifelse(tmp$yr>=2008 & tmp$yr<=2010, 2009
+            , ifelse(tmp$yr>=2011 & tmp$yr<=2013, 2012
+            , ifelse(tmp$yr>=2014 & tmp$yr<=2016, 2015
+            , ifelse(tmp$yr>=2017 & tmp$yr<=2019, 2018
+            , ifelse(tmp$yr>=2020 & tmp$yr<=2022, 2021, 0
+                     ))))))
+tmp1 <- vhis
+tmp1$ife.yr <-            tmp1$ife + tmp1$yr/10000
+tmp$ife.yr  <- as.numeric(tmp$ife) +  tmp$dfyr/10000
+tmp1 <- merge(x = tmp1, y = tmp[,c("ife.yr","emm")], by = "ife.yr", all.x = TRUE, all.y = FALSE)
+# verify
+sel <- which(tmp1$inegi==29001)grep("tla-...001", tmp1$emm)
+tmp1[sel,] # NA in emm is correct, that row will not be used given ayun elec in 2004 2007 2010 2013 2016 2021
+vhis <- tmp1
+
+
+########################################
+## lag to create race-prior variables ##
+########################################
+tmp <- inc
+# add dropped observations
+tmp <- merge(x = tmp, y = full.xsts[,c("ord","emm","cycle","inegi")], by = "emm", all = TRUE)
+tmp$ddrop <- as.numeric(is.na(tmp$inegi.x)) # will drop these obs after lag to retain dimensionality
+tmp$ord.x[is.na(tmp$inegi.x)] <- tmp$ord.y[is.na(tmp$inegi.x)] # get missing ords for sorting
+tmp$inegi.x[is.na(tmp$inegi.x)] <- tmp$inegi.y[is.na(tmp$inegi.x)] # get missing inegi codes for grouping
+tmp$inegi.y <- tmp$ord.y <- NULL
+colnames(tmp)[which(colnames(tmp)=="inegi.x")] <- "inegi" # rename back to inegi
+colnames(tmp)[which(colnames(tmp)=="ord.x")] <- "ord"     # rename back to ord
 #
-# drop observations that went to usos y costumbres
-sel <- grep("drop-obs", inc$race.after, ignore.case = TRUE)
-if (length(sel)>0) inc <- inc[-sel,]
-sel <- grep("uyc", inc$win, ignore.case = TRUE)
-if (length(sel)>0) inc <- inc[-sel,]
-# mark election before went uyc as p-lost
-sel <- grep("uyc", inc$race.after, ignore.case = TRUE)
-inc$emm[sel]
-inc$race.after[sel] <- "Term-limited-p-lost"
+library(DataCombine) # easy lags
+tmp <- tmp[order(tmp$ord),] # verify sorted before lags
+tmp <- slide(tmp, Var = "race.after", NewVar = "race.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+tmp <- slide(tmp, Var = "win",        NewVar = "win.prior",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+#tmp <- slide(tmp, Var = "ddied",      NewVar = "ddied.prior",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+#tmp$drep <- as.numeric(tmp$drepe==1 | tmp$drepg==1) # join drep info into one and dichotomize
+#tmp <- slide(tmp, Var = "drep",       NewVar = "drep.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+#tmp <- slide(tmp, Var = "dlegacy",    NewVar = "dlegacy.prior", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+#
+tmp <- tmp[-which(tmp$ddrop==1), -which(colnames(tmp)=="ddrop")] # drop added obs
+#tmp[which(tmp$inegi==9004), c("emm","mun","win.prior","win","incumbent","race.prior","race.after")] # verify
+inc <- tmp # replace manipulated object
 
 
-DROP CONSEJOS MUNICIPALES HERE TOO?
+aqui voy
 
     
 ##########################################################################################

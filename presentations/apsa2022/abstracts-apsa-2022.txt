@@ -1,0 +1,20 @@
+Title: Using Redistricting to Separate Incumbency from Campaign Effects in Mexico
+
+Using Redistricting to Separate Incumbency from Campaign Effects: Name Recognition in Mexican Subnational Legislative Races
+
+A method to separate incumbency and campaign effects by means of redistricting with application to Mexico
+
+Author: Eric Magar (ITAM) (will add Moreno in the paper, not submission to avoid el oso of another no show...)
+
+Abstract: I investigate name recognition of candidates to Coahuila's state assembly in the 2017 election---the first Mexican state since 1930 allowing incumbents on the ballot. Name recognition has been associated with representatives' efforts to preserve or enhance their reelectability. I propose a general method relying on redistricting to parse out incumbency effects from more standard campaign effects in name recognition. A pre-election survey provides evidence of systematic differentials (higher name recognition for incumbents than challengers and open seats; higher in precincts unchanged by redistricting than those that were removed/added; etc.) Just three incumbents were on the ballot, but the patterns uncovered conform to personal vote hypotheses. The method can be extended to other systems where redistricting preceded legislative elections.
+
+-------------------------------
+Title: Incumbency Advantage in Mexican Municipal Elections
+
+A systematic study of reelecion and incumbency advantage in Mexican municipalities
+
+Author: Eric Magar (ITAM)
+
+Abstract: Mexico removed single-term limits for municipal governments in 2018. A landslide against major parties in the concurrent presidential election offers a chance to study how well municipal incumbents resisted a formidably unfavorable tide. Frequencies suggest they performed better: with incumbents on the ballot, the largest parties experienced 50-50 (PRI) and 2-to-1 (PAN) chances of winning; among open seats that they controlled, performance plunged to 2-to-1 and 55-45 chances of losing, respectively. Controlling for municipal characteristics, the electoral history, and candidate characteristics---including original data on candidate quality---will offer a first glimpse at incumbency advantage during the introduction of consecutive reelection. 
+
+

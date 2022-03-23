@@ -15,12 +15,23 @@ sel <- grep("Dead", d$race.after, ignore.case = TRUE)
 d$ddead <- 0
 d$ddead[sel] <- 1
 # recode race.after
-d$race.after[sel] <- gsub("Dead-term-limited", "Term-limited", d$race.after[sel])
-d$race.after[sel] <- gsub("Dead-reran-"      , "Out-"        , d$race.after[sel])
-d$race.after[sel] <- gsub("Dead-"            , "Out-"        , d$race.after[sel])
+d$race.after[sel] <- gsub("Dead-suplente",     "Quit-suplente", d$race.after[sel])
+d$race.after[sel] <- gsub("Dead-term-limited", "Term-limited",  d$race.after[sel])
+d$race.after[sel] <- gsub("Dead-reran-"      , "Out-"        ,  d$race.after[sel])
+d$race.after[sel] <- gsub("Dead-"            , "Out-"        ,  d$race.after[sel])
 #table(d$race.after[sel])
 #table(d$race.after)
 rm(sel)
+
+# retain suplente ending term
+sel <- grep("Quit-suplente", d$race.after, ignore.case = TRUE)
+d$dsupended <- 0
+d$dsupended[sel] <- 1
+d$race.after[sel] <- gsub("Quit-suplente-r", "R", d$race.after[sel])
+d$race.after[sel] <- gsub("Quit-suplente-o", "O", d$race.after[sel])
+# OPTIONAL: drop propietarios of suplentes who finished the term
+sel <- which(d$dsupended==1)
+d <- d[-sel,]
 
 # manipulate cases where incumbent/reelected switched parties so coded as party won/lost accordingly
 table(d$yr, d$race.after)
@@ -62,14 +73,26 @@ if (length(sel1)>0) {
     d$race.after[sel1] <- "Reran-beaten"
 }
 # clean
-rm(tmp,tmp1,tmp2,tmp3,tmp4,sel1,sel2)
+rm(tmp,tmp1,tmp2,tmp3,tmp4,sel1,sel2,sel)
 
 table(d$yr, d$race.after)
+table(d$race.after)
+
+
+## setwd("~/Downloads/tmp-julio-blog")
+## save.image(file = "datos-magar.RData")
+
+## # aqui empieza código para buro parlamentario
+## rm(list=ls())
+## setwd("~/Downloads/tmp-julio-blog") # donde guardaste los datos
+## load(file = "datos-magar.RData")
+## ls()
+
+
 
 # recode labels so they appear win/lose in table
 library(plyr)
 d$race.after <- mapvalues(d$race.after, from = c("Out-p-won","Out-p-lost","Reelected","Reran-beaten"), to = c("3Out-p-won","4Out-p-lost","1Reelected","2Reran-beaten"))
-
 
 # inspect reelection 2021
 tmp <- d[d$yr==2018,]
@@ -89,16 +112,16 @@ tmp3 <- myxtab(tmp$part,tmp$race.after, pct=FALSE, rel=FALSE, digits=0, marginal
 colSums(tmp3)
 tmp4 <- c(round(colSums(tmp3)*100/300,2), colSums(tmp3)[5])
 tmp2 <- rbind(Todos=tmp4, tmp2)
+tmp2 <- tmp2[order(-tmp2[,1],-tmp2[,2]),]
 tmp2
 
-tmp2 <- tmp2[order(-tmp2[,1],-tmp2[,2]),]
 
 library(RColorBrewer)
 #pdf(file     = "../graph/reel-dipfed2021.pdf", width = 7, height = 5)
 #png(filename = "../graph/reel-dipfed2021.png", width = 700, height = 480)
 clr <- brewer.pal(n=6, name = 'Paired'); clr <- clr[c(4,3,6,5,2,1)]
 par(mar = c(2,0,1.2,0)+.1) # bottom, left, top, right 
-plot(x = c(-9,105), y = c(0.4,nrow(tmp2)+1), type = "n", main = "Diputados federales uninominales 2021", axes = FALSE)
+plot(x = c(-9,105), y = c(0.4,nrow(tmp2)+1), type = "n", main = "Diputados federales de mayoría 2021", axes = FALSE)
 axis(1, at=seq(0,100,10),label=FALSE)
 axis(1, at=seq(0,100,20),labels=c(seq(0,80,20),"100%"),cex.axis=.9)
 polygon(x=c(-20,-20,120,120), y=c(4,5,5,4),col="gray85",border="gray85")
@@ -135,6 +158,18 @@ legend(x = 15,  y = 0.85, legend = c("reelecto","derrotado"), title = "Ocupante 
 legend(x = 60, y = 0.85, legend = c("ganó","perdió")       , title = "Silla vacía, partido", fill = clr[5:6], cex = .85, border = clr[5:6], bty = "n", horiz = TRUE)
 text(x = 105, y = .85, "@emagar", col = "gray", cex = .7)
 #dev.off()
+
+
+# cartas y renuncia recursos
+tmp$will <- 0
+tmp$will[tmp$dcarta==1 & tmp$drenuncia_apoyo==0] <- 1
+tmp$will[tmp$dcarta==0 & tmp$drenuncia_apoyo==1] <- 2
+tmp$will[tmp$dcarta==1 & tmp$drenuncia_apoyo==1] <- 3
+tmp$will <- factor(tmp$will, levels = 0:3, labels = c("Ninguna","Sólo carta","Sólo renunció apoyo","Ambas"))
+table(tmp$part, tmp$will)
+table(factor(tmp$dreran, 1:0, c("Contendió","No")), tmp$will)
+
+
 
 
 

@@ -1,6 +1,10 @@
 \#*.*#
 .#*.*
 
+# these are independent repos
+coa2017/
+dgo2022/
+
 .Rhistory
 
 *.*~

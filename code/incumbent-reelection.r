@@ -117,7 +117,8 @@ tmp <- inc$race.after[sel1]
 tmp <- sub("-dif-p", "", tmp)
 inc$race.after[sel1] <- tmp
 # verify
-table(inc$race.after)
+colnames(inc)
+table(inc$yr, inc$race.after)
 # clean
 rm(tmp,tmp1,tmp2,tmp3,tmp4,sel,sel1,sel2)
 

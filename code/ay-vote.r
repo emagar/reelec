@@ -40,8 +40,12 @@ dat <- dat[-sel,]
 ## clean
 rm(l,vcoa)
 ##
-# drop these obs from analysis: races cancelled, missing, pending and others
-# 6ago2020: check which cancelled don't have extraord data. drop them? would break lags... check in incumbents block too
+## drop Belisario Domínguez, litigio after 2nd election
+drop.r <- grep("xxx", dat$emm)
+dat <- dat[-drop.r,]
+rm(drop.r)
+## drop these obs from analysis: races cancelled, missing, pending and others
+## 6ago2020: check which cancelled don't have extraord data. drop them? would break lags... check in incumbents block too
 table(dat$status)
 drop.r <- grep("cancelled|missing|litigio|pending", dat$status)
 dat <- dat[-drop.r,]
@@ -427,12 +431,43 @@ summary(dat$efec - v7$efec)
 # keep 123 places, drop rest
 dat <- within(dat, v01 <- v02 <- v03 <- v04 <- v05 <- v06 <- v07 <- v08 <- v09 <- v10 <- v11 <- v12 <- v13 <- v14 <- v15 <- v16 <- v17 <- v18 <- v19 <- v20 <- v21 <- v22 <- v23 <- v24 <- v25 <- NULL)
 dat <- within(dat, l01 <- l02 <- l03 <- l04 <- l05 <- l06 <- l07 <- l08 <- l09 <- l10 <- l11 <- l12 <- l13 <- l14 <- l15 <- l16 <- l17 <- l18 <- l19 <- l20 <- l21 <- l22 <- l23 <- l24 <- l25 <- NULL)
-# inspect
+## inspect
 dat[1,]
-#
-# clean
+table(dat$status)
+##
+## clean
 rm(efec,sel.c,v,v7)
 
+## Save data
+getwd()
+save.image(file = "ay-mu-vote-analysis.RData")
+
+## Generate lags
+library(DataCombine) # easy lags with slide
+tmp <- dat$emm
+tmp <- sub("^[a-z]+-([0-9]{2})[ab]?[.][0-9]+$", "\\1", tmp) ## ab for anuladas en pre-runoffs
+table(tmp)
+tmp <- as.numeric(tmp)
+dat$cycle <- tmp
+rm(tmp)
+## lag by one period
+dat <- slide(dat, Var = "pan",    NewVar = "panlag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat <- slide(dat, Var = "pri",    NewVar = "prilag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat <- slide(dat, Var = "prd",    NewVar = "prdlag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat <- slide(dat, Var = "pvem",   NewVar = "pvemlag",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat <- slide(dat, Var = "pt",     NewVar = "ptlag",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat <- slide(dat, Var = "mc",     NewVar = "mclag",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat <- slide(dat, Var = "morena", NewVar = "morenalag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat[1:15,]
+
+summary(dat$pan)
+summary(dat$panlag)
+summary(dat$yr)
+
+summary(lm(pan ~ dcoalpri, data = dat))
+summary(lm(pan ~ dcoalpan, data = dat))
+summary(lm(pan ~ dcoalpan + dcoalpri + yr, data = dat))
+summary(lm(pan ~ yr, data = dat))
 ls()
 dim(dat)
 

@@ -26,7 +26,7 @@ source("~/Dropbox/data/useful-functions/myxtab.r")
 ###################
 ## read alcaldes ##
 ###################
-inc <- read.csv(file = "aymu1989-present.incumbents.csv", stringsAsFactors = FALSE)
+inc <- read.csv(file = "aymu1989-on.incumbents.csv", stringsAsFactors = FALSE)
 inc <- inc[order(inc$ord),]
 library(plyr)
 inc$edo <- mapvalues(inc$edon, from = 1:32, to = c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic", "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac"))
@@ -34,6 +34,7 @@ inc$edo <- mapvalues(inc$edon, from = 1:32, to = c("ags", "bc", "bcs", "cam", "c
 ##############################
 ## keep dead incumbent info ##
 ##############################
+table(inc$race.after)
 sel <- grep("Dead", inc$race.after, ignore.case = TRUE)
 inc$ddead <- 0
 inc$ddead[sel] <- 1
@@ -61,11 +62,12 @@ full.xsts <- tmp # keep as list of all observations (to recover them after they 
 ## pending cases ##
 ###################
 sel <- grep("^[0-9]+$", inc$race.after)
-table(inc$race.after[sel])
+table(pending=inc$race.after[sel])
 inc$race.after[sel] <- "Pending"
 # code missing race.after as pending (drop this bit of code once all case are known)
 #inc[inc$ife==20442, c("mun","yr","ife","inegi","win","incumbent","race.after")] # used to debug
 sel <- grep("[?]", inc$race.after)
+inc[sel,]
 inc$race.after[sel] <- "Pending"
 #
 ################################################################

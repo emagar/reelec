@@ -2,33 +2,20 @@
 ## verify time series' structure (for lags) ##
 #############################################
 library(DataCombine) # easy lags
-tmp <- inc[,c("ord","inegi","emm")]
+tmp <- inc
 tmp$cycle <- as.numeric(sub("^[a-z]+[-]([0-9]+)[.].+$", "\\1", tmp$emm))
-tmp <- tmp[order(tmp$ord),] # verify sorted before lags
+tmp <- tmp[order(tmp$emm),] # verify sorted before lags
 tmp <- slide(tmp, Var = "cycle", NewVar = "cycle.lag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-tmp$verif <- tmp$cycle - tmp$cycle.lag
-table(tmp$verif) # verify: all should be 1 then ok to lag
-# 
-full.xsts <- tmp # keep as list of all observations (to recover them after they were drop to ease code/analysis)
-
-
+verif <- tmp$cycle - tmp$cycle.lag
+table(verif) # verify: all should be 1 then ok to lag
+rm(verif)
+tail(tmp)
+tmp$cycle.lag <- NULL
 ########################################
 ## lag to create race-prior variables ##
 ########################################
-tmp <- inc
-# add dropped observations
-tmp <- merge(x = tmp, y = full.xsts[,c("ord","emm","cycle","inegi")], by = "emm", all = TRUE)
-tmp$ddrop <- as.numeric(is.na(tmp$inegi.x)) # will drop these obs after lag to retain dimensionality
-tmp$ord.x[is.na(tmp$inegi.x)] <- tmp$ord.y[is.na(tmp$inegi.x)] # get missing ords for sorting
-tmp$inegi.x[is.na(tmp$inegi.x)] <- tmp$inegi.y[is.na(tmp$inegi.x)] # get missing inegi codes for grouping
-tmp$inegi.y <- tmp$ord.y <- NULL
-colnames(tmp)[which(colnames(tmp)=="inegi.x")] <- "inegi" # rename back to inegi
-colnames(tmp)[which(colnames(tmp)=="ord.x")] <- "ord"     # rename back to ord
-#
-library(DataCombine) # easy lags
-tmp <- tmp[order(tmp$ord),] # verify sorted before lags
 tmp <- slide(tmp, Var = "race.after", NewVar = "race.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-tmp <- slide(tmp, Var = "win",        NewVar = "win.prior",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+tmp <- slide(tmp, Var = "part",       NewVar = "part.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 #tmp <- slide(tmp, Var = "ddied",      NewVar = "ddied.prior",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 #tmp$drep <- as.numeric(tmp$drepe==1 | tmp$drepg==1) # join drep info into one and dichotomize
 #tmp <- slide(tmp, Var = "drep",       NewVar = "drep.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)

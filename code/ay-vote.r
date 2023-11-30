@@ -436,14 +436,60 @@ dat[1,]
 table(dat$status)
 ##
 ## clean
-rm(efec,sel.c,v,v7)
+rm(v7)
 
 ## Save data
 getwd()
 save.image(file = "ay-mu-vote-analysis.RData")
 
+## read saved image
+rm(list = ls())
+##
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
+setwd(wd)
+load(file = "ay-mu-vote-analysis.RData")
+
+## get incumbency data
+inc <- read.csv(paste0(dd, "aymu1989-on.incumbents.csv"), stringsAsFactors = FALSE)
+sel.r <- which(inc$yr < 1995)
+inc <- inc[-sel.r,] ## drop pre-1995
+sel.c <- which(colnames(inc) %in% c("ord","source","dmujer","runnerup","part2nd","mg"))
+inc <- inc[,-sel.c] ## drop some cols
+head(inc)
+
+#############################################
+## verify time series' structure (for lags) ##
+#############################################
+library(DataCombine) # easy lags
+tmp <- inc
+tmp$cycle <- as.numeric(sub("^[a-z]+[-]([0-9]+)[.].+$", "\\1", tmp$emm))
+tmp <- tmp[order(tmp$emm),] # verify sorted before lags
+tmp <- slide(tmp, Var = "cycle", NewVar = "cycle.lag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+verif <- tmp$cycle - tmp$cycle.lag
+table(verif) # verify: all should be 1 then ok to lag
+rm(verif)
+tail(tmp)
+tmp$cycle.lag <- NULL
+########################################
+## lag to create race-prior variables ##
+########################################
+tmp <- slide(tmp, Var = "race.after", NewVar = "race.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+tmp <- slide(tmp, Var = "part",       NewVar = "part.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+#tmp <- slide(tmp, Var = "ddied",      NewVar = "ddied.prior",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+#tmp$drep <- as.numeric(tmp$drepe==1 | tmp$drepg==1) # join drep info into one and dichotomize
+#tmp <- slide(tmp, Var = "drep",       NewVar = "drep.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+#tmp <- slide(tmp, Var = "dlegacy",    NewVar = "dlegacy.prior", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+#tmp[which(tmp$inegi==9004), c("emm","mun","win.prior","win","incumbent","race.prior","race.after")] # verify
+tail(tmp)
+
+inc <- tmp # replace manipulated object
+
+
+
 ## Generate lags
 library(DataCombine) # easy lags with slide
+dat <- dat[order(dat$emm),] # sort mun-chrono
 tmp <- dat$emm
 tmp <- sub("^[a-z]+-([0-9]{2})[ab]?[.][0-9]+$", "\\1", tmp) ## ab for anuladas en pre-runoffs
 table(tmp)
@@ -452,7 +498,7 @@ dat$cycle <- tmp
 rm(tmp)
 ## lag by one period
 dat <- slide(dat, Var = "pan",    NewVar = "panlag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat <- slide(dat, Var = "pri",    NewVar = "prilag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat <- slide(dat, Var = "pri",    NewVar = "prilag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1, keepInvalid = FALSE)
 dat <- slide(dat, Var = "prd",    NewVar = "prdlag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 dat <- slide(dat, Var = "pvem",   NewVar = "pvemlag",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 dat <- slide(dat, Var = "pt",     NewVar = "ptlag",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
@@ -460,9 +506,13 @@ dat <- slide(dat, Var = "mc",     NewVar = "mclag",     TimeVar = "cycle", Group
 dat <- slide(dat, Var = "morena", NewVar = "morenalag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 dat[1:15,]
 
-summary(dat$pan)
-summary(dat$panlag)
-summary(dat$yr)
+## cómo lidio con missing periods?
+summary(dat$pri)
+summary(dat$prilag)
+table(is.na(dat$prilag))
+
+sel.r <- which(dat$inegi==20472)
+dat[sel.r,]
 
 summary(lm(pan ~ dcoalpri, data = dat))
 summary(lm(pan ~ dcoalpan, data = dat))

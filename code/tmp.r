@@ -1,29 +1,30 @@
-#############################################
-## verify time series' structure (for lags) ##
-#############################################
-library(DataCombine) # easy lags
-tmp <- inc
-tmp$cycle <- as.numeric(sub("^[a-z]+[-]([0-9]+)[.].+$", "\\1", tmp$emm))
-tmp <- tmp[order(tmp$emm),] # verify sorted before lags
-tmp <- slide(tmp, Var = "cycle", NewVar = "cycle.lag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-verif <- tmp$cycle - tmp$cycle.lag
-table(verif) # verify: all should be 1 then ok to lag
-rm(verif)
-tail(tmp)
-tmp$cycle.lag <- NULL
-########################################
-## lag to create race-prior variables ##
-########################################
-tmp <- slide(tmp, Var = "race.after", NewVar = "race.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-tmp <- slide(tmp, Var = "part",       NewVar = "part.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-#tmp <- slide(tmp, Var = "ddied",      NewVar = "ddied.prior",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-#tmp$drep <- as.numeric(tmp$drepe==1 | tmp$drepg==1) # join drep info into one and dichotomize
-#tmp <- slide(tmp, Var = "drep",       NewVar = "drep.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-#tmp <- slide(tmp, Var = "dlegacy",    NewVar = "dlegacy.prior", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-#
-tmp <- tmp[-which(tmp$ddrop==1), -which(colnames(tmp)=="ddrop")] # drop added obs
-#tmp[which(tmp$inegi==9004), c("emm","mun","win.prior","win","incumbent","race.prior","race.after")] # verify
-inc <- tmp # replace manipulated object
+
+THIS IS WHAT DATA IN aymu.incumbents LOOKS LIKE
+case after0 inc1 after1 inc2 after2
+a    term-l mr X reran  ms Y out-l
+b    out-w  mr Z reelec mr Z term-l
+c    out-l  ms V out-l  mr W reran
+
+THIS IS HOW IT LOOKS AFTER LAGGING
+case prior1 inc1 prior2 inc2 ...... dinc1 dinc2
+a    reran  mr X out    ms Y            1     0
+b    reelec mr Z term-l mr Z            1     0
+c    out    ms V reran  mr W            0     1
+
+----------------
+
+THIS IS WHAT DATA IN LOOKS LIKE | AFTER LAG
+case ...... inc  after            case  prior  inc   ......
+a              ? term-l           a         NA     ? 
+a           mr X reran            a     term-l  mr X 
+a           ms Y out-l            a     reran   ms Y 
+b              ? out-w            b         NA     ? 
+b           mr Z reelec           b     out-w   mr Z 
+b           mr Z term-l           b     reelec  mr Z 
+c              ? out-l            c         NA     ? 
+c           ms V out-l            c     out-l   ms V 
+c           mr W reran            c     out-l   mr W 
+
 
 
 ##########################################################################################

@@ -10,6 +10,17 @@ dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
 setwd(wd)
 
+## useful functions
+pth <- ifelse (Sys.info()["user"] %in% c("eric", "magar"),
+    "~/Dropbox/data/useful-functions",
+    "https://raw.githubusercontent.com/emagar/useful-functions/master"
+    )
+## Reads function
+source( paste(pth, "moveme.r", sep = "/") )
+source( paste(pth, "notin.r", sep = "/") )
+rm(pth)
+
+
 #########################
 ## get municipal votes ##
 #########################
@@ -450,41 +461,93 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
 setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
 
-## get incumbency data
+## Change san luis ids followed by runoff
+sel <- grep("san-[0-9]+b", dat$emm) # these are first round races that led to runoff
+tmp <- dat$emm[sel]
+tmp <- sub(pattern = "(san-[0-9]+)b([.0-9]+$)", replacement = "\\1\\2", tmp)
+dat$emm[sel] <- tmp
+rm(tmp,sel)
+
+#########################
+## get incumbency data ##
+#########################
 inc <- read.csv(paste0(dd, "aymu1989-on.incumbents.csv"), stringsAsFactors = FALSE)
 sel.r <- which(inc$yr < 1995)
 inc <- inc[-sel.r,] ## drop pre-1995
-sel.c <- which(colnames(inc) %in% c("ord","source","dmujer","runnerup","part2nd","mg"))
+sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","runnerup","part2nd","mg","dlegacy","who"))
 inc <- inc[,-sel.c] ## drop some cols
 head(inc)
-
-#############################################
-## verify time series' structure (for lags) ##
-#############################################
+## verify time series' structure (for lags)
 library(DataCombine) # easy lags
-tmp <- inc
-tmp$cycle <- as.numeric(sub("^[a-z]+[-]([0-9]+)[.].+$", "\\1", tmp$emm))
-tmp <- tmp[order(tmp$emm),] # verify sorted before lags
-tmp <- slide(tmp, Var = "cycle", NewVar = "cycle.lag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-verif <- tmp$cycle - tmp$cycle.lag
+inc$cycle <- as.numeric(sub("^[a-z]+[-]([0-9]+)[.].+$", "\\1", inc$emm))
+inc <- inc[order(inc$emm),] # verify sorted before lags
+inc <- slide(inc, Var = "cycle", NewVar = "cycle.lag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+verif <- inc$cycle - inc$cycle.lag
 table(verif) # verify: all should be 1 then ok to lag
 rm(verif)
-tail(tmp)
-tmp$cycle.lag <- NULL
+tail(inc) ## check lag or lead
+inc$cycle.lag <- NULL
+## paste race.after and incumbent party
+inc$race.after <- paste(inc$race.after, inc$part, sep = ".")
+## Manipulate dif-p cases by hand
+dif.p <- data.frame(
+    emm=c("nl-16.012", "jal-17.082", "jal-17.123", "cps-17.087", "cps-17.099", "gue-16.017", "mic-16.035", "oax-17.040", "oax-17.169", "mor-17.016", "nl-16.045", "nl-17.036", "que-17.013", "pue-16.166", "cps-17.084", "dgo-16.003", "mex-16.125", "pue-16.086", "cps-16.076", "cps-16.100", "nl-17.042", "oax-16.184", "jal-16.022", "nl-16.028", "mor-16.013", "cam-17.005", "cua-16.004", "yuc-16.048", "gue-16.042", "nl-16.031", "oax-16.545", "cps-17.054", "cps-17.103", "pue-16.121", "mic-16.110", "pue-16.111", "pue-16.186", "oax-16.187", "jal-16.026", "jal-16.057", "oax-17.181", "oax-17.150", "jal-17.052", "jal-17.073", "jal-17.079", "cps-17.062", "gue-16.033", "jal-17.040", "jal-17.114", "jal-17.119", "mex-16.056", "mic-16.065", "mic-16.072", "cps-17.052", "cps-17.071", "gue-16.015", "gue-16.041", "gue-16.043", "oax-17.421", "pue-16.126", "san-17.028", "son-17.072", "yuc-17.035", "gue-16.060", "jal-17.078", "mor-17.006", "mex-15.013", "zac-17.050", "cps-17.094", "cua-17.059", "mor-17.015", "mor-17.024", "tam-17.015", "ags-16.010", "gue-16.021", "jal-17.086", "jal-17.113", "nl-16.050", "cua-16.031", "cua-16.036", "cua-16.055", "nl-16.024", "oax-17.295", "zac-16.003", "zac-16.011", "yuc-17.004", "yuc-17.006", "gua-17.027", "mor-17.018", "pue-16.089", "pue-16.170", "pue-16.175", "mic-16.093", "cps-17.124", "dgo-16.035", "pue-16.053", "pue-16.203", "pue-16.212", "san-17.042", "san-17.053", "mor-17.025", "oax-17.166"
+          ),
+    race.after=c(
+        "Reelected.indep", "Reelected.mc", "Reelected.mc", "Reelected.morena", "Reelected.morena", "Reelected.morena", "Reelected.morena", "Reelected.morena", "Reelected.morena", "Reelected.pan", "Reelected.pan", "Reelected.pan", "Reelected.pan", "Reelected.pan-pri-prd", "Reelected.pchu", "Reelected.pd", "Reelected.pes", "Reelected.pes", "Reelected.pmch", "Reelected.pmch", "Reelected.pna", "Reelected.pna", "Reelected.prd", "Reelected.prd", "Reelected.prd-psd", "Reelected.pri", "Reelected.pri", "Reelected.pri", "Reelected.pri-prd", "Reelected.pri-pvem", "Reelected.psd", "Reelected.pt", "Reelected.pt", "Reelected.pt", "Reelected.pt-morena", "Reelected.pt-morena", "Reelected.pt-morena", "Reelected.pt-morena-pes", "Reelected.pvem", "Reelected.pvem", "Reelected.pvem", "Reelected.rsp", "Reelected.somos", "Reran-beaten.hagamos", "Reran-beaten.hagamos", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.pan", "Reran-beaten.pan", "Reran-beaten.pan-ph", "Reran-beaten.pan-prd-mc", "Reran-beaten.paz", "Reran-beaten.pchu", "Reran-beaten.pes", "Reran-beaten.pes", "Reran-beaten.pes", "Reran-beaten.pes", "Reran-beaten.pna", "Reran-beaten.prd", "Reran-beaten.prd", "Reran-beaten.prd", "Reran-beaten.prd", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri-prd", "Reran-beaten.pri-prd", "Reran-beaten.pt", "Reran-beaten.pt", "Reran-beaten.pt", "Reran-beaten.pt", "Reran-beaten.pt", "Reran-beaten.pt-morena", "Reran-beaten.pvem", "Reran-beaten.pvem", "Reran-beaten.pvem", "Reran-beaten.pvem", "Reran-beaten.pvem", "Reran-beaten.pvem-pt", "Reran-beaten.pvem-pt", "Reran-beaten.rsp", "Reran-beaten.rsp"
+    )
+)
+for (i in 1:nrow(dif.p)) inc$race.after[which(inc$emm==dif.p$emm[i])] <- dif.p$race.after[i]
+rm(dif.p)
 ########################################
 ## lag to create race-prior variables ##
 ########################################
-tmp <- slide(tmp, Var = "race.after", NewVar = "race.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-tmp <- slide(tmp, Var = "part",       NewVar = "part.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-#tmp <- slide(tmp, Var = "ddied",      NewVar = "ddied.prior",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-#tmp$drep <- as.numeric(tmp$drepe==1 | tmp$drepg==1) # join drep info into one and dichotomize
-#tmp <- slide(tmp, Var = "drep",       NewVar = "drep.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-#tmp <- slide(tmp, Var = "dlegacy",    NewVar = "dlegacy.prior", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-#tmp[which(tmp$inegi==9004), c("emm","mun","win.prior","win","incumbent","race.prior","race.after")] # verify
-tail(tmp)
+inc <- slide(inc, Var = "race.after", NewVar = "race.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+tail(inc)
 
-inc <- tmp # replace manipulated object
+## THIS IS WHAT DATA LOOKS LIKE | ... AFTER LAGGING RACE.PRIOR
+## case ..... inc  after        |   case  prior  inc   .....  dinc
+## a             ? term-l       |   a         NA     ?          NA
+## a          mr X reran        |   a     term-l  mr X           0
+## a          ms Y out-l        |   a     reran   ms Y           1
+## b             ? out-w        |   b         NA     ?          NA
+## b          mr Z reelec       |   b     out-w   mr Z           0
+## b          mr Z term-l       |   b     reelec  mr Z           1
+## c             ? out-l        |   c         NA     ?          NA
+## c          ms V out-l        |   c     out-l   ms V           0
+## c          mr W reran        |   c     out-l   mr W           0
 
+## merge inc
+##sel <- which(inc$emm %notin% dat$emm)
+##data.frame(emm=inc$emm[sel], yr=inc$yr[sel], mun=inc$mun[sel], incumbent=inc$incumbent[sel])
+tmp <- merge(x = dat, y = inc[,c("emm","race.prior")], by = "emm", all.x = TRUE, all.y = FALSE)
+## compute incumbent dummies
+tmp <- within(tmp, {
+    dincoth <- 0
+    dincmorena <- 0
+    dincmc <- 0
+    dincpt <- 0
+    dincpvem <- 0
+    dincprd <- 0
+    dincpri <- 0
+    dincpan <- 0
+})
+sel.r <- grep("Reelected|Reran", tmp$race.prior)
+tmp2 <- tmp[sel.r,] # subset for manipulation
+race.prior <- tmp2$race.prior ## indicate progress here
+race.prior <- sub("(Reran-beaten|Reran-dead-p-won|Reelected)([.])(.+)$", "\\3", race.prior)
+## code dummies (emptying race.prior as it proceeds)
+sel <- grep("pan",    race.prior); tmp2$dincpan   [sel] <- 1; race.prior <- sub("pan",    "", race.prior)
+sel <- grep("pri",    race.prior); tmp2$dincpri   [sel] <- 1; race.prior <- sub("pri",    "", race.prior)
+sel <- grep("prd",    race.prior); tmp2$dincprd   [sel] <- 1; race.prior <- sub("prd",    "", race.prior)
+sel <- grep("pvem",   race.prior); tmp2$dincpvem  [sel] <- 1; race.prior <- sub("pvem",   "", race.prior)
+sel <- grep("pt",     race.prior); tmp2$dincpt    [sel] <- 1; race.prior <- sub("pt",     "", race.prior)
+sel <- grep("mc",     race.prior); tmp2$dincmc    [sel] <- 1; race.prior <- sub("mc",     "", race.prior)
+sel <- grep("morena", race.prior); tmp2$dincmorena[sel] <- 1; race.prior <- sub("morena", "", race.prior)
+table(race.prior, useNA = "ifany") ## only minor parties or none should remain
+race.prior <- sub("^(-+)$", "", race.prior) ## slashes with no text to empty (will become dincoth=0)
+tmp2$dincoth <- ifelse(race.prior=="", 0, 1) ## empty to 0, rest to 1
+table(pan=tmp2$dincpan, pri=tmp2$dincpri)
 
 
 ## Generate lags

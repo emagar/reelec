@@ -468,15 +468,15 @@ tmp <- sub(pattern = "(san-[0-9]+)b([.0-9]+$)", replacement = "\\1\\2", tmp)
 dat$emm[sel] <- tmp
 rm(tmp,sel)
 
-#########################
-## get incumbency data ##
-#########################
+#####################################################################
+## Get incumbency data                                             ##
+## relies on prior.inc.part, added to aymu.incumbent.csv, for this ##
+#####################################################################
 inc <- read.csv(paste0(dd, "aymu1989-on.incumbents.csv"), stringsAsFactors = FALSE)
+## drop pre-1995 and some cols
 sel.r <- which(inc$yr < 1995)
-inc <- inc[-sel.r,] ## drop pre-1995
 sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","runnerup","part2nd","mg","dlegacy","who"))
-inc <- inc[,-sel.c] ## drop some cols
-head(inc)
+inc <- inc[-sel.r,-sel.c]
 ## verify time series' structure (for lags)
 library(DataCombine) # easy lags
 inc$cycle <- as.numeric(sub("^[a-z]+[-]([0-9]+)[.].+$", "\\1", inc$emm))
@@ -487,42 +487,17 @@ table(verif) # verify: all should be 1 then ok to lag
 rm(verif)
 tail(inc) ## check lag or lead
 inc$cycle.lag <- NULL
-########################################
+##
 ## lag to create race-prior variables ##
-########################################
 inc <- slide(inc, Var = "race.after", NewVar = "race.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-tail(inc)
+##
+## merge inc into dat
+#sel <- which(inc$emm %notin% dat$emm)
+#data.frame(emm=inc$emm[sel], yr=inc$yr[sel], mun=inc$mun[sel], incumbent=inc$incumbent[sel])
 
-## THIS IS WHAT DATA LOOKS LIKE | ... AFTER LAGGING RACE.PRIOR
-## case ..... inc  after        |   case  prior  inc   .....  dinc
-## a             ? term-l       |   a         NA     ?          NA
-## a          mr X reran        |   a     term-l  mr X           0
-## a          ms Y out-l        |   a     reran   ms Y           1
-## b             ? out-w        |   b         NA     ?          NA
-## b          mr Z reelec       |   b     out-w   mr Z           0
-## b          mr Z term-l       |   b     reelec  mr Z           1
-## c             ? out-l        |   c         NA     ?          NA
-## c          ms V out-l        |   c     out-l   ms V           0
-## c          mr W reran        |   c     out-l   mr W           0
-
-## THIS IS WHAT DATA LOOKS LIKE | ... AFTER LAGGING RACE.PRIOR
-## case ..... part inc  after        |   case  prior  part inc   .....  dincpan dincpri
-## a          pan     ? term-l       |   a         NA pan      ?             NA      NA
-## a          pri  mr X reran        |   a     term-l pri   mr X              0       0
-## a          pan  ms Y out-l        |   a     reran  pan   ms Y              1       1
-## b                  ? out-w        |   b         NA          ?             NA      NA
-## b               mr Z reelec       |   b     out-w        mr Z              0       0
-## b               mr Z term-l       |   b     reelec       mr Z              1       1
-## c                  ? out-l        |   c         NA          ?             NA      NA
-## c               ms V out-l        |   c     out-l        ms V              0       0
-## c               mr W reran        |   c     out-l        mr W              0       0
-
-## merge inc
-##sel <- which(inc$emm %notin% dat$emm)
-##data.frame(emm=inc$emm[sel], yr=inc$yr[sel], mun=inc$mun[sel], incumbent=inc$incumbent[sel])
-tmp <- merge(x = dat, y = inc[,c("emm","race.prior","prior.inc.part")], by = "emm", all.x = TRUE, all.y = FALSE)
+dat <- merge(x = dat, y = inc[,c("emm","race.prior","prior.inc.part")], by = "emm", all.x = TRUE, all.y = FALSE)
 ## compute incumbent dummies
-tmp <- within(tmp, {
+dat <- within(dat, {
     dincoth <- 0
     dincmorena <- 0
     dincmc <- 0
@@ -532,18 +507,18 @@ tmp <- within(tmp, {
     dincpri <- 0
     dincpan <- 0
 })
-sel.r <- grep("Reelected|Reran", tmp$race.prior)
-tmp2 <- tmp[sel.r,] # subset for manipulation
-tmp2[1,]
-prior.inc.part <- tmp2$prior.inc.part ## indicate progress here
+sel.r <- grep("Reelected|Reran", dat$race.prior)
+dat2 <- dat[sel.r,] # subset for manipulation
+dat2[1,]
+prior.inc.part <- dat2$prior.inc.part ## indicate progress here
 ## code dummies (emptying race.prior as it proceeds)
-sel <- grep("pan",    prior.inc.part); tmp2$dincpan   [sel] <- 1; prior.inc.part <- sub("pan",    "", prior.inc.part)
-sel <- grep("pri",    prior.inc.part); tmp2$dincpri   [sel] <- 1; prior.inc.part <- sub("pri",    "", prior.inc.part)
-sel <- grep("prd",    prior.inc.part); tmp2$dincprd   [sel] <- 1; prior.inc.part <- sub("prd",    "", prior.inc.part)
-sel <- grep("pvem",   prior.inc.part); tmp2$dincpvem  [sel] <- 1; prior.inc.part <- sub("pvem",   "", prior.inc.part)
-sel <- grep("pt",     prior.inc.part); tmp2$dincpt    [sel] <- 1; prior.inc.part <- sub("pt",     "", prior.inc.part)
-sel <- grep("mc",     prior.inc.part); tmp2$dincmc    [sel] <- 1; prior.inc.part <- sub("mc",     "", prior.inc.part)
-sel <- grep("morena", prior.inc.part); tmp2$dincmorena[sel] <- 1; prior.inc.part <- sub("morena", "", prior.inc.part)
+sel <- grep("pan",    prior.inc.part); dat2$dincpan   [sel] <- 1; prior.inc.part <- sub("pan",    "", prior.inc.part)
+sel <- grep("pri",    prior.inc.part); dat2$dincpri   [sel] <- 1; prior.inc.part <- sub("pri",    "", prior.inc.part)
+sel <- grep("prd",    prior.inc.part); dat2$dincprd   [sel] <- 1; prior.inc.part <- sub("prd",    "", prior.inc.part)
+sel <- grep("pvem",   prior.inc.part); dat2$dincpvem  [sel] <- 1; prior.inc.part <- sub("pvem",   "", prior.inc.part)
+sel <- grep("pt",     prior.inc.part); dat2$dincpt    [sel] <- 1; prior.inc.part <- sub("pt",     "", prior.inc.part)
+sel <- grep("mc",     prior.inc.part); dat2$dincmc    [sel] <- 1; prior.inc.part <- sub("mc",     "", prior.inc.part)
+sel <- grep("morena", prior.inc.part); dat2$dincmorena[sel] <- 1; prior.inc.part <- sub("morena", "", prior.inc.part)
 ##
 prior.inc.part <- sub("^(-+)$", "", prior.inc.part) ## slashes with no text to empty (will become dincoth=0)
 prior.inc.part <- sub("^concejo municipal$", "", prior.inc.part) ## will become dincoth=0
@@ -551,8 +526,15 @@ prior.inc.part <- sub("^incumbent out$", "", prior.inc.part) ## will become dinc
 ##
 table(prior.inc.part, useNA = "ifany") ## only minor parties or none should remain
 ##
-tmp2$dincoth <- ifelse(prior.inc.part=="", 0, 1) ## empty to 0, rest to 1
-
+## code dummy
+dat2$dincoth <- ifelse(prior.inc.part=="", 0, 1) ## empty to 0, rest to 1
+## return to data
+dat[sel.r,] <- dat2
+## clean
+rm(prior.inc.part,dat2,inc,sel,sel.c,sel.r)
+dat$prior.inc.part <- NULL
+## inspect
+tail(dat)
 
 ## Generate lags
 library(DataCombine) # easy lags with slide
@@ -581,9 +563,9 @@ table(is.na(dat$prilag))
 sel.r <- which(dat$inegi==20472)
 dat[sel.r,]
 
+summary(lm(pan ~ dincpan + dincprd + dcoalpan + dcoalpri + yr, data = dat))
 summary(lm(pan ~ dcoalpri, data = dat))
 summary(lm(pan ~ dcoalpan, data = dat))
-summary(lm(pan ~ dcoalpan + dcoalpri + yr, data = dat))
 summary(lm(pan ~ yr, data = dat))
 ls()
 dim(dat)

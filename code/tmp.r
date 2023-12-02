@@ -13,17 +13,6 @@ c    out    ms V reran  mr W            0     1
 
 ----------------
 
-THIS IS WHAT DATA IN LOOKS LIKE | AFTER LAG
-case ...... inc  after            case  prior  inc   ......
-a              ? term-l           a         NA     ? 
-a           mr X reran            a     term-l  mr X 
-a           ms Y out-l            a     reran   ms Y 
-b              ? out-w            b         NA     ? 
-b           mr Z reelec           b     out-w   mr Z 
-b           mr Z term-l           b     reelec  mr Z 
-c              ? out-l            c         NA     ? 
-c           ms V out-l            c     out-l   ms V 
-c           mr W reran            c     out-l   mr W 
 
 
 

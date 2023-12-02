@@ -487,18 +487,6 @@ table(verif) # verify: all should be 1 then ok to lag
 rm(verif)
 tail(inc) ## check lag or lead
 inc$cycle.lag <- NULL
-## paste race.after and incumbent party
-inc$race.after <- paste(inc$race.after, inc$part, sep = ".")
-## Manipulate dif-p cases by hand
-dif.p <- data.frame(
-    emm=c("nl-16.012", "jal-17.082", "jal-17.123", "cps-17.087", "cps-17.099", "gue-16.017", "mic-16.035", "oax-17.040", "oax-17.169", "mor-17.016", "nl-16.045", "nl-17.036", "que-17.013", "pue-16.166", "cps-17.084", "dgo-16.003", "mex-16.125", "pue-16.086", "cps-16.076", "cps-16.100", "nl-17.042", "oax-16.184", "jal-16.022", "nl-16.028", "mor-16.013", "cam-17.005", "cua-16.004", "yuc-16.048", "gue-16.042", "nl-16.031", "oax-16.545", "cps-17.054", "cps-17.103", "pue-16.121", "mic-16.110", "pue-16.111", "pue-16.186", "oax-16.187", "jal-16.026", "jal-16.057", "oax-17.181", "oax-17.150", "jal-17.052", "jal-17.073", "jal-17.079", "cps-17.062", "gue-16.033", "jal-17.040", "jal-17.114", "jal-17.119", "mex-16.056", "mic-16.065", "mic-16.072", "cps-17.052", "cps-17.071", "gue-16.015", "gue-16.041", "gue-16.043", "oax-17.421", "pue-16.126", "san-17.028", "son-17.072", "yuc-17.035", "gue-16.060", "jal-17.078", "mor-17.006", "mex-15.013", "zac-17.050", "cps-17.094", "cua-17.059", "mor-17.015", "mor-17.024", "tam-17.015", "ags-16.010", "gue-16.021", "jal-17.086", "jal-17.113", "nl-16.050", "cua-16.031", "cua-16.036", "cua-16.055", "nl-16.024", "oax-17.295", "zac-16.003", "zac-16.011", "yuc-17.004", "yuc-17.006", "gua-17.027", "mor-17.018", "pue-16.089", "pue-16.170", "pue-16.175", "mic-16.093", "cps-17.124", "dgo-16.035", "pue-16.053", "pue-16.203", "pue-16.212", "san-17.042", "san-17.053", "mor-17.025", "oax-17.166"
-          ),
-    race.after=c(
-        "Reelected.indep", "Reelected.mc", "Reelected.mc", "Reelected.morena", "Reelected.morena", "Reelected.morena", "Reelected.morena", "Reelected.morena", "Reelected.morena", "Reelected.pan", "Reelected.pan", "Reelected.pan", "Reelected.pan", "Reelected.pan-pri-prd", "Reelected.pchu", "Reelected.pd", "Reelected.pes", "Reelected.pes", "Reelected.pmch", "Reelected.pmch", "Reelected.pna", "Reelected.pna", "Reelected.prd", "Reelected.prd", "Reelected.prd-psd", "Reelected.pri", "Reelected.pri", "Reelected.pri", "Reelected.pri-prd", "Reelected.pri-pvem", "Reelected.psd", "Reelected.pt", "Reelected.pt", "Reelected.pt", "Reelected.pt-morena", "Reelected.pt-morena", "Reelected.pt-morena", "Reelected.pt-morena-pes", "Reelected.pvem", "Reelected.pvem", "Reelected.pvem", "Reelected.rsp", "Reelected.somos", "Reran-beaten.hagamos", "Reran-beaten.hagamos", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.mc", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.morena", "Reran-beaten.pan", "Reran-beaten.pan", "Reran-beaten.pan-ph", "Reran-beaten.pan-prd-mc", "Reran-beaten.paz", "Reran-beaten.pchu", "Reran-beaten.pes", "Reran-beaten.pes", "Reran-beaten.pes", "Reran-beaten.pes", "Reran-beaten.pna", "Reran-beaten.prd", "Reran-beaten.prd", "Reran-beaten.prd", "Reran-beaten.prd", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri", "Reran-beaten.pri-prd", "Reran-beaten.pri-prd", "Reran-beaten.pt", "Reran-beaten.pt", "Reran-beaten.pt", "Reran-beaten.pt", "Reran-beaten.pt", "Reran-beaten.pt-morena", "Reran-beaten.pvem", "Reran-beaten.pvem", "Reran-beaten.pvem", "Reran-beaten.pvem", "Reran-beaten.pvem", "Reran-beaten.pvem-pt", "Reran-beaten.pvem-pt", "Reran-beaten.rsp", "Reran-beaten.rsp"
-    )
-)
-for (i in 1:nrow(dif.p)) inc$race.after[which(inc$emm==dif.p$emm[i])] <- dif.p$race.after[i]
-rm(dif.p)
 ########################################
 ## lag to create race-prior variables ##
 ########################################
@@ -517,10 +505,22 @@ tail(inc)
 ## c          ms V out-l        |   c     out-l   ms V           0
 ## c          mr W reran        |   c     out-l   mr W           0
 
+## THIS IS WHAT DATA LOOKS LIKE | ... AFTER LAGGING RACE.PRIOR
+## case ..... part inc  after        |   case  prior  part inc   .....  dincpan dincpri
+## a          pan     ? term-l       |   a         NA pan      ?             NA      NA
+## a          pri  mr X reran        |   a     term-l pri   mr X              0       0
+## a          pan  ms Y out-l        |   a     reran  pan   ms Y              1       1
+## b                  ? out-w        |   b         NA          ?             NA      NA
+## b               mr Z reelec       |   b     out-w        mr Z              0       0
+## b               mr Z term-l       |   b     reelec       mr Z              1       1
+## c                  ? out-l        |   c         NA          ?             NA      NA
+## c               ms V out-l        |   c     out-l        ms V              0       0
+## c               mr W reran        |   c     out-l        mr W              0       0
+
 ## merge inc
 ##sel <- which(inc$emm %notin% dat$emm)
 ##data.frame(emm=inc$emm[sel], yr=inc$yr[sel], mun=inc$mun[sel], incumbent=inc$incumbent[sel])
-tmp <- merge(x = dat, y = inc[,c("emm","race.prior")], by = "emm", all.x = TRUE, all.y = FALSE)
+tmp <- merge(x = dat, y = inc[,c("emm","race.prior","prior.inc.part")], by = "emm", all.x = TRUE, all.y = FALSE)
 ## compute incumbent dummies
 tmp <- within(tmp, {
     dincoth <- 0
@@ -534,20 +534,24 @@ tmp <- within(tmp, {
 })
 sel.r <- grep("Reelected|Reran", tmp$race.prior)
 tmp2 <- tmp[sel.r,] # subset for manipulation
-race.prior <- tmp2$race.prior ## indicate progress here
-race.prior <- sub("(Reran-beaten|Reran-dead-p-won|Reelected)([.])(.+)$", "\\3", race.prior)
+tmp2[1,]
+prior.inc.part <- tmp2$prior.inc.part ## indicate progress here
 ## code dummies (emptying race.prior as it proceeds)
-sel <- grep("pan",    race.prior); tmp2$dincpan   [sel] <- 1; race.prior <- sub("pan",    "", race.prior)
-sel <- grep("pri",    race.prior); tmp2$dincpri   [sel] <- 1; race.prior <- sub("pri",    "", race.prior)
-sel <- grep("prd",    race.prior); tmp2$dincprd   [sel] <- 1; race.prior <- sub("prd",    "", race.prior)
-sel <- grep("pvem",   race.prior); tmp2$dincpvem  [sel] <- 1; race.prior <- sub("pvem",   "", race.prior)
-sel <- grep("pt",     race.prior); tmp2$dincpt    [sel] <- 1; race.prior <- sub("pt",     "", race.prior)
-sel <- grep("mc",     race.prior); tmp2$dincmc    [sel] <- 1; race.prior <- sub("mc",     "", race.prior)
-sel <- grep("morena", race.prior); tmp2$dincmorena[sel] <- 1; race.prior <- sub("morena", "", race.prior)
-table(race.prior, useNA = "ifany") ## only minor parties or none should remain
-race.prior <- sub("^(-+)$", "", race.prior) ## slashes with no text to empty (will become dincoth=0)
-tmp2$dincoth <- ifelse(race.prior=="", 0, 1) ## empty to 0, rest to 1
-table(pan=tmp2$dincpan, pri=tmp2$dincpri)
+sel <- grep("pan",    prior.inc.part); tmp2$dincpan   [sel] <- 1; prior.inc.part <- sub("pan",    "", prior.inc.part)
+sel <- grep("pri",    prior.inc.part); tmp2$dincpri   [sel] <- 1; prior.inc.part <- sub("pri",    "", prior.inc.part)
+sel <- grep("prd",    prior.inc.part); tmp2$dincprd   [sel] <- 1; prior.inc.part <- sub("prd",    "", prior.inc.part)
+sel <- grep("pvem",   prior.inc.part); tmp2$dincpvem  [sel] <- 1; prior.inc.part <- sub("pvem",   "", prior.inc.part)
+sel <- grep("pt",     prior.inc.part); tmp2$dincpt    [sel] <- 1; prior.inc.part <- sub("pt",     "", prior.inc.part)
+sel <- grep("mc",     prior.inc.part); tmp2$dincmc    [sel] <- 1; prior.inc.part <- sub("mc",     "", prior.inc.part)
+sel <- grep("morena", prior.inc.part); tmp2$dincmorena[sel] <- 1; prior.inc.part <- sub("morena", "", prior.inc.part)
+##
+prior.inc.part <- sub("^(-+)$", "", prior.inc.part) ## slashes with no text to empty (will become dincoth=0)
+prior.inc.part <- sub("^concejo municipal$", "", prior.inc.part) ## will become dincoth=0
+prior.inc.part <- sub("^incumbent out$", "", prior.inc.part) ## will become dincoth=0
+##
+table(prior.inc.part, useNA = "ifany") ## only minor parties or none should remain
+##
+tmp2$dincoth <- ifelse(prior.inc.part=="", 0, 1) ## empty to 0, rest to 1
 
 
 ## Generate lags

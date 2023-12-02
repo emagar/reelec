@@ -537,6 +537,8 @@ dat$prior.inc.part <- NULL
 tail(dat)
 
 ## Generate lags
+## dat xsts not square, use inc (which is) to add missing obs
+
 library(DataCombine) # easy lags with slide
 dat <- dat[order(dat$emm),] # sort mun-chrono
 tmp <- dat$emm

@@ -449,6 +449,13 @@ table(dat$status)
 ## clean
 rm(v7)
 
+## Change san luis ids followed by runoff
+sel <- grep("san-[0-9]+b", dat$emm) # these are first round races that led to runoff
+tmp <- dat$emm[sel]
+tmp <- sub(pattern = "(san-[0-9]+)b([.0-9]+$)", replacement = "\\1\\2", tmp)
+dat$emm[sel] <- tmp
+rm(tmp,sel)
+
 ## Save data
 getwd()
 save.image(file = "ay-mu-vote-analysis.RData")
@@ -461,20 +468,13 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
 setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
 
-## Change san luis ids followed by runoff
-sel <- grep("san-[0-9]+b", dat$emm) # these are first round races that led to runoff
-tmp <- dat$emm[sel]
-tmp <- sub(pattern = "(san-[0-9]+)b([.0-9]+$)", replacement = "\\1\\2", tmp)
-dat$emm[sel] <- tmp
-rm(tmp,sel)
-
 #####################################################################
 ## Get incumbency data                                             ##
 ## relies on prior.inc.part, added to aymu.incumbent.csv, for this ##
 #####################################################################
 inc <- read.csv(paste0(dd, "aymu1989-on.incumbents.csv"), stringsAsFactors = FALSE)
 ## drop pre-1995 and some cols
-sel.r <- which(inc$yr < 1995)
+sel.r <- which(inc$yr < 1994)
 sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","runnerup","part2nd","mg","dlegacy","who"))
 inc <- inc[-sel.r,-sel.c]
 ## verify time series' structure (for lags)
@@ -494,7 +494,6 @@ inc <- slide(inc, Var = "race.after", NewVar = "race.prior",    TimeVar = "cycle
 ## merge inc into dat
 #sel <- which(inc$emm %notin% dat$emm)
 #data.frame(emm=inc$emm[sel], yr=inc$yr[sel], mun=inc$mun[sel], incumbent=inc$incumbent[sel])
-
 dat <- merge(x = dat, y = inc[,c("emm","race.prior","prior.inc.part")], by = "emm", all.x = TRUE, all.y = FALSE)
 ## compute incumbent dummies
 dat <- within(dat, {
@@ -531,23 +530,46 @@ dat2$dincoth <- ifelse(prior.inc.part=="", 0, 1) ## empty to 0, rest to 1
 ## return to data
 dat[sel.r,] <- dat2
 ## clean
-rm(prior.inc.part,dat2,inc,sel,sel.c,sel.r)
+rm(prior.inc.part,dat2,sel,sel.c,sel.r)
 dat$prior.inc.part <- NULL
 ## inspect
 tail(dat)
 
 ## Generate lags
 ## dat xsts not square, use inc (which is) to add missing obs
-
-library(DataCombine) # easy lags with slide
-dat <- dat[order(dat$emm),] # sort mun-chrono
+## add cycle
 tmp <- dat$emm
 tmp <- sub("^[a-z]+-([0-9]{2})[ab]?[.][0-9]+$", "\\1", tmp) ## ab for anuladas en pre-runoffs
 table(tmp)
 tmp <- as.numeric(tmp)
 dat$cycle <- tmp
 rm(tmp)
-## lag by one period
+##
+table(dat$cycle)
+table(inc$cycle)
+##
+tmp <- inc[, c("emm","cycle")] ## keep ids and temp ids only
+tmp <- merge(x=dat, y=tmp, by=c("emm","cycle"), all=TRUE)
+tmp <- tmp[order(tmp$emm),]
+dim(tmp)
+dim(inc)
+dim(dat)
+## drop these after merge
+sel.r <- which(tmp$emm %in% c("cps-15.xxx", "cps-16.xxx", "cps-17.xxx", "oax-09.088", "oax-10.088", "oax-11.088", "oax-12.088", "oax-13.088", "oax-14.088", "oax-15.088", "oax-16.088", "oax-17.088", "oax-18.088"))
+tmp <- tmp[-sel.r,]
+## fill missing ids in new obs
+sel.r <- which(is.na(tmp$inegi))
+edon <- sub("^([a-z]+)-.+$", "\\1", tmp$emm[sel.r])
+edon <- ifelse(edon=="oax", 20, 32)
+tmp$edon[sel.r] <- edon
+inegi <- as.numeric(sub("^[a-z]+-[0-9]+[.]([0-9]+)$", "\\1", tmp$emm[sel.r]))
+inegi <- edon*1000 + inegi
+tmp$inegi[sel.r] <- inegi
+## replace dat with manipulatd object
+dat <- tmp
+rm(edon, inegi, tmp, sel.r, inc)
+## lag vote by one period
+dat <- dat[order(dat$emm),] # sort mun-chrono
 dat <- slide(dat, Var = "pan",    NewVar = "panlag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 dat <- slide(dat, Var = "pri",    NewVar = "prilag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1, keepInvalid = FALSE)
 dat <- slide(dat, Var = "prd",    NewVar = "prdlag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
@@ -555,20 +577,143 @@ dat <- slide(dat, Var = "pvem",   NewVar = "pvemlag",   TimeVar = "cycle", Group
 dat <- slide(dat, Var = "pt",     NewVar = "ptlag",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 dat <- slide(dat, Var = "mc",     NewVar = "mclag",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 dat <- slide(dat, Var = "morena", NewVar = "morenalag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat[1:15,]
-
-## cómo lidio con missing periods?
+##
+## cómo lidio con missing periods? generan NAs en la serie del municipio donde ocurren
 summary(dat$pri)
 summary(dat$prilag)
 table(is.na(dat$prilag))
 
-sel.r <- which(dat$inegi==20472)
-dat[sel.r,]
+## Compute electoral calendar variables
+## add missing dates manually
+date <- dat$date
+sel.r <- which(is.na(date))
+date[sel.r] <- c(rep(19951112, 16), 20011007, rep(20041003, 2), 20071007, 19950806)
+dat$date <- date
+## date format
+library(lubridate)
+dat$date <- ymd(dat$date)
+date <- ymd(date)
+summary(date) # no NAs
+##
+## get electoral calendar
+cal <- read.csv(file = paste0(dd, "../../calendariosReelec/data/fechasEleccionesMexicoDesde1994.csv"))
+sel.r <- which(cal$elec=="gob" | cal$elec=="dip"); cal <- cal[sel.r,] # subset dip and gob
+cal[6,]
+## translate months to english
+library(stringr)
+to.eng <- function(x) str_replace_all(x, c("ene"="jan", "abr"="apr", "ago"="aug", "dic"="dec"))
+cal <- as.data.frame(sapply(cal, to.eng))
+## to date format
+sel.c <- grep("^y[0-9]{4}", colnames(cal))
+year <- as.numeric(sub("y", "", colnames(cal)[sel.c]))
+for (i in 1:nrow(cal)) cal[i,sel.c] <- paste0(cal[i,sel.c], year)
+for (i in 1:nrow(cal)) cal[i,sel.c] <- sub("--[0-9]{4}", "", cal[i,sel.c])
+for (i in 1:nrow(cal)) cal[i,sel.c] <- sub("([0-9]+)([a-z]+)([0-9]{4})", "\\3-\\2-\\1", cal[i,sel.c])
+for (i in 1:ncol(cal)) cal[,sel.c[i]] <- ymd(cal[,sel.c[i]]) ## proceed columnwise to retain date format
+cal[1,]
+## dummies
+dat$dconcdf <- 0
+dat$dconcgo <- 0
+for (i in 1:32){
+    #i <- 5
+    sel <- cal[cal$edon==i, sel.c]
+    sel.r <- which(dat$date[dat$edon==i] %in% sel)
+    if (length(sel.r)>0) dat$dconcgo[dat$edon==i][sel.r] <- 1
+    sel <- cal[cal$elec=="dip", sel.c]
+    sel.r <- which(dat$date[dat$edon==i] %in% sel)
+    if (length(sel.r)>0) dat$dconcdf[dat$edon==i][sel.r] <- 1
+}
+table(dat$dconcgo)
+table(dat$dconcdf)
+rm(cal)
+## code reform date
+## get electoral calendar
+cal <- read.csv(file = paste0(dd, "../../calendariosReelec/data/fechasEleccionesMexicoDesde1994.csv"))
+sel.r <- which(cal$elec=="ayun"); cal <- cal[sel.r, c("edon","elec","yr1st")] # subset ayun
+cal$elec <- NULL
+cal$yr1st[cal$edon==13] <- 3000
+cal$yr1st <- as.numeric(cal$yr1st)
+dat <- merge(x = dat, y = cal, by = "edon", all = TRUE)
+rm(cal,sel.r,date)
 
-summary(lm(pan ~ dincpan + dincprd + dcoalpan + dcoalpri + yr, data = dat))
-summary(lm(pan ~ dcoalpri, data = dat))
-summary(lm(pan ~ dcoalpan, data = dat))
-summary(lm(pan ~ yr, data = dat))
+## Get governor parties
+gov <- read.csv(file = paste0(dd, "../../mxBranches/statesBranches/32stategovts.csv"))
+head(gov)
+sel.r <- which(is.na(gov$govin) | gov$govin < 1000000) ## drop redundant rows
+gov <- gov[-sel.r, c("edon","yr","govin","govpty")]    ## keep selected columns
+gov <- slide(gov, Var = "govin", NewVar = "govout", TimeVar = "govin", GroupVar = "edon", slideBy = 1) ## lag 1
+gov$govin <- ymd(gov$govin)
+gov$govout <- ymd(gov$govout) - days(1) ## end of term
+sel.r <- which(is.na(gov$govout))
+gov$govout[sel.r] <- gov$govin[sel.r] + years(6) - days(1) ## add future ends of term
+## Import gov pty to dat
+dat$govpty <- NA
+for (i in 1:32){ ## loop over states
+    #i <- 1
+    gov2 <- gov[gov$edon==i,]
+    dat2 <- dat[dat$edon==i,]
+    for (j in 1:nrow(gov2)){ ## loop over state cycles
+        #j <- 2
+        sel.r <- which(dat2$date >= gov2$govin[j] & dat2$date <= gov2$govout[j])
+        if (length(sel.r) > 0) dat2$govpty[sel.r] <- gov2$govpty[j]
+    }
+    dat[dat$edon==i,] <- dat2 ## return to dat
+}
+table(dat$govpty, useNA = "ifany")
+## clean
+rm(dat2, date, gov, gov2, i, j, sel, sel.c, sel.r, year, to.eng)
+## Code gov dummies
+dat <- within(dat, {
+    dgovmorena <- as.numeric(govpty=="morena")
+    dgovmc     <- as.numeric(govpty=="mc")
+    dgovpvem   <- as.numeric(govpty=="pvem")
+    dgovprd    <- as.numeric(govpty=="prd")
+    dgovpri    <- as.numeric(govpty=="pri")
+    dgovpan    <- as.numeric(govpty=="pan")
+})
+dat <- within(dat, {
+    dpresmorena <- as.numeric(date >= ymd("20181201") & date < ymd("20241001"))
+    dprespri    <- as.numeric( date <  ymd("20001201") |
+                              (date >= ymd("20121201") & date < ymd("20181201")))
+    dprespan    <- as.numeric(date >= ymd("20001201") & date < ymd("20121201"))
+})
+
+## Incumbent ayuntamiento party
+dat <- dat[order(dat$emm),]
+dat <- slide(dat, Var = "win", NewVar = "winlast", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1) ## lag 1
+## compute dummies --- equal 1 if party won alone or in coalition last cycle
+dat$daymorena <- dat$daymc     <- dat$daypt     <- dat$daypvem   <- dat$dayprd    <- dat$daypri    <- dat$daypan    <- 0
+sel.r <- grep("pan",    dat$winlast); dat$daypan   [sel.r] <- 1
+sel.r <- grep("pri",    dat$winlast); dat$daypri   [sel.r] <- 1
+sel.r <- grep("prd",    dat$winlast); dat$dayprd   [sel.r] <- 1
+sel.r <- grep("pvem",   dat$winlast); dat$daypvem  [sel.r] <- 1
+sel.r <- grep("pt",     dat$winlast); dat$daypt    [sel.r] <- 1
+sel.r <- grep("mc",     dat$winlast); dat$daymc    [sel.r] <- 1
+sel.r <- grep("morena", dat$winlast); dat$daymorena[sel.r] <- 1
+rm(sel.r)
+
+
+dat2 <- dat ## duplicate
+dat2  <-  within(dat2, dincballot <- as.numeric(dincpan==1 | dincpri==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))
+dat2 <- within(dat2, {
+    dincpan    <- daypan
+    dincpri    <- daypri
+    dincprd    <- dayprd
+    dincmorena <- daymorena
+})
+summary(lm(pan ~ (dincpan * dincballot) + dgovpan + dprespan + panlag + as.factor(cycle), data = dat2))
+summary(lm(pri ~ (dincpri * dincballot) + dgovpri + dprespri + prilag + as.factor(cycle), data = dat2))
+summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + morenalag, data = dat2, subset = yr>2014))
+
+              
+dat2 <- within(dat2, dincnopan <- as.numeric(dincpri==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))
+summary(lm(pan ~ dincpan + dincnopan + dgovpan + dprespan + daypan + as.numeric(yr>=yr1st) + as.factor(yr) + as.factor(edon), data = dat2))
+dat2 <- within(dat2, dincnopri <- as.numeric(dincpan==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))
+summary(lm(pri ~ dincpri + dincnopri + dgovpri + dprespri + as.numeric(yr>=yr1st) + as.factor(yr) + as.factor(edon), data = dat2))
+
+
+
+summary(lm(pan ~ dcoalpan + dcoalpri, data = dat)) ## Para ilustrar endogeneidad
 ls()
 dim(dat)
 

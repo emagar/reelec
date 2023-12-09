@@ -202,13 +202,13 @@ tmp$r <- 25
 tmp$v <- tmp$v25; tmp$l <- tmp$l25;
 v7 <- rbind(v7,tmp)
 v7[1,]
-## make sure all v and l columns have been added
+## make sure all v and l columns have been added before next commands
 v7$v01 <- v7$v02 <- v7$v03 <- v7$v04 <- v7$v05 <- v7$v06 <- v7$v07 <- v7$v08 <- v7$v09 <- v7$v10 <- v7$v11 <- v7$v12 <- v7$v13 <- v7$v14 <- v7$v15 <- v7$v16 <- v7$v17 <- v7$v18 <- v7$v19 <- v7$v20 <- v7$v21 <- v7$v22 <- v7$v23 <- v7$v24 <- v7$v25 <- NULL
 v7$l01 <- v7$l02 <- v7$l03 <- v7$l04 <- v7$l05 <- v7$l06 <- v7$l07 <- v7$l08 <- v7$l09 <- v7$l10 <- v7$l11 <- v7$l12 <- v7$l13 <- v7$l14 <- v7$l15 <- v7$l16 <- v7$l17 <- v7$l18 <- v7$l19 <- v7$l20 <- v7$l21 <- v7$l22 <- v7$l23 <- v7$l24 <- v7$l25 <- NULL
 ##
 ## rebrand conve to mc etc
 table(v7$l)
-v7$l[v7$l=="conve|cdppn"] <- "mc"
+v7$l[v7$l %in% c("conve","cdppn")] <- "mc"
 v7$l[v7$l %in% c("pt1","ptc")] <- "pt"
 v7$l[v7$l %in% c("pesm","pest")] <- "pes"
 ##v7$l[grep("indep|ci_", v7$l)] <- "indep"
@@ -449,7 +449,9 @@ rm(tmp,sel)
 getwd()
 save.image(file = "ay-mu-vote-analysis.RData")
 
-## read saved image
+######################
+## read saved image ##
+######################
 rm(list = ls())
 ##
 dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
@@ -524,11 +526,10 @@ dat$prior.inc.part <- NULL
 ## inspect
 tail(dat)
 
-## Generate lags
-## dat xsts not square, use inc (which is) to add missing obs
+## For lags: dat xsts not square, use inc (which is) to add missing obs
 ## add cycle
 tmp <- dat$emm
-tmp <- sub("^[a-z]+-([0-9]{2})[ab]?[.][0-9]+$", "\\1", tmp) ## ab for anuladas en pre-runoffs
+tmp <- sub("^[a-z]+-([0-9]{2})[ab]?[.][0-9]+$", "\\1", tmp) ## ab for anuladas and pre-runoffs
 table(tmp)
 tmp <- as.numeric(tmp)
 dat$cycle <- tmp
@@ -557,20 +558,6 @@ tmp$inegi[sel.r] <- inegi
 ## replace dat with manipulatd object
 dat <- tmp
 rm(edon, inegi, tmp, sel.r, inc)
-## lag vote by one period
-dat <- dat[order(dat$emm),] # sort mun-chrono
-dat <- slide(dat, Var = "pan",    NewVar = "panlag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat <- slide(dat, Var = "pri",    NewVar = "prilag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1, keepInvalid = FALSE)
-dat <- slide(dat, Var = "prd",    NewVar = "prdlag",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat <- slide(dat, Var = "pvem",   NewVar = "pvemlag",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat <- slide(dat, Var = "pt",     NewVar = "ptlag",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat <- slide(dat, Var = "mc",     NewVar = "mclag",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat <- slide(dat, Var = "morena", NewVar = "morenalag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-##
-## cómo lidio con missing periods? generan NAs en la serie del municipio donde ocurren
-summary(dat$pri)
-summary(dat$prilag)
-table(is.na(dat$prilag))
 
 ## Compute electoral calendar variables
 ## add missing dates manually
@@ -578,33 +565,37 @@ date <- dat$date
 sel.r <- which(is.na(date))
 date[sel.r] <- c(rep(19951112, 16), 20011007, rep(20041003, 2), 20071007, 19950806)
 dat$date <- date
-## date format
-library(lubridate)
-dat$date <- ymd(dat$date)
-date <- ymd(date)
-summary(date) # no NAs
+## ## commented: dates stopped workibng with R upgrade
+## ## date format
+## library(lubridate)
+## dat$date <- ymd(dat$date)
+## date <- ymd(date)
+## summary(date) # no NAs
 ##
 ## get electoral calendar
 cal <- read.csv(file = paste0(dd, "../../calendariosReelec/data/fechasEleccionesMexicoDesde1994.csv"))
 sel.r <- which(cal$elec=="gob" | cal$elec=="dip"); cal <- cal[sel.r,] # subset dip and gob
 cal[6,]
 ## translate months to english
+
 library(stringr)
 to.eng <- function(x) str_replace_all(x, c("ene"="jan", "abr"="apr", "ago"="aug", "dic"="dec"))
 cal <- as.data.frame(sapply(cal, to.eng))
-## to date format
+## dates to yyyymmdd
 sel.c <- grep("^y[0-9]{4}", colnames(cal))
 year <- as.numeric(sub("y", "", colnames(cal)[sel.c]))
 for (i in 1:nrow(cal)) cal[i,sel.c] <- paste0(cal[i,sel.c], year)
 for (i in 1:nrow(cal)) cal[i,sel.c] <- sub("--[0-9]{4}", "", cal[i,sel.c])
-for (i in 1:nrow(cal)) cal[i,sel.c] <- sub("([0-9]+)([a-z]+)([0-9]{4})", "\\3-\\2-\\1", cal[i,sel.c])
-for (i in 1:ncol(cal)) cal[,sel.c[i]] <- ymd(cal[,sel.c[i]]) ## proceed columnwise to retain date format
-cal[1,]
+for (i in 1:nrow(cal)) cal[i,sel.c] <- sub("([0-9]+)([a-z]+)([0-9]{4})", "\\3\\2\\1", cal[i,sel.c])
+for (i in 1:nrow(cal)) cal[i,sel.c] <- sub("([a-z]{1})([1-9]{1})$", "\\10\\2", cal[i,sel.c]) # add heading zeroes for single-digit days
+to.num <- function(x) str_replace_all(x, c("jan"="01", "feb"="02", "mar"="03", "apr"="04", "may"="05", "jun"="06", "jul"="07", "aug"="08", "sep"="09", "oct"="10", "nov"="11", "dec"="12"))
+cal <- as.data.frame(sapply(cal, to.num))
+##for (i in 1:length(sel.c)) cal[,sel.c[i]] <- ymd(cal[,sel.c[i]]) ## proceed columnwise to retain date format
 ## dummies
 dat$dconcdf <- 0
 dat$dconcgo <- 0
 for (i in 1:32){
-    #i <- 5
+    #i <- 26
     sel <- cal[cal$edon==i, sel.c]
     sel.r <- which(dat$date[dat$edon==i] %in% sel)
     if (length(sel.r)>0) dat$dconcgo[dat$edon==i][sel.r] <- 1
@@ -631,10 +622,11 @@ head(gov)
 sel.r <- which(is.na(gov$govin) | gov$govin < 1000000) ## drop redundant rows
 gov <- gov[-sel.r, c("edon","yr","govin","govpty")]    ## keep selected columns
 gov <- slide(gov, Var = "govin", NewVar = "govout", TimeVar = "govin", GroupVar = "edon", slideBy = 1) ## lag 1
-gov$govin <- ymd(gov$govin)
-gov$govout <- ymd(gov$govout) - days(1) ## end of term
+##gov$govin <- ymd(gov$govin)
+##gov$govout <- ymd(gov$govout) - days(1) ## end of term
 sel.r <- which(is.na(gov$govout))
-gov$govout[sel.r] <- gov$govin[sel.r] + years(6) - days(1) ## add future ends of term
+##gov$govout[sel.r] <- gov$govin[sel.r] + years(6) - days(1) ## add future ends of term
+gov$govout[sel.r] <- gov$govin[sel.r] + 60000 ## add future ends of term (6 yrs)
 ## Import gov pty to dat
 dat$govpty <- NA
 for (i in 1:32){ ## loop over states
@@ -643,14 +635,14 @@ for (i in 1:32){ ## loop over states
     dat2 <- dat[dat$edon==i,]
     for (j in 1:nrow(gov2)){ ## loop over state cycles
         #j <- 2
-        sel.r <- which(dat2$date >= gov2$govin[j] & dat2$date <= gov2$govout[j])
+        sel.r <- which(dat2$date >= gov2$govin[j] & dat2$date < gov2$govout[j])
         if (length(sel.r) > 0) dat2$govpty[sel.r] <- gov2$govpty[j]
     }
     dat[dat$edon==i,] <- dat2 ## return to dat
 }
 table(dat$govpty, useNA = "ifany")
 ## clean
-rm(dat2, date, gov, gov2, i, j, sel, sel.c, sel.r, year, to.eng)
+rm(dat2, gov, gov2, i, j, sel, sel.c, sel.r, year, to.eng)
 ## Code gov dummies
 dat <- within(dat, {
     dgovmorena <- as.numeric(govpty=="morena")
@@ -660,11 +652,17 @@ dat <- within(dat, {
     dgovpri    <- as.numeric(govpty=="pri")
     dgovpan    <- as.numeric(govpty=="pan")
 })
+## dat <- within(dat, {
+##     dpresmorena <- as.numeric(date >= ymd("20181201") & date < ymd("20241001"))
+##     dprespri    <- as.numeric( date <  ymd("20001201") |
+##                               (date >= ymd("20121201") & date < ymd("20181201")))
+##     dprespan    <- as.numeric(date >= ymd("20001201") & date < ymd("20121201"))
+## })
 dat <- within(dat, {
-    dpresmorena <- as.numeric(date >= ymd("20181201") & date < ymd("20241001"))
-    dprespri    <- as.numeric( date <  ymd("20001201") |
-                              (date >= ymd("20121201") & date < ymd("20181201")))
-    dprespan    <- as.numeric(date >= ymd("20001201") & date < ymd("20121201"))
+    dpresmorena <- as.numeric(date >= 20181201 & date < 20241001)
+    dprespri    <- as.numeric(date <  20001201 |
+                             (date >= 20121201 & date < 20181201))
+    dprespan    <- as.numeric(date >= 20001201 & date < 20121201)
 })
 
 ## Incumbent ayuntamiento party
@@ -681,7 +679,95 @@ sel.r <- grep("mc",     dat$winlast); dat$daymc    [sel.r] <- 1
 sel.r <- grep("morena", dat$winlast); dat$daymorena[sel.r] <- 1
 rm(sel.r)
 
+## lag variables by one period
+dat <- dat[order(dat$emm),] # sort mun-chrono
+sel.c <- which(colnames(dat)=="status")
+dat1 <- dat[, 1:sel.c] # id columns
+dat2 <- dat[, (sel.c+1):ncol(dat)] # vars to lag
+colnames(dat2) <- paste0(colnames(dat2), "2") # rename cols
+drop.c <- colnames(dat2) # save names to drop after manipulation
+dat2 <- cbind(dat1, dat2) # recompose dataframe with 
+rm(dat1)
 
+dat2 <- slide(dat2, Var = "lisnom2", NewVar = "lisnom", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "efec2", NewVar = "efec", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "ncoal2", NewVar = "ncoal", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "ncand2", NewVar = "ncand", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dextra2", NewVar = "dextra", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "win2", NewVar = "win", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "mg2", NewVar = "mg", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalpan2", NewVar = "dcoalpan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalpri2", NewVar = "dcoalpri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalprd2", NewVar = "dcoalprd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalmor2", NewVar = "dcoalmor", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalpve2", NewVar = "dcoalpve", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalpt2", NewVar = "dcoalpt", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalmc2", NewVar = "dcoalmc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "pan2", NewVar = "pan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "pri2", NewVar = "pri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "prd2", NewVar = "prd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "pvem2", NewVar = "pvem", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "pt2", NewVar = "pt", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "mc2", NewVar = "mc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "morena2", NewVar = "morena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "oth2", NewVar = "oth", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "race.prior2", NewVar = "race.prior", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincpan2", NewVar = "dincpan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincpri2", NewVar = "dincpri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincprd2", NewVar = "dincprd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincpvem2", NewVar = "dincpvem", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincpt2", NewVar = "dincpt", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincmc2", NewVar = "dincmc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincmorena2", NewVar = "dincmorena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincoth2", NewVar = "dincoth", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dconcdf2", NewVar = "dconcdf", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dconcgo2", NewVar = "dconcgo", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "yr1st2", NewVar = "yr1st", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "govpty2", NewVar = "govpty", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovpan2", NewVar = "dgovpan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovpri2", NewVar = "dgovpri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovprd2", NewVar = "dgovprd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovpvem2", NewVar = "dgovpvem", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovmc2", NewVar = "dgovmc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovmorena2", NewVar = "dgovmorena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dprespan2", NewVar = "dprespan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dprespri2", NewVar = "dprespri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dpresmorena2", NewVar = "dpresmorena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "winlast2", NewVar = "winlast", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "daypan2", NewVar = "daypan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "daypri2", NewVar = "daypri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dayprd2", NewVar = "dayprd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "daypvem2", NewVar = "daypvem", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "daypt2", NewVar = "daypt", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "daymc2", NewVar = "daymc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "daymorena2", NewVar = "daymorena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+##
+drop.c <- which(colnames(dat2) %in% drop.c)
+dat2 <- dat2[, -drop.c]
+datlag <- dat2
+rm(dat2, drop.c, sel.c, to.num) # clean
+##
+## cómo lidio con missing periods? generan NAs en la serie del municipio donde ocurren
+summary(dat$pri)
+summary(datlag$pri)
+table(is.na(datlag$pri))
+
+## deltas for cross-temp regs
+sel.c <- which(colnames(dat)=="status") + 1 # ignore id vars for 1st difference
+sel.c <- sel.c:ncol(dat)
+sel.c <- setdiff(sel.c, grep("win|race.prior|govpty|winlast", colnames(dat))) ## ignore non-numeric vars in 1st diff
+delta <- dat
+for (i in sel.c){
+    delta[, i] <- dat[, i] - datlag[, i]
+}
+rm(i,sel.c)
+##
+table(delta$dincpan)
+table(delta$dincpri)
+table(delta$dincprd)
+table(delta$dincmorena)
+
+## single yr
 dat2 <- dat ## duplicate
 dat2  <-  within(dat2, dincballot <- as.numeric(dincpan==1 | dincpri==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))
 dat2 <- within(dat2, {
@@ -690,17 +776,27 @@ dat2 <- within(dat2, {
     dincprd    <- dayprd
     dincmorena <- daymorena
 })
+dat2$panlag <-    datlag$pan
+dat2$prilag <-    datlag$pri
+dat2$prdlag <-    datlag$prd
+dat2$pvemlag <-   datlag$pvem
+dat2$ptlag <-     datlag$pt
+dat2$mclag <-     datlag$mc
+dat2$morenalag <- datlag$morena
 summary(lm(pan ~ (dincpan * dincballot) + dgovpan + dprespan + panlag + as.factor(cycle), data = dat2))
 summary(lm(pri ~ (dincpri * dincballot) + dgovpri + dprespri + prilag + as.factor(cycle), data = dat2))
 summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + morenalag, data = dat2, subset = yr>2014))
 
-              
+
 dat2 <- within(dat2, dincnopan <- as.numeric(dincpri==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))
 summary(lm(pan ~ dincpan + dincnopan + dgovpan + dprespan + daypan + as.numeric(yr>=yr1st) + as.factor(yr) + as.factor(edon), data = dat2))
 dat2 <- within(dat2, dincnopri <- as.numeric(dincpan==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))
 summary(lm(pri ~ dincpri + dincnopri + dgovpri + dprespri + as.numeric(yr>=yr1st) + as.factor(yr) + as.factor(edon), data = dat2))
 
-
+## cross-temp
+summary(lm(pan    ~ dincpan    + dgovpan    + dprespan    + daypan, data = delta))
+summary(lm(pri    ~ dincpri    + dgovpri    + dprespri    + daypri, data = delta))
+summary(lm(morena ~ dincmorena + dgovmorena + dpresmorena + daymorena, data = delta))
 
 summary(lm(pan ~ dcoalpan + dcoalpri, data = dat)) ## Para ilustrar endogeneidad
 ls()

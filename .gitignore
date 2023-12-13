@@ -12,3 +12,6 @@ dgo2022/
 *.aux
 *.blg
 *.log
+*.bbl
+
+auto/

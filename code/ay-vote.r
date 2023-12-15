@@ -767,6 +767,264 @@ table(delta$dincpri)
 table(delta$dincprd)
 table(delta$dincmorena)
 
+## state capital municipalities
+sel <- which(dat$ife  %in%  c( 1001,
+                               2002,
+                               3003,
+                               4001,
+                               5030,
+                               6001,
+                               7102,
+                               8019,
+                               9015, # makes Cuauhtémoc DF's capital
+                              10005,
+                              11015,
+                              12001,
+                              13047,
+                              14041,
+                              15107,
+                              16054,
+                              17007,
+                              18017,
+                              19040,
+                              20066,
+                              21115,
+                              22014,
+                              23007,
+                              24028,
+                              25006,
+                              26049,
+                              27004,
+                              28041,
+                              29033,
+                              30089,
+                              31050,
+                              32056))
+dat$dcapital <- 0; dat$dcapital[sel] <- 1
+rm(sel)
+
+## Same with 2020 localidad-level censo
+
+
+## census vars: lines 1743:1918
+## unzip, read, then delete unzipped file
+system("unzip /home/eric/Downloads/Desktop/MXelsCalendGovt/censos/raw/2010censo/00_nacional_2010_iter_zip.ZIP")
+## get municipio altitude variance (from censo 2010 @ localidad level)
+library(foreign)
+tmp <- read.dbf("ITER_nalDBF10/ITER_NALDBF10.dbf", as.is = TRUE)
+table(is.na(tmp$X))
+dim(tmp)
+## erase unzipped file from disk, too large
+system("rm -r ITER_nalDBF10/")
+# selected columns only
+colnames(tmp)
+sel <- grep("entidad|mun|loc|longitud|latitud|altitud|pobtot", colnames(tmp), ignore.case = TRUE, perl = TRUE)
+tmp <- tmp[,sel]
+# rename variables
+colnames(tmp) <- c("edon","inegi","mun","locn","localidad","long","lat","alt","ptot","drop")
+tmp$drop <- NULL
+tmp$edon <- as.numeric(as.character(tmp$edon))
+tmp$inegi <- as.numeric(as.character(tmp$inegi))
+tmp$mun <- as.character(tmp$mun)
+tmp$locn <- as.numeric(as.character(tmp$locn))
+tmp$localidad <- as.character(tmp$localidad)
+tmp$long <- as.numeric(as.character(tmp$long))
+tmp$lat <- as.numeric(as.character(tmp$lat))
+tmp$alt <- as.numeric(as.character(tmp$alt))
+tmp$ptot <- as.numeric(as.character(tmp$ptot))
+# drop aggregate rows
+
+sel <- which(tmp$locn==0|tmp$locn==9998|tmp$locn==9999)
+tmp <- tmp[-sel,]
+## add edon to inegi
+tmp$inegi <- tmp$edon*1000 + tmp$inegi
+## mun pop share in localidad
+tmp$tmp      <- ave(tmp$ptot, as.factor(tmp$inegi), FUN=sum, na.rm=TRUE)
+tmp$popsh    <- tmp$ptot / tmp$tmp
+summary(tmp$popsh)
+## weighted mean(alt) and sd(alt)
+tmp$altpopsh <- tmp$popsh * tmp$alt 
+tmp$wmeanalt <- ave(tmp$altpopsh, as.factor(tmp$inegi), FUN=sum, na.rm=TRUE)
+tmp$altpopsh <- tmp$popsh * (tmp$alt - tmp$wmeanalt)^2
+tmp$wsdalt <-   ave(tmp$altpopsh, as.factor(tmp$inegi), FUN=sum, na.rm=TRUE)
+tmp$wsdalt <-   sqrt(tmp$wsdalt)
+tmp$altpopsh <- NULL # clean
+# mean(alt) and sd(alt)
+tmp$meanalt <- ave(tmp$alt, as.factor(tmp$inegi), FUN=mean, na.rm=TRUE)
+tmp$sdalt <-   ave(tmp$alt, as.factor(tmp$inegi), FUN=sd,   na.rm=TRUE)
+# cases with single localidad sd=NA
+sel <- which(is.na(tmp$sdalt)==TRUE & is.na(tmp$meanalt)==FALSE)
+tmp$inegi[sel]
+tmp$wsdalt[sel] <- 0
+tmp$sdalt[sel] <- 0
+##
+## share of municipio pop in cabecera should capture center/periphery conflict
+## need to compile list of localidades that are cabecera municipal ---  
+## localidad name has char encoding issues, this imports a previously exported version converted to utf-8
+localidades <- read.csv("../ancillary/localidades-2010-utf8.csv")
+table(localidades$locn==tmp$locn) ## check all same order
+tmp$localidad <- localidades$localidad
+rm(localidades)
+## Cabecera is locn=1 in municipio, with very few exceptions. Most cabeceras share mun's name (not all: eg. Santa Rosalía for Mulegé)
+tmp$dcabecera <- as.numeric(tmp$locn==1)
+## ## cabeceras of municipios created after 2010 (for use when generating variables with censo 2010)
+## sel.r <- which(tmp$inegi== 2001 & tmp$locn==857); tmp$dcabecera[sel.r] <- 1 ## inegi== 2006 SAN QUINTIN
+## sel.r <- which(tmp$inegi== 7072 & tmp$locn== 54;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7121 RINCON CHAMULA SAN PEDRO
+## sel.r <- which(tmp$inegi== 7080 & tmp$locn== 13;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7125 HONDURAS DE LA SIERRA
+## sel.r <- which(tmp$inegi== 7092 & tmp$locn== 31;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7124 MEZCALAPA
+## sel.r <- which(tmp$inegi== 7102 & tmp$locn== 71;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7123 EMILIANO ZAPATA
+## sel.r <- which(tmp$inegi== 7107 & tmp$locn==166;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7122 PARRAL--EL
+## sel.r <- which(tmp$inegi==14093 & tmp$locn== 58;  tmp$dcabecera[sel.r] <- 1 ## inegi==14126 CAPILLA DE GUADALUPE
+## sel.r <- which(tmp$inegi==23004 & tmp$locn== 11;  tmp$dcabecera[sel.r] <- 1 ## inegi==23010 BACALAR
+## sel.r <- which(tmp$inegi==23005 & tmp$locn== 24;  tmp$dcabecera[sel.r] <- 1 ## inegi==23011 PUERTO MORELOS
+## ## cabeceras of municipios created after 2020 (for use when generating variables with censo 2020)
+## sel.r <- which(tmp$inegi==14093 & tmp$locn== 58;  tmp$dcabecera[sel.r] <- 1 ## inegi==14126 CAPILLA DE GUADALUPE
+
+
+# drop redundant rows cols
+tmp <- tmp[-duplicated(as.factor(tmp$inegi))==FALSE,]
+tmp$locn <- tmp$localidad <- tmp$alt <- tmp$long <- tmp$lat <- tmp$mun <- tmp$edon <- tmp$popsh <- tmp$tmp <- NULL
+tmp$wmeanalt <- round(tmp$wmeanalt, 1)
+tmp$wsdalt <- round(tmp$wsdalt, 1)
+tmp$meanalt <- round(tmp$meanalt, 1)
+tmp$sdalt <- round(tmp$sdalt, 1)
+#summary(tmp$sdalt)
+#summary(tmp$wsdalt)
+#
+# make discrete altitude variables for mapping exploration
+alt <- tmp
+dim(alt)
+rm(tmp,sel)
+#
+# read sección-municipio equivalencias
+tmp <- read.csv("/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/equivSecc/tablaEquivalenciasSeccionalesDesde1994.csv", stringsAsFactors = FALSE)
+tmp <- tmp[,grep("edon|seccion|inegi|ife|mun[0-9]+",colnames(tmp))] # select columns
+#tmp[1,]
+#tmp[tmp$edon==1 & tmp$inegi==1010,c("seccion","munn")]
+censo <- tmp # rename, will receive state-by-state
+#
+# get censo 2010 ptot p5li etc
+edos <- c("ags","bc","bcs","cam","coa","col","cps","cua","df","dgo","gua","gue","hgo","jal","mex","mic",
+          "mor","nay","nl","oax","pue","que","qui","san","sin","son","tab","tam","tla","ver","yuc","zac")
+tmp.dat <- data.frame() # will receive state's rows
+for (i in 1:32){
+    #i <- 1 # debug
+    tmp.dir <- paste("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/secciones/eceg_2010", edos[i], sep = "/")
+    tmp.file <- grep("secciones.+csv", dir(tmp.dir))
+    tmp.file <- dir(tmp.dir)[grep("secciones.+csv", dir(tmp.dir))]
+    tmp <- read.csv(paste(tmp.dir, tmp.file, sep = "/"))
+    sel <- grep("clavegeo|entidad|pobtot|pcatolica|sin_relig|pder|psinder|vivtot|c_elec|drenaj|agua|p5_hli$|p_5ymas$", colnames(tmp), ignore.case = TRUE, perl = TRUE)
+    #colnames(tmp)[sel] # debug
+    tmp <- tmp[,sel]
+    tmp$seccion <- tmp$CLAVEGEO - as.integer(tmp$CLAVEGEO/10000)*10000
+    tmp$edon <- tmp$ENTIDAD; tmp$ENTIDAD <- NULL; tmp$CLAVEGEO <- NULL
+    # sort columns
+    tmp <- tmp[, c("edon", "seccion", "POBTOT", "P_5YMAS", "P5_HLI", "PSINDER", "PDER_SS", "PDER_IMSS", "PDER_ISTE", "PDER_ISTEE", "PDER_SEGP", "PCATOLICA", "PSIN_RELIG", "VIVTOT", "VPH_AGUAFV", "VPH_AGUADV", "VPH_C_ELEC", "VPH_DRENAJ")]
+    # add rows merge to main object that will merge to censo for mun aggregations
+    #tmp[1,]
+    tmp.dat <- rbind(tmp.dat, tmp)
+}
+# merge to censo
+dim(censo)
+dim(tmp.dat)
+censo <- merge(x = censo, y = tmp.dat, by = c("edon","seccion"), all = TRUE)
+#table(censo$POBTOT, useNA = "always")
+#censo[which(is.na(censo$POBTOT))[2],]
+#x
+# change NAs to zero
+sel <- which(colnames(censo) %in% c("POBTOT", "P_5YMAS", "P5_HLI", "PSINDER", "PDER_SS", "PDER_IMSS", "PDER_ISTE", "PDER_ISTEE", "PDER_SEGP", "PCATOLICA", "PSIN_RELIG", "VIVTOT", "VPH_AGUAFV", "VPH_AGUADV", "VPH_C_ELEC", "VPH_DRENAJ"))
+tmp <- censo[,sel]
+tmp[is.na(tmp)] <- 0
+censo[,sel] <- tmp
+# duplicate to fix new municipios
+censo.sec <- censo
+#censo <- censo.sec # restore
+# aggregate municipios
+censo$POBTOT     <- ave(censo$POBTOT    , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$P_5YMAS    <- ave(censo$P_5YMAS   , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$P5_HLI     <- ave(censo$P5_HLI    , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PSINDER    <- ave(censo$PSINDER   , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_SS    <- ave(censo$PDER_SS   , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_IMSS  <- ave(censo$PDER_IMSS , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_ISTE  <- ave(censo$PDER_ISTE , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_ISTEE <- ave(censo$PDER_ISTEE, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PDER_SEGP  <- ave(censo$PDER_SEGP , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PCATOLICA  <- ave(censo$PCATOLICA , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$PSIN_RELIG <- ave(censo$PSIN_RELIG, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VIVTOT     <- ave(censo$VIVTOT    , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VPH_AGUAFV <- ave(censo$VPH_AGUAFV, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VPH_AGUADV <- ave(censo$VPH_AGUADV, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VPH_C_ELEC <- ave(censo$VPH_C_ELEC, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+censo$VPH_DRENAJ <- ave(censo$VPH_DRENAJ, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
+# drop redundant lines cols
+censo <- censo[duplicated(censo$ife)==FALSE,]
+censo <- censo[, -grep("ife[0-9]", colnames(censo))]
+#
+###########################################################################################
+## go back to censo.sec and fix new municipios and their parents in exact year happened  ##
+## at present, seccion-mun map taken from 2018 and projected backwards                   ##
+## --> take code from redistrict/code/elec-data-for-maps.r to achieve exact year mapping ##
+## --> steps for 2015                                                                    ##
+## --> (1) change censo.sec$ife  <- censo.sec$mun2015                                    ##
+## --> (2) subset parent.children secciones with target.ife                              ##
+## --> (3) aggregate                                                                     ##
+## --> (4) paste manipulation in censo                                                   ##
+###########################################################################################
+#          
+# create census variables
+censo$ptot <- censo$POBTOT
+censo$p5li <- censo$P5_HLI / censo$P_5YMAS
+censo$religoth  <- (censo$ptot - censo$PCATOLICA - censo$PSIN_RELIG) / censo$ptot
+censo$relignone <-                                 censo$PSIN_RELIG  / censo$ptot
+censo$segpop    <-  censo$PDER_SEGP / censo$ptot
+censo$imss      <- censo$PDER_IMSS / censo$ptot
+censo$issste    <- (censo$PDER_ISTE + censo$PDER_ISTEE) / censo$ptot # proxy bureaucrats
+censo$uninsured <- censo$PSINDER   / censo$ptot # no he usado derechohabientes imss
+censo$water     <- (censo$VPH_AGUAFV + censo$VPH_AGUADV) / censo$VIVTOT
+censo$electric  <- censo$VPH_C_ELEC / censo$VIVTOT
+censo$sewage    <- censo$VPH_DRENAJ / censo$VIVTOT
+# round 3 digits
+censo <- within(censo, {
+    p5li      <- round(p5li, 3);     
+    religoth  <- round(religoth, 3); 
+    relignone <- round(relignone, 3);
+    segpop    <- round(segpop, 3);   
+    imss      <- round(imss, 3);     
+    issste    <- round(issste, 3);   
+    uninsured <- round(uninsured, 3);
+    water     <- round(water, 3);    
+    electric  <- round(electric, 3); 
+    sewage    <- round(sewage, 3);
+})
+# clean
+censo <- within(censo, POBTOT <- P_5YMAS <- P5_HLI <- PSINDER <- PDER_SS <- PDER_IMSS <- PDER_ISTE <- PDER_ISTEE <- PDER_SEGP <- PCATOLICA <- PSIN_RELIG <- VIVTOT <- VPH_AGUAFV <- VPH_AGUADV <- VPH_C_ELEC <- VPH_DRENAJ  <- NULL)
+censo$seccion <- NULL
+#
+# merge altitudes
+dim(censo)
+dim(alt)
+alt$ptot <- NULL
+#
+#tmp <- censo # duplicate for debug
+censo <- merge(x = censo, y = alt, by = "inegi", all = TRUE)
+# clean
+rm(alt)
+#
+# make discrete altitude variables for mapping exploration
+# script mapa-municipios.r draws wsd(alt) etc
+#
+# merge censo into vot
+sel <- which(colnames(censo) %in% c("ife","edon")) # drop towards merge
+vot <- merge(x = vot, y = censo[,-sel], by = "inegi", all.x = TRUE, all.y = FALSE)
+rm(censo, censo.sec, i, sel, tmp, tmp.dat, tmp.file, tmp.dir)
+
+
+## get electoral histories: incumbent-reelection.r in same dir has code lines 424:472 1311:1467
+## use left nor prd/morena: lines 1469:1536 1966:1971 2024:2177
+## municipio altitude var: lines 1743:1795 1987:
+## run regs: lines 2356:2642
+
+
 ## single yr
 dat2 <- dat ## duplicate
 dat2  <-  within(dat2, dincballot <- as.numeric(dincpan==1 | dincpri==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))

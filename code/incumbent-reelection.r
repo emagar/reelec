@@ -1931,7 +1931,7 @@ sel <- which(vot$ife  %in%  c( 1001,
                                6001,
                                7102,
                                8019,
-                               9015, # makes Cuauhtémoc the fake capital of DF  
+#                               9015, # makes Cuauhtémoc the fake capital of DF  
                               10005,
                               11015,
                               12001,

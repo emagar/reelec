@@ -20,7 +20,6 @@ source( paste(pth, "moveme.r", sep = "/") )
 source( paste(pth, "notin.r", sep = "/") )
 rm(pth)
 
-
 #########################
 ## get municipal votes ##
 #########################
@@ -423,12 +422,27 @@ v7[1,]
 dat[1,]
 rm(efec,sel.c,v)
 
+## ## Transform left=prd up to morena, left=morena+prd < 2018, then left=morena since then
+## v6 <- v7
+## v6[1,]
+## v6$left <- v6$prd
+## sel <- which(v6$yr<2015)
+## v6$prd[sel] <- 0 ## remove duplicates
+## sel <- which(v6$yr>=2015 & v6$yr<2018)
+## v6$left[sel] <- v6$prd[sel] + v6$morena[sel]
+## v6$prd[sel] <- 0 ## remove duplicate
+## sel <- which(v6$yr>=2018)
+## v6$left[sel] <- v6$morena[sel]
+## v6$morena <- NULL ## remove duplicate
+## v6 <- v6[moveme(names(v6), "left before prd")]
+## v6[1,]
 
 ## return to dat
+dat[1,]
 dat <- cbind(dat, v7[,c("pan","pri","prd","pvem","pt","mc","morena","oth")])
 summary(dat$efec - v7$efec)
 ##dat$efec <- v7$efec # commenting this line keeps rounded efec
-# keep 123 places, drop rest
+# keep named vote cols, drop rest
 dat <- within(dat, v01 <- v02 <- v03 <- v04 <- v05 <- v06 <- v07 <- v08 <- v09 <- v10 <- v11 <- v12 <- v13 <- v14 <- v15 <- v16 <- v17 <- v18 <- v19 <- v20 <- v21 <- v22 <- v23 <- v24 <- v25 <- NULL)
 dat <- within(dat, l01 <- l02 <- l03 <- l04 <- l05 <- l06 <- l07 <- l08 <- l09 <- l10 <- l11 <- l12 <- l13 <- l14 <- l15 <- l16 <- l17 <- l18 <- l19 <- l20 <- l21 <- l22 <- l23 <- l24 <- l25 <- NULL)
 ## inspect
@@ -468,6 +482,10 @@ inc <- read.csv(paste0(dd, "aymu1989-on.incumbents.csv"), stringsAsFactors = FAL
 sel.r <- which(inc$yr < 1994)
 sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","runnerup","part2nd","mg","dlegacy","who"))
 inc <- inc[-sel.r,-sel.c]
+## change conve top mc
+inc$part <- sub("conve|cdppn", "mc", inc$part)
+inc$prior.inc.part <- sub("conve|cdppn", "mc", inc$prior.inc.part)
+inc$inc.part.after <- sub("conve|cdppn", "mc", inc$inc.part.after)
 ## verify time series' structure (for lags)
 library(DataCombine) # easy lags
 inc$cycle <- as.numeric(sub("^[a-z]+[-]([0-9]+)[.].+$", "\\1", inc$emm))
@@ -555,6 +573,15 @@ tmp$edon[sel.r] <- edon
 inegi <- as.numeric(sub("^[a-z]+-[0-9]+[.]([0-9]+)$", "\\1", tmp$emm[sel.r]))
 inegi <- edon*1000 + inegi
 tmp$inegi[sel.r] <- inegi
+## function to complete missing ifes
+pth <- ifelse (Sys.info()["user"] %in% c("eric", "magar"),
+    "~/Dropbox/data/useful-functions",
+    "https://raw.githubusercontent.com/emagar/useful-functions/master"
+    )
+source( paste(pth, "inegi2ife.r", sep = "/") )
+rm(pth)
+tmp$ife[sel.r] <- inegi2ife(tmp$inegi[sel.r])
+rm(inegi2ife)
 ## replace dat with manipulatd object
 dat <- tmp
 rm(edon, inegi, tmp, sel.r, inc)
@@ -679,93 +706,11 @@ sel.r <- grep("mc",     dat$winlast); dat$daymc    [sel.r] <- 1
 sel.r <- grep("morena", dat$winlast); dat$daymorena[sel.r] <- 1
 rm(sel.r)
 
-## lag variables by one period
-dat <- dat[order(dat$emm),] # sort mun-chrono
-sel.c <- which(colnames(dat)=="status")
-dat1 <- dat[, 1:sel.c] # id columns
-dat2 <- dat[, (sel.c+1):ncol(dat)] # vars to lag
-colnames(dat2) <- paste0(colnames(dat2), "2") # rename cols
-drop.c <- colnames(dat2) # save names to drop after manipulation
-dat2 <- cbind(dat1, dat2) # recompose dataframe with 
-rm(dat1)
-
-dat2 <- slide(dat2, Var = "lisnom2", NewVar = "lisnom", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "efec2", NewVar = "efec", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "ncoal2", NewVar = "ncoal", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "ncand2", NewVar = "ncand", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dextra2", NewVar = "dextra", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "win2", NewVar = "win", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "mg2", NewVar = "mg", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalpan2", NewVar = "dcoalpan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalpri2", NewVar = "dcoalpri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalprd2", NewVar = "dcoalprd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalmor2", NewVar = "dcoalmor", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalpve2", NewVar = "dcoalpve", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalpt2", NewVar = "dcoalpt", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalmc2", NewVar = "dcoalmc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "pan2", NewVar = "pan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "pri2", NewVar = "pri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "prd2", NewVar = "prd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "pvem2", NewVar = "pvem", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "pt2", NewVar = "pt", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "mc2", NewVar = "mc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "morena2", NewVar = "morena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "oth2", NewVar = "oth", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "race.prior2", NewVar = "race.prior", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincpan2", NewVar = "dincpan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincpri2", NewVar = "dincpri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincprd2", NewVar = "dincprd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincpvem2", NewVar = "dincpvem", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincpt2", NewVar = "dincpt", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincmc2", NewVar = "dincmc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincmorena2", NewVar = "dincmorena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincoth2", NewVar = "dincoth", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dconcdf2", NewVar = "dconcdf", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dconcgo2", NewVar = "dconcgo", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "yr1st2", NewVar = "yr1st", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "govpty2", NewVar = "govpty", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovpan2", NewVar = "dgovpan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovpri2", NewVar = "dgovpri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovprd2", NewVar = "dgovprd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovpvem2", NewVar = "dgovpvem", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovmc2", NewVar = "dgovmc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovmorena2", NewVar = "dgovmorena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dprespan2", NewVar = "dprespan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dprespri2", NewVar = "dprespri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dpresmorena2", NewVar = "dpresmorena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "winlast2", NewVar = "winlast", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "daypan2", NewVar = "daypan", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "daypri2", NewVar = "daypri", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dayprd2", NewVar = "dayprd", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "daypvem2", NewVar = "daypvem", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "daypt2", NewVar = "daypt", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "daymc2", NewVar = "daymc", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "daymorena2", NewVar = "daymorena", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-##
-drop.c <- which(colnames(dat2) %in% drop.c)
-dat2 <- dat2[, -drop.c]
-datlag <- dat2
-rm(dat2, drop.c, sel.c, to.num) # clean
-##
-## cómo lidio con missing periods? generan NAs en la serie del municipio donde ocurren
-summary(dat$pri)
-summary(datlag$pri)
-table(is.na(datlag$pri))
-
-## deltas for cross-temp regs
-sel.c <- which(colnames(dat)=="status") + 1 # ignore id vars for 1st difference
-sel.c <- sel.c:ncol(dat)
-sel.c <- setdiff(sel.c, grep("win|race.prior|govpty|winlast", colnames(dat))) ## ignore non-numeric vars in 1st diff
-delta <- dat
-for (i in sel.c){
-    delta[, i] <- dat[, i] - datlag[, i]
-}
-rm(i,sel.c)
-##
-table(delta$dincpan)
-table(delta$dincpri)
-table(delta$dincprd)
-table(delta$dincmorena)
+## triennium cat var (cycle breaks sequence when state calendars change)
+dat$trienio <- cut(dat$yr, 
+                   breaks=c(-Inf, seq(1992,2028,3), Inf),
+                   labels=seq(from=1991, to=2030, by=3))
+dat <- dat[,moveme(names(dat), "trienio before status")]
 
 ## state capital municipalities
 sel <- which(dat$ife  %in%  c( 1001,
@@ -803,237 +748,518 @@ sel <- which(dat$ife  %in%  c( 1001,
 dat$dcapital <- 0; dat$dcapital[sel] <- 1
 rm(sel)
 
-## Same with 2020 localidad-level censo
-
-
-## census vars: lines 1743:1918
-## unzip, read, then delete unzipped file
-system("unzip /home/eric/Downloads/Desktop/MXelsCalendGovt/censos/raw/2010censo/00_nacional_2010_iter_zip.ZIP")
-## get municipio altitude variance (from censo 2010 @ localidad level)
-library(foreign)
-tmp <- read.dbf("ITER_nalDBF10/ITER_NALDBF10.dbf", as.is = TRUE)
-table(is.na(tmp$X))
-dim(tmp)
-## erase unzipped file from disk, too large
-system("rm -r ITER_nalDBF10/")
-# selected columns only
-colnames(tmp)
-sel <- grep("entidad|mun|loc|longitud|latitud|altitud|pobtot", colnames(tmp), ignore.case = TRUE, perl = TRUE)
-tmp <- tmp[,sel]
-# rename variables
-colnames(tmp) <- c("edon","inegi","mun","locn","localidad","long","lat","alt","ptot","drop")
-tmp$drop <- NULL
-tmp$edon <- as.numeric(as.character(tmp$edon))
-tmp$inegi <- as.numeric(as.character(tmp$inegi))
-tmp$mun <- as.character(tmp$mun)
-tmp$locn <- as.numeric(as.character(tmp$locn))
-tmp$localidad <- as.character(tmp$localidad)
-tmp$long <- as.numeric(as.character(tmp$long))
-tmp$lat <- as.numeric(as.character(tmp$lat))
-tmp$alt <- as.numeric(as.character(tmp$alt))
-tmp$ptot <- as.numeric(as.character(tmp$ptot))
-# drop aggregate rows
-
-sel <- which(tmp$locn==0|tmp$locn==9998|tmp$locn==9999)
-tmp <- tmp[-sel,]
-## add edon to inegi
-tmp$inegi <- tmp$edon*1000 + tmp$inegi
-## mun pop share in localidad
-tmp$tmp      <- ave(tmp$ptot, as.factor(tmp$inegi), FUN=sum, na.rm=TRUE)
-tmp$popsh    <- tmp$ptot / tmp$tmp
-summary(tmp$popsh)
-## weighted mean(alt) and sd(alt)
-tmp$altpopsh <- tmp$popsh * tmp$alt 
-tmp$wmeanalt <- ave(tmp$altpopsh, as.factor(tmp$inegi), FUN=sum, na.rm=TRUE)
-tmp$altpopsh <- tmp$popsh * (tmp$alt - tmp$wmeanalt)^2
-tmp$wsdalt <-   ave(tmp$altpopsh, as.factor(tmp$inegi), FUN=sum, na.rm=TRUE)
-tmp$wsdalt <-   sqrt(tmp$wsdalt)
-tmp$altpopsh <- NULL # clean
-# mean(alt) and sd(alt)
-tmp$meanalt <- ave(tmp$alt, as.factor(tmp$inegi), FUN=mean, na.rm=TRUE)
-tmp$sdalt <-   ave(tmp$alt, as.factor(tmp$inegi), FUN=sd,   na.rm=TRUE)
-# cases with single localidad sd=NA
-sel <- which(is.na(tmp$sdalt)==TRUE & is.na(tmp$meanalt)==FALSE)
-tmp$inegi[sel]
-tmp$wsdalt[sel] <- 0
-tmp$sdalt[sel] <- 0
+##################################################
+## Get altitude and population from localidades ##
+##################################################
+## ## With 2010 censo
+## ## unzip, read, then delete unzipped file
+## system("unzip /home/eric/Downloads/Desktop/MXelsCalendGovt/censos/raw/2010censo/00_nacional_2010_iter_zip.ZIP")
+## ## get municipio altitude variance (from censo 2010 @ localidad level)
+## library(foreign)
+## alt <- read.dbf("ITER_nalDBF10/ITER_NALDBF10.dbf", as.is = TRUE)
+## table(is.na(alt$X))
+## dim(alt)
+## ## erase unzipped file from disk, too large
+## system("rm -r ITER_nalDBF10/")
+## # selected columns only
+## colnames(alt)
+## sel <- grep("entidad|mun|loc|longitud|latitud|altitud|pobtot", colnames(alt), ignore.case = TRUE, perl = TRUE)
+## alt <- alt[,sel]
+## # rename variables
+## colnames(alt) <- c("edon","inegi","mun","locn","localidad","long","lat","alt","ptot","drop")
+## alt$drop <- NULL
+## alt[1:15,]
 ##
-## share of municipio pop in cabecera should capture center/periphery conflict
-## need to compile list of localidades that are cabecera municipal ---  
-## localidad name has char encoding issues, this imports a previously exported version converted to utf-8
-localidades <- read.csv("../ancillary/localidades-2010-utf8.csv")
-table(localidades$locn==tmp$locn) ## check all same order
-tmp$localidad <- localidades$localidad
-rm(localidades)
-## Cabecera is locn=1 in municipio, with very few exceptions. Most cabeceras share mun's name (not all: eg. Santa Rosalía for Mulegé)
-tmp$dcabecera <- as.numeric(tmp$locn==1)
-## ## cabeceras of municipios created after 2010 (for use when generating variables with censo 2010)
-## sel.r <- which(tmp$inegi== 2001 & tmp$locn==857); tmp$dcabecera[sel.r] <- 1 ## inegi== 2006 SAN QUINTIN
-## sel.r <- which(tmp$inegi== 7072 & tmp$locn== 54;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7121 RINCON CHAMULA SAN PEDRO
-## sel.r <- which(tmp$inegi== 7080 & tmp$locn== 13;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7125 HONDURAS DE LA SIERRA
-## sel.r <- which(tmp$inegi== 7092 & tmp$locn== 31;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7124 MEZCALAPA
-## sel.r <- which(tmp$inegi== 7102 & tmp$locn== 71;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7123 EMILIANO ZAPATA
-## sel.r <- which(tmp$inegi== 7107 & tmp$locn==166;  tmp$dcabecera[sel.r] <- 1 ## inegi== 7122 PARRAL--EL
-## sel.r <- which(tmp$inegi==14093 & tmp$locn== 58;  tmp$dcabecera[sel.r] <- 1 ## inegi==14126 CAPILLA DE GUADALUPE
-## sel.r <- which(tmp$inegi==23004 & tmp$locn== 11;  tmp$dcabecera[sel.r] <- 1 ## inegi==23010 BACALAR
-## sel.r <- which(tmp$inegi==23005 & tmp$locn== 24;  tmp$dcabecera[sel.r] <- 1 ## inegi==23011 PUERTO MORELOS
-## ## cabeceras of municipios created after 2020 (for use when generating variables with censo 2020)
-## sel.r <- which(tmp$inegi==14093 & tmp$locn== 58;  tmp$dcabecera[sel.r] <- 1 ## inegi==14126 CAPILLA DE GUADALUPE
-
-
-# drop redundant rows cols
-tmp <- tmp[-duplicated(as.factor(tmp$inegi))==FALSE,]
-tmp$locn <- tmp$localidad <- tmp$alt <- tmp$long <- tmp$lat <- tmp$mun <- tmp$edon <- tmp$popsh <- tmp$tmp <- NULL
-tmp$wmeanalt <- round(tmp$wmeanalt, 1)
-tmp$wsdalt <- round(tmp$wsdalt, 1)
-tmp$meanalt <- round(tmp$meanalt, 1)
-tmp$sdalt <- round(tmp$sdalt, 1)
-#summary(tmp$sdalt)
-#summary(tmp$wsdalt)
-#
-# make discrete altitude variables for mapping exploration
-alt <- tmp
-dim(alt)
-rm(tmp,sel)
-#
-# read sección-municipio equivalencias
-tmp <- read.csv("/home/eric/Desktop/MXelsCalendGovt/redistrict/ife.ine/equivSecc/tablaEquivalenciasSeccionalesDesde1994.csv", stringsAsFactors = FALSE)
-tmp <- tmp[,grep("edon|seccion|inegi|ife|mun[0-9]+",colnames(tmp))] # select columns
-#tmp[1,]
-#tmp[tmp$edon==1 & tmp$inegi==1010,c("seccion","munn")]
-censo <- tmp # rename, will receive state-by-state
-#
-# get censo 2010 ptot p5li etc
-edos <- c("ags","bc","bcs","cam","coa","col","cps","cua","df","dgo","gua","gue","hgo","jal","mex","mic",
-          "mor","nay","nl","oax","pue","que","qui","san","sin","son","tab","tam","tla","ver","yuc","zac")
-tmp.dat <- data.frame() # will receive state's rows
-for (i in 1:32){
-    #i <- 1 # debug
-    tmp.dir <- paste("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/secciones/eceg_2010", edos[i], sep = "/")
-    tmp.file <- grep("secciones.+csv", dir(tmp.dir))
-    tmp.file <- dir(tmp.dir)[grep("secciones.+csv", dir(tmp.dir))]
-    tmp <- read.csv(paste(tmp.dir, tmp.file, sep = "/"))
-    sel <- grep("clavegeo|entidad|pobtot|pcatolica|sin_relig|pder|psinder|vivtot|c_elec|drenaj|agua|p5_hli$|p_5ymas$", colnames(tmp), ignore.case = TRUE, perl = TRUE)
-    #colnames(tmp)[sel] # debug
-    tmp <- tmp[,sel]
-    tmp$seccion <- tmp$CLAVEGEO - as.integer(tmp$CLAVEGEO/10000)*10000
-    tmp$edon <- tmp$ENTIDAD; tmp$ENTIDAD <- NULL; tmp$CLAVEGEO <- NULL
-    # sort columns
-    tmp <- tmp[, c("edon", "seccion", "POBTOT", "P_5YMAS", "P5_HLI", "PSINDER", "PDER_SS", "PDER_IMSS", "PDER_ISTE", "PDER_ISTEE", "PDER_SEGP", "PCATOLICA", "PSIN_RELIG", "VIVTOT", "VPH_AGUAFV", "VPH_AGUADV", "VPH_C_ELEC", "VPH_DRENAJ")]
-    # add rows merge to main object that will merge to censo for mun aggregations
-    #tmp[1,]
-    tmp.dat <- rbind(tmp.dat, tmp)
+## With 2020 censo
+alt <- data.frame() # prep
+for (i in 1:9){
+    tmp <- read.csv(paste0("../../censos/raw/2020censo/localidades/poblacion/ITER_0", i, "CSV20.csv"))
+    ## Keep selected indicators only
+    tmp <- tmp[, c("ENTIDAD","MUN","NOM_MUN","LOC","NOM_LOC","LONGITUD","LATITUD","ALTITUD","POBTOT","P_18YMAS","P_5YMAS","P5_HLI")]
+    alt <- rbind(alt, tmp)
 }
-# merge to censo
-dim(censo)
-dim(tmp.dat)
-censo <- merge(x = censo, y = tmp.dat, by = c("edon","seccion"), all = TRUE)
-#table(censo$POBTOT, useNA = "always")
-#censo[which(is.na(censo$POBTOT))[2],]
-#x
-# change NAs to zero
-sel <- which(colnames(censo) %in% c("POBTOT", "P_5YMAS", "P5_HLI", "PSINDER", "PDER_SS", "PDER_IMSS", "PDER_ISTE", "PDER_ISTEE", "PDER_SEGP", "PCATOLICA", "PSIN_RELIG", "VIVTOT", "VPH_AGUAFV", "VPH_AGUADV", "VPH_C_ELEC", "VPH_DRENAJ"))
-tmp <- censo[,sel]
-tmp[is.na(tmp)] <- 0
-censo[,sel] <- tmp
-# duplicate to fix new municipios
-censo.sec <- censo
-#censo <- censo.sec # restore
-# aggregate municipios
-censo$POBTOT     <- ave(censo$POBTOT    , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$P_5YMAS    <- ave(censo$P_5YMAS   , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$P5_HLI     <- ave(censo$P5_HLI    , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$PSINDER    <- ave(censo$PSINDER   , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$PDER_SS    <- ave(censo$PDER_SS   , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$PDER_IMSS  <- ave(censo$PDER_IMSS , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$PDER_ISTE  <- ave(censo$PDER_ISTE , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$PDER_ISTEE <- ave(censo$PDER_ISTEE, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$PDER_SEGP  <- ave(censo$PDER_SEGP , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$PCATOLICA  <- ave(censo$PCATOLICA , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$PSIN_RELIG <- ave(censo$PSIN_RELIG, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$VIVTOT     <- ave(censo$VIVTOT    , as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$VPH_AGUAFV <- ave(censo$VPH_AGUAFV, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$VPH_AGUADV <- ave(censo$VPH_AGUADV, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$VPH_C_ELEC <- ave(censo$VPH_C_ELEC, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-censo$VPH_DRENAJ <- ave(censo$VPH_DRENAJ, as.factor(censo$ife), FUN=sum, na.rm=TRUE)
-# drop redundant lines cols
-censo <- censo[duplicated(censo$ife)==FALSE,]
-censo <- censo[, -grep("ife[0-9]", colnames(censo))]
-#
-###########################################################################################
-## go back to censo.sec and fix new municipios and their parents in exact year happened  ##
-## at present, seccion-mun map taken from 2018 and projected backwards                   ##
-## --> take code from redistrict/code/elec-data-for-maps.r to achieve exact year mapping ##
-## --> steps for 2015                                                                    ##
-## --> (1) change censo.sec$ife  <- censo.sec$mun2015                                    ##
-## --> (2) subset parent.children secciones with target.ife                              ##
-## --> (3) aggregate                                                                     ##
-## --> (4) paste manipulation in censo                                                   ##
-###########################################################################################
-#          
-# create census variables
-censo$ptot <- censo$POBTOT
-censo$p5li <- censo$P5_HLI / censo$P_5YMAS
-censo$religoth  <- (censo$ptot - censo$PCATOLICA - censo$PSIN_RELIG) / censo$ptot
-censo$relignone <-                                 censo$PSIN_RELIG  / censo$ptot
-censo$segpop    <-  censo$PDER_SEGP / censo$ptot
-censo$imss      <- censo$PDER_IMSS / censo$ptot
-censo$issste    <- (censo$PDER_ISTE + censo$PDER_ISTEE) / censo$ptot # proxy bureaucrats
-censo$uninsured <- censo$PSINDER   / censo$ptot # no he usado derechohabientes imss
-censo$water     <- (censo$VPH_AGUAFV + censo$VPH_AGUADV) / censo$VIVTOT
-censo$electric  <- censo$VPH_C_ELEC / censo$VIVTOT
-censo$sewage    <- censo$VPH_DRENAJ / censo$VIVTOT
-# round 3 digits
-censo <- within(censo, {
-    p5li      <- round(p5li, 3);     
-    religoth  <- round(religoth, 3); 
-    relignone <- round(relignone, 3);
-    segpop    <- round(segpop, 3);   
-    imss      <- round(imss, 3);     
-    issste    <- round(issste, 3);   
-    uninsured <- round(uninsured, 3);
-    water     <- round(water, 3);    
-    electric  <- round(electric, 3); 
-    sewage    <- round(sewage, 3);
+for (i in 10:32){
+    tmp <- read.csv(paste0("../../censos/raw/2020censo/localidades/poblacion/ITER_", i, "CSV20.csv"))
+    ## Keep selected indicators only
+    tmp <- tmp[, c("ENTIDAD","MUN","NOM_MUN","LOC","NOM_LOC","LONGITUD","LATITUD","ALTITUD","POBTOT","P_18YMAS","P_5YMAS","P5_HLI")]
+    alt <- rbind(alt, tmp)
+}
+colnames(alt) <- c("edon","inegi","mun","locn","localidad","long","lat","alt","ptot","p18","p5","p5li")
+alt[5:10,]
+## 2020 long lat need manip
+alt$long <- gsub("[°'\" WN]", "", alt$long)
+alt$lat <- gsub("[°'\" WN]", "", alt$lat)
+## 2020 alt
+sel.r <- grep("^00[-]", alt$alt)
+table(alt$alt[sel.r])
+alt$alt <- gsub("^00[-]", "-", alt$alt)
+## numeric vars
+alt$edon <- as.numeric(as.character(alt$edon))
+alt$inegi <- as.numeric(as.character(alt$inegi))
+alt$mun <- as.character(alt$mun)
+alt$locn <- as.numeric(as.character(alt$locn))
+alt$localidad <- as.character(alt$localidad)
+alt$long <- as.numeric(as.character(alt$long))
+alt$lat <- as.numeric(as.character(alt$lat))
+alt$alt <- as.numeric(as.character(alt$alt))
+alt$ptot <- as.numeric(as.character(alt$ptot))
+## alt$p18 <- as.numeric(as.character(alt$p18))
+## alt$p5 <- as.numeric(as.character(alt$p5))
+## alt$p5li <- as.numeric(as.character(alt$p5li))
+## add edon to inegi
+alt$inegi <- alt$edon*1000 + alt$inegi
+## drop aggregate rows
+sel <- which(alt$locn==0|alt$locn==9998|alt$locn==9999)
+alt <- alt[-sel,]
+## standardize long lat to 0=further E/S to 1=further W/N
+alt <- within(alt, {
+    longs <- (long - (min(long))) / (max(long) - min(long))
+    lats  <- (lat  - (min(lat)))  / (max(lat)  - min(lat))
 })
-# clean
-censo <- within(censo, POBTOT <- P_5YMAS <- P5_HLI <- PSINDER <- PDER_SS <- PDER_IMSS <- PDER_ISTE <- PDER_ISTEE <- PDER_SEGP <- PCATOLICA <- PSIN_RELIG <- VIVTOT <- VPH_AGUAFV <- VPH_AGUADV <- VPH_C_ELEC <- VPH_DRENAJ  <- NULL)
-censo$seccion <- NULL
-#
-# merge altitudes
-dim(censo)
+## mun pop share in localidad
+alt$tmp      <- ave(alt$ptot, as.factor(alt$inegi), FUN=sum, na.rm=TRUE)
+alt$popsh    <- alt$ptot / alt$tmp
+alt$tmp <- NULL
+summary(alt$popsh)
+## Effective num of localidades (pop-wise)
+alt$effloc <- ave(alt$popsh, as.factor(alt$inegi), FUN=function(x) 1/sum(x^2))
+summary(alt$effloc)
+##
+## Population share in cabecera
+## should capture center/periphery conflict
+## ## 2010 localidad name has char encoding issues, this imports a previously exported version converted to utf-8
+## localidades <- read.csv("../ancillary/localidades-2010-utf8.csv")
+## table(localidades$locn==alt$locn) ## check all same order
+## alt$localidad <- localidades$localidad
+## rm(localidades)
+## Cabecera is locn=1 in municipio, with very few exceptions. Most cabeceras share mun's name (not all: eg. Santa Rosalía for Mulegé)
+alt$dcabecera <- as.numeric(alt$locn==1)
+sel.r <- which(alt$inegi== 7033 & alt$locn== 42);  alt$dcabecera[sel.r] <- 1 ## inegi== 7033 Francisco León
+sel.r <- which(alt$inegi==24056 & alt$locn== 2);   alt$dcabecera[sel.r] <- 1 ## inegi==24056 Villa de Arista
+## ## cabeceras of municipios created after 2010 (for use when generating variables with censo 2010)
+## sel.r <- which(alt$inegi== 2001 & alt$locn==857); alt$dcabecera[sel.r] <- 1 ## inegi== 2006 SAN QUINTIN
+## sel.r <- which(alt$inegi== 7072 & alt$locn== 54;  alt$dcabecera[sel.r] <- 1 ## inegi== 7121 RINCON CHAMULA SAN PEDRO
+## sel.r <- which(alt$inegi== 7080 & alt$locn== 13;  alt$dcabecera[sel.r] <- 1 ## inegi== 7125 HONDURAS DE LA SIERRA
+## sel.r <- which(alt$inegi== 7092 & alt$locn== 31;  alt$dcabecera[sel.r] <- 1 ## inegi== 7124 MEZCALAPA
+## sel.r <- which(alt$inegi== 7102 & alt$locn== 71;  alt$dcabecera[sel.r] <- 1 ## inegi== 7123 EMILIANO ZAPATA
+## sel.r <- which(alt$inegi== 7107 & alt$locn==166;  alt$dcabecera[sel.r] <- 1 ## inegi== 7122 PARRAL--EL
+## sel.r <- which(alt$inegi==14093 & alt$locn== 58;  alt$dcabecera[sel.r] <- 1 ## inegi==14126 CAPILLA DE GUADALUPE
+## sel.r <- which(alt$inegi==23004 & alt$locn== 11;  alt$dcabecera[sel.r] <- 1 ## inegi==23010 BACALAR
+## sel.r <- which(alt$inegi==23005 & alt$locn== 24;  alt$dcabecera[sel.r] <- 1 ## inegi==23011 PUERTO MORELOS
+## ## cabeceras of municipios created after 2020 (for use when generating variables with censo 2020)
+sel.r <- which(alt$inegi==4001 & alt$locn== 7);  alt$dcabecera[sel.r] <- 1 ## inegi==4013 DZITBALCHE
+sel.r <- which(alt$inegi==4001 & alt$locn %in% c(3,7));  alt$inegi[sel.r] <- 4013 ## inegi==4013 localidades in DZITBALCHE
+## sel.r <- which(alt$inegi==14093 & alt$locn== 58;  alt$dcabecera[sel.r] <- 1 ## inegi==14126 CAPILLA DE GUADALUPE
+alt$popshincab <- alt$popsh * alt$dcabecera
+alt$popshincab <- ave(alt$popshincab, as.factor(alt$inegi), FUN=sum) ## put value in all localidades
+summary(alt$popshincab)
+## weighted mean(alt) and sd(alt)
+alt$altpopsh <- alt$popsh * alt$alt 
+alt$wmeanalt <- ave(alt$altpopsh, as.factor(alt$inegi), FUN=sum, na.rm=TRUE)
+alt$altpopsh <- alt$popsh * (alt$alt - alt$wmeanalt)^2
+alt$wsdalt <-   ave(alt$altpopsh, as.factor(alt$inegi), FUN=sum, na.rm=TRUE)
+alt$wsdalt <-   sqrt(alt$wsdalt)
+alt$altpopsh <- NULL # clean
+# mean(alt) and sd(alt)
+alt$meanalt <- ave(alt$alt, as.factor(alt$inegi), FUN=mean, na.rm=TRUE)
+alt$sdalt <-   ave(alt$alt, as.factor(alt$inegi), FUN=sd,   na.rm=TRUE)
+# cases with single localidad sd=NA
+sel <- which(is.na(alt$sdalt)==TRUE & is.na(alt$meanalt)==FALSE)
+alt$inegi[sel]
+alt$wsdalt[sel] <- 0
+alt$sdalt[sel] <- 0
+##
+## drop redundant rows and cols
+alt <- alt[-duplicated(as.factor(alt$inegi))==FALSE,]
+alt[1,]
+alt$locn <- alt$localidad <- alt$alt <- alt$mun <- alt$edon <- alt$popsh <- alt$dcabecera <- NULL
+alt$wmeanalt <- round(alt$wmeanalt, 1)
+alt$wsdalt <- round(alt$wsdalt, 1)
+alt$meanalt <- round(alt$meanalt, 1)
+alt$sdalt <- round(alt$sdalt, 1)
+#summary(alt$sdalt)
+#summary(alt$wsdalt)
+##
+## add geo vars to dat
 dim(alt)
-alt$ptot <- NULL
-#
-#tmp <- censo # duplicate for debug
-censo <- merge(x = censo, y = alt, by = "inegi", all = TRUE)
-# clean
-rm(alt)
-#
-# make discrete altitude variables for mapping exploration
-# script mapa-municipios.r draws wsd(alt) etc
-#
-# merge censo into vot
-sel <- which(colnames(censo) %in% c("ife","edon")) # drop towards merge
-vot <- merge(x = vot, y = censo[,-sel], by = "inegi", all.x = TRUE, all.y = FALSE)
-rm(censo, censo.sec, i, sel, tmp, tmp.dat, tmp.file, tmp.dir)
+alt[1,]
+dat[1,]
+sel.c <- c("inegi","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt") # columns to merge into dat
+dat <- merge(x = dat, y = alt[,sel.c], by = "inegi", all.x = TRUE, all.y = FALSE)
+rm(i,sel,sel.r,sel.c,tmp) # clean
+summary(dat$sdalt)
+##
+
+## re-define party-by-party incumbency variables
+## rename vars: dincpan will now mean outgoing mayor is pan etc, dincballotpan that outgoing mayior is in ballot again
+colnames(dat) <- gsub("^dinc", "dincballot", colnames(dat))
+## generic dummy dincballot=1 if outgoing mayor (regardless of party) is in ballot again
+dat <- within(dat, {
+    dincballot <- as.numeric(dincballotpan==1 | dincballotpri==1 | dincballotprd==1 | dincballotpvem==1 | dincballotpt==1 | dincballotmc==1 | dincballotmorena==1 | dincballototh==1)
+})
+## rename accordingly daypan to dincpan etc
+colnames(dat) <- gsub("^day", "dinc", colnames(dat))
+dat[1,]
+
+## Separate id and non-time varying vars into own data.frame
+colnames(dat)
+sel.c <- which(colnames(dat) %in% c("inegi","edon","cycle","yr","ife","mun","date","trienio","status","dcapital","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt"))
+ids <- dat$emm
+ids <- cbind(emm=ids, dat[,sel.c])
+dat <- dat[,-sel.c]
+ids[1,]
+dat[1,]
+
+## Import municipal electoral histories for ids
+elhis <- data.frame()
+for (yr in seq(1994,2024,3)){
+    #yr <- 2009
+    tmp <- read.csv(file = paste0(dd, "v-hats-etc/mun/dipfed-municipio-vhat-", yr, ".csv"))
+    tmp[1,]
+    elhis <- rbind(elhis, tmp)
+}
+## keep selected vars only
+sel.c <- grep("yr|ife|vhat|alpha|beta", colnames(elhis))
+elhis <- elhis[, sel.c]
+## alpha and beta to ids
+tmp <- elhis[which(duplicated(elhis$ife)==FALSE), c("ife","alphahat.pan","alphahat.pri","alphahat.left","betahat.pan","betahat.left")]
+ids <- merge(x = ids, y = tmp, by = "ife", all.x = TRUE, all.y = FALSE)
+## vhats to dat
+## function to complete missing ifes
+pth <- ifelse (Sys.info()["user"] %in% c("eric", "magar"),
+    "~/Dropbox/data/useful-functions",
+    "https://raw.githubusercontent.com/emagar/useful-functions/master"
+    )
+source( paste(pth, "inegi2ife.r", sep = "/") )
+rm(pth)
+elhis$inegi <- ife2inegi(elhis$ife)
+## use info from elecRetrns/ancillary/mun-yrs to deduct state cycle from federal yr
+elhis$edon <- as.integer(elhis$inegi/1000)
+elhis$cycle <- elhis$yr
+sel <- which(elhis$edon==1)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==1],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013, 2016, 2019, 2021, 2024
+                              to = 4:19)
+sel <- which(elhis$edon==2)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==2],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013, 2016, 2019, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==3)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==3],
+                              from = c(1979, 1982, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1987, 1990, 1993, 1996, 1999, 2002, 2005, 2008, 2011, 2015, 2018, 2021, 2024),
+                              to = 4:18)
+sel <- which(elhis$edon==4)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==4],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==5)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==5],
+                              from = c(1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012,       2018, 2021, 2024),
+                           ##state els 1981, 1984, 1987, 1990, 1993, 1996, 1999, 2002, 2005, 2009, 2013, 2017, 2018, 2021, 2024),
+                              to = c(4:14,16:18)) ## skip 15 that will be a manual duplicate of 16 below
+sel <- which(elhis$edon==6)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==6],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==7)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==7],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1995, 1998, 2001, 2004, 2007, 2010, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==8)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==8],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013, 2016, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==9)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==9],
+                              from = c(2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 11:19)
+sel <- which(elhis$edon==10)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==10],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013, 2016, 2019, 2022, 2025),
+                              to = 4:19)
+sel <- which(elhis$edon==11)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==11],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==12)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==12],
+                              from = c(1979, 1982, 1985, 1988, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1993, 1996, 1999, 2002, 2005, 2008, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:18)
+sel <- which(elhis$edon==13)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==13],
+                              from = c(1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2021, 2024),
+                           ##state els 1981, 1984, 1987, 1990, 1993, 1996, 1999, 2002, 2005, 2008, 2011, 2016, 2020, 2024),
+                              to = 4:17)
+sel <- which(elhis$edon==14)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==14],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1992, 1995, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==15)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==15],
+                              from = c(1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1981, 1984, 1987, 1990, 1993, 1996, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:18)
+sel <- which(elhis$edon==16)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==16],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2011, 2015, 2018, 2021, 2024),
+                              to = 4:18)
+sel <- which(elhis$edon==17)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==17],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==18)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==18],
+                              from = c(1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1981, 1984, 1987, 1990, 1993, 1996, 1999, 2002, 2005, 2008, 2011, 2014, 2017, 2021, 2024),
+                              to = 4:18)
+sel <- which(elhis$edon==19)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==19],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==20)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==20],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013, 2016, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==21)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==21],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013, 2018, 2021, 2024),
+                              to = 4:18)
+sel <- which(elhis$edon==22)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==22],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==23)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==23],
+                              from = c(1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006,       2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1981, 1984, 1987, 1990, 1993, 1996, 1999, 2002, 2005, 2008, 2010, 2013, 2016, 2018, 2021, 2024),
+                              to = c(4:12,14:19)) ## skip 13 that will be a manual duplicate of 14 below
+sel <- which(elhis$edon==24)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==24],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==25)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==25],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013, 2016, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==26)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==26],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==27)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==27],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==28)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==28],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1980, 1983, 1986, 1989, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013, 2016, 2018, 2021, 2024),
+                              to = 4:19)
+sel <- which(elhis$edon==29)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==29],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1998, 2001, 2004, 2007, 2010, 2013, 2016, 2021, 2024),
+                              to = 4:18)
+sel <- which(elhis$edon==30)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==30],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2004, 2007, 2010, 2013, 2017, 2021, 2024),
+                              to = 4:18)
+sel <- which(elhis$edon==31)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==31],
+                              from = c(1982, 1985, 1988, 1991, 1994,       1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1981, 1984, 1987, 1990, 1993, 1995, 1998, 2001, 2004, 2007, 2010, 2012, 2016, 2018, 2021, 2024),
+                              to = c(4:8,10:19))  ## skip 9 that will be a manual duplicate of 8 below
+sel <- which(elhis$edon==32)
+elhis$cycle[sel] <- mapvalues(elhis$cycle[elhis$edon==32],
+                              from = c(1979, 1982, 1985, 1988, 1991, 1994, 1997, 2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021, 2024),
+                           ##state els 1979, 1982, 1985, 1988, 1992, 1995, 1998, 2001, 2004, 2007, 2010, 2013, 2016, 2018, 2021, 2024),
+                              to = 4:19)
+## duplicate cycle 16 in yucatán and make it cycle 15
+sel <- which(elhis$edon==5 & elhis$cycle==16)
+tmp <- elhis[sel,]
+tmp$cycle <- 15
+elhis <- rbind(elhis, tmp)
+## duplicate cycle 14 in quintana roo and make it cycle 13
+sel <- which(elhis$edon==23 & elhis$cycle==14)
+tmp <- elhis[sel,]
+tmp$cycle <- 13
+elhis <- rbind(elhis, tmp)
+## duplicate cycle 8 in yucatán and make it cycle 9
+sel <- which(elhis$edon==31 & elhis$cycle==8)
+tmp <- elhis[sel,]
+tmp$cycle <- 9
+elhis <- rbind(elhis, tmp)
+## build emm for merging
+elhis$edo <- mapvalues(x=elhis$edon,
+                          from = 1:32,
+                          to = c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic", "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac"))
+tmp <- sub('.*(?=.{3}$)', '', elhis$inegi, perl=TRUE) ## last three characters of inegi
+elhis$emm <- paste0(elhis$edo, "-0", elhis$cycle, ".", tmp) ## adds zero heading cycle
+elhis$emm <- sub("-0([1-9][0-9])", "-\\1", elhis$emm)       ## drop heading zero in emm when followed by non-zero and another digit
+elhis <- within(elhis, edo <- alphahat.pan <- alphahat.pri <- alphahat.left <- betahat.pan <- betahat.left <- NULL)
+##
+dat <- merge(x = dat, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], by = "emm", all.x = TRUE, all.y = FALSE)
+
+rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,tmp,to.num,yr) ## clean
+
+## function to simplify lagging and deltas
+inegi.cycle.fr.emm <- function(emm){
+    library(plyr)
+    #emm <- dat$emm[1:1000] # debug
+    tmp <- data.frame(emm=emm)
+    tmp$edo <- sub("^([a-z]{2,3})[-][0-9]{2}[.][0-9]{3}$", "\\1", emm)
+    tmp$edon <- mapvalues(x=tmp$edo,
+                          from = c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic", "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac"),
+                          to = 1:32)
+    tmp$inegi <- sub("^[a-z]+[-][0-9]+[.]([0-9]{3})$", "\\1", emm)
+    tmp$inegi <- as.numeric(tmp$edon)*1000 + as.numeric(tmp$inegi)
+    tmp$cycle <- sub("^[a-z]+[-]([0-9]+)[.][0-9]{3}", "\\1", emm)
+    tmp$cycle <- as.numeric(tmp$cycle)
+    return(tmp[, c("inegi","cycle")])
+    #head(tmp)
+    }
+
+#################################
+## lag variables by one period ##
+#################################
+dat <- dat[order(dat$emm),] # sort mun-chrono
+ids <- ids[order(ids$emm),]
+dat2 <- dat
+colnames(dat2)[-1] <- paste0(colnames(dat2)[-1], "2") # rename cols except emm
+drop.c <- colnames(dat2)[-1] # save names to drop after manipulation
+dat2 <- cbind(dat2, inegi.cycle.fr.emm(dat2$emm))
+dat2[1,]
+##
+dat2 <- slide(dat2, Var = "lisnom2",          NewVar = "lisnom",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "efec2",            NewVar = "efec",            TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "ncoal2",           NewVar = "ncoal",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "ncand2",           NewVar = "ncand",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dextra2",          NewVar = "dextra",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "win2",             NewVar = "win",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "mg2",              NewVar = "mg",              TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalpan2",        NewVar = "dcoalpan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalpri2",        NewVar = "dcoalpri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalprd2",        NewVar = "dcoalprd",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalmor2",        NewVar = "dcoalmor",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalpve2",        NewVar = "dcoalpve",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalpt2",         NewVar = "dcoalpt",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dcoalmc2",         NewVar = "dcoalmc",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "pan2",             NewVar = "pan",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "pri2",             NewVar = "pri",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "prd2",             NewVar = "prd",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "pvem2",            NewVar = "pvem",            TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "pt2",              NewVar = "pt",              TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "mc2",              NewVar = "mc",              TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "morena2",          NewVar = "morena",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "oth2",             NewVar = "oth",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "race.prior2",      NewVar = "race.prior",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincballotpan2",   NewVar = "dincballotpan",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincballotpri2",   NewVar = "dincballotpri",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincballotprd2",   NewVar = "dincballotprd",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincballotpvem2",  NewVar = "dincballotpvem",  TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincballotpt2",    NewVar = "dincballotpt",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincballotmc2",    NewVar = "dincballotmc",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincballotmorena2",NewVar = "dincballotmorena",TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincballototh2",   NewVar = "dincballototh",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dconcdf2",         NewVar = "dconcdf",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dconcgo2",         NewVar = "dconcgo",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "yr1st2",           NewVar = "yr1st",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "govpty2",          NewVar = "govpty",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovpan2",         NewVar = "dgovpan",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovpri2",         NewVar = "dgovpri",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovprd2",         NewVar = "dgovprd",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovpvem2",        NewVar = "dgovpvem",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovmc2",          NewVar = "dgovmc",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dgovmorena2",      NewVar = "dgovmorena",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dprespan2",        NewVar = "dprespan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dprespri2",        NewVar = "dprespri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dpresmorena2",     NewVar = "dpresmorena",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "winlast2",         NewVar = "winlast",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincpan2",         NewVar = "dincpan",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincpri2",         NewVar = "dincpri",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincprd2",         NewVar = "dincprd",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincpvem2",        NewVar = "dincpvem",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincpt2",          NewVar = "dincpt",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincmc2",          NewVar = "dincmc",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincmorena2",      NewVar = "dincmorena",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dincballot2",      NewVar = "dincballot",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "vhat.pan2",        NewVar = "vhat.pan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "vhat.pri2",        NewVar = "vhat.pri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "vhat.left2",       NewVar = "vhat.left",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+##
+drop.c <- which(colnames(dat2) %in% drop.c)
+dat2 <- dat2[, -drop.c]
+dat2$inegi <- dat2$cycle <- NULL
+datlag <- dat2
+rm(dat2, drop.c) # clean
+##
+## cómo lidio con missing periods? generan NAs en la serie del municipio donde ocurren
+summary(dat$pri)
+summary(datlag$pri)
+
+## deltas for cross-temp regs
+## sort all
+table(colnames(dat)==colnames(datlag))
+dat[1,]
+datlag[1,]
+dat    <- dat   [order(dat$emm),   ]
+datlag <- datlag[order(datlag$emm),]
+sel.c <- setdiff(2:ncol(dat), grep("win|race.prior|govpty|winlast", colnames(dat))) ## ignore non-numeric vars in 1st diff
+delta <- dat
+for (i in sel.c){
+    delta[, i] <- dat[, i] - datlag[, i]
+}
+rm(i,sel.c,inegi.cycle.fr.emm)
+##
+table(delta$dincpan)
+table(delta$dincpri)
+table(delta$dincprd)
+table(delta$dincmorena)
 
 
 ## get electoral histories: incumbent-reelection.r in same dir has code lines 424:472 1311:1467
+
 ## use left nor prd/morena: lines 1469:1536 1966:1971 2024:2177
-## municipio altitude var: lines 1743:1795 1987:
 ## run regs: lines 2356:2642
 
+## Lucardi/Rosas case selector needed
+summary(datlag$mg)
+table(datlag$mg<.15) ## éste es el que aparentemente usan
+table(datlag$mg<.1)
+table(datlag$mg<.05)
+table(datlag$mg<.025, useNA = "ifany") ## éste suena mucho mejor
+sel.lr <- which(datlag$mg<.15)
+table(dat$winlast[sel.lr])
 
 ## single yr
-dat2 <- dat ## duplicate
-dat2  <-  within(dat2, dincballot <- as.numeric(dincpan==1 | dincpri==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))
-dat2 <- within(dat2, {
-    dincpan    <- daypan
-    dincpri    <- daypri
-    dincprd    <- dayprd
-    dincmorena <- daymorena
-})
+dat <- dat[order(dat$emm),]; datlag <- datlag[order(datlag$emm),]; ids <- ids[order(ids$emm),] ## sort all objects
+## add ids to dat
+dat2 <- cbind(ids, dat[,-1]) ## duplicate
+dat2[1,]
+##
+## get lags
 dat2$panlag <-    datlag$pan
 dat2$prilag <-    datlag$pri
 dat2$prdlag <-    datlag$prd
@@ -1041,20 +1267,22 @@ dat2$pvemlag <-   datlag$pvem
 dat2$ptlag <-     datlag$pt
 dat2$mclag <-     datlag$mc
 dat2$morenalag <- datlag$morena
-summary(lm(pan ~ (dincpan * dincballot) + dgovpan + dprespan + panlag + as.factor(cycle), data = dat2))
-summary(lm(pri ~ (dincpri * dincballot) + dgovpri + dprespri + prilag + as.factor(cycle), data = dat2))
-summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + morenalag, data = dat2, subset = yr>2014))
-
-
-dat2 <- within(dat2, dincnopan <- as.numeric(dincpri==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))
-summary(lm(pan ~ dincpan + dincnopan + dgovpan + dprespan + daypan + as.numeric(yr>=yr1st) + as.factor(yr) + as.factor(edon), data = dat2))
-dat2 <- within(dat2, dincnopri <- as.numeric(dincpan==1 | dincprd==1 | dincpvem==1 | dincpt==1 | dincmc==1 | dincmorena==1 | dincoth==1))
-summary(lm(pri ~ dincpri + dincnopri + dgovpri + dprespri + as.numeric(yr>=yr1st) + as.factor(yr) + as.factor(edon), data = dat2))
+##
+colnames(dat2)
+summary(lm(pan ~    (dincpan * dincballot)    + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>1996))
+summary(lm(pri ~    (dincpri * dincballot)    + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>1996))
+summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + vhat.left + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2014))
 
 ## cross-temp
-summary(lm(pan    ~ dincpan    + dgovpan    + dprespan    + daypan, data = delta))
-summary(lm(pri    ~ dincpri    + dgovpri    + dprespri    + daypri, data = delta))
-summary(lm(morena ~ dincmorena + dgovmorena + dpresmorena + daymorena, data = delta))
+delta <- delta[order(delta$emm),]; ids <- ids[order(ids$emm),] ## sort all objects
+## add ids to dat
+delta2 <- cbind(ids, delta[,-1]) ## duplicate
+delta2[1,]
+summary(lm(pan    ~ (dincpan * dincballot)    + dgovpan    + dprespan    + as.factor(trienio), data = delta2, subset = yr>1996))
+summary(lm(pri    ~ (dincpri * dincballot)    + dgovpri    + dprespri    + as.factor(trienio), data = delta2, subset = yr>2001))
+summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + as.factor(trienio), data = delta2, subset = yr>2013))
+
+summary(lm(pan    ~ (dincpan * dincballot)    + dgovpan    + dprespan    + dconcgo + as.factor(trienio), data = delta2, subset = yr>2001))
 
 summary(lm(pan ~ dcoalpan + dcoalpri, data = dat)) ## Para ilustrar endogeneidad
 ls()

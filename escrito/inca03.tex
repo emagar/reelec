@@ -123,21 +123,22 @@ See \citet{cain.etal.1987} for argumentation.
 The dependent variable is vote change since last electoral cycle. The strategy of analysis is similar to \citet{levitt1994pacs} and \citet{cox.magar.1999}. To explain it, let $\vn{v}_{it}$ be one party's vote share (inspecting parties separately) in municipality $i$ at times $t=1$ and $t=2$. Start with two cross-sectional equations, one for $t=1$, one for $t=2$:
 
 \begin{equation}
-\vn{v}_{i1} = \alpha_1 + \iota \vn{incumbent}_{i1} + \pi \vn{party}_{i1} + \xi \vn{incumbent}_{i1} \times \vn{party}_{i1} + \tau \vn{T}_{i1} + \sigma \vn{X}_i + \epsilon_{i1}
+\vn{v}_{i1} = \alpha_1 + \iota \vn{incumbent}_{i1} + \pi \vn{party}_{i1} + \xi \vn{incumbent}_{i1} \times \vn{party}_{i1} + \sigma_1 + \tau \vn{T}_{i1} + \rho \vn{X}_i + \epsilon_{i1}
 \end{equation}
 
 \begin{equation}
-\vn{v}_{i2} = \alpha_2 + \iota \vn{incumbent}_{i2} + \pi \vn{party}_{i2} + \xi \vn{incumbent}_{i2} \times \vn{party}_{i2} + \tau \vn{T}_{i2} + \sigma \vn{X}_i + \epsilon_{i2}.
+\vn{v}_{i2} = \alpha_2 + \iota \vn{incumbent}_{i2} + \pi \vn{party}_{i2} + \xi \vn{incumbent}_{i2} \times \vn{party}_{i2} + \sigma_2 + \tau \vn{T}_{i2} + \rho \vn{X}_i + \epsilon_{i2}.
 \end{equation}
 
-\noindent Here, $\vn{incumbent}_{it}$ is 1 if the sitting municipal president was on cycle $t$'s ballot, running for consecutive reelection, 0 otherwise; $\vn{party}_{it}$ is 1 if the candidate shares a party label with the outgoing municipal administration, 0 otherwise; $\vn{T}_{it}$ is a vector of observed time-varying covariates (such as the state of the economy as perceived by voters or the governor's party); and $\vn{X}_i$ is a vector of municipal time-invariant covariates (such as the mix of interest groups in the municipality or its level of education). Note that, with the exception of the constant $\alpha_{it}$ and the error term $\epsilon_{it}$, all regression coefficients are constant across three-year election cycles (the $t$ subindex is absent). Subtracting the first equation from the second yields
+\noindent Here, $\vn{incumbent}_{it}$ is 1 if the sitting municipal president was on cycle $t$'s ballot, running for consecutive reelection, 0 otherwise; $\vn{party}_{it}$ is 1 if the party labels of the candidate and the outgoing municipal administration are the same, 0 otherwise; $\sigma_t$ is a national partisan swing across all municipalities in cycle $t$; $\vn{T}_{it}$ is a vector of observed time-varying covariates (such as the state of the economy as perceived by voters or the governor's party); $\vn{X}_i$ is a vector of municipal time-invariant covariates (such as the mix of interest groups in the municipality or its level of education); and $\epsilon_{it}$ is a municipio-specific shock, assumed to be normal-distributed with zero mean. Note that, with the exception of the constant $\alpha_{it}$, the swing $\sigma_t$, and the error term $\epsilon_{it}$, all regression coefficients are constant across three-year election cycles (the $t$ subindex is absent). Subtracting the first equation from the second yields
 
 \begin{equation}
 \begin{split}
-  \vn{v}_{i2} - \vn{v}_{i1} =  & ~~\alpha_2 - \alpha_1 \\
+  \vn{v}_{i2} - \vn{v}_{i1} =  & ~~(\alpha_2 - \alpha_1) \\
                                & ~~+~\iota~(\vn{incumbent}_{i2} - \vn{incumbent}_{i1}) \\
                                & ~~+~\pi~(\vn{party}_{i2} - \vn{party}_{i1}) \\
                                & ~~+~\xi~(\vn{incumbent}_{i2} \times \vn{party}_{i2} - \vn{incumbent}_{i1} \times \vn{party}_{i1}) \\
+                               & ~~+~(\sigma_2 - \sigma_1) \\
                                & ~~+~\tau~(\vn{T}_{i2} - \vn{T}_{i1}) \\
                                & ~~+~\epsilon_{i2} - \epsilon_{i1}
 \end{split}

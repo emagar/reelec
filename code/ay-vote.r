@@ -459,19 +459,6 @@ tmp <- sub(pattern = "(san-[0-9]+)b([.0-9]+$)", replacement = "\\1\\2", tmp)
 dat$emm[sel] <- tmp
 rm(tmp,sel)
 
-## Save data
-getwd()
-save.image(file = "ay-mu-vote-analysis.RData")
-
-######################
-## read saved image ##
-######################
-rm(list = ls())
-##
-dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
-setwd(wd)
-load(file = "ay-mu-vote-analysis.RData")
 
 #####################################################################
 ## Get incumbency data                                             ##
@@ -1124,6 +1111,47 @@ dat <- merge(x = dat, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], b
 
 rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,tmp,to.num,yr) ## clean
 
+
+## Save data
+getwd()
+save.image(file = "ay-mu-vote-analysis.RData")
+
+######################
+## read saved image ##
+######################
+library(DataCombine) # easy lags
+rm(list = ls())
+##
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
+setwd(wd)
+load(file = "ay-mu-vote-analysis.RData")
+
+## alternative to interaction
+dat <- within(dat, {
+    #dinopan     <- as.numeric(dincpan==0 & dincballot==0) ## omited
+    dipan       <- as.numeric(dincpan==1 & dincballot==0)
+    diballnopan <- as.numeric(dincpan==0 & dincballot==1)
+    diballpan   <- as.numeric(dincpan==1 & dincballot==1)
+    ##
+    #dinopri     <- as.numeric(dincpri==0 & dincballot==0) ## omited
+    dipri       <- as.numeric(dincpri==1 & dincballot==0)
+    diballnopri <- as.numeric(dincpri==0 & dincballot==1)
+    diballpri   <- as.numeric(dincpri==1 & dincballot==1)
+    ##
+    #dinomorena     <- as.numeric(dincmorena==0 & dincballot==0) ## omited
+    dimorena       <- as.numeric(dincmorena==1 & dincballot==0)
+    diballnomorena <- as.numeric(dincmorena==0 & dincballot==1)
+    diballmorena   <- as.numeric(dincmorena==1 & dincballot==1)
+})
+
+## residual DVs
+dat <- within(dat, {
+    panres    <- pan    - vhat.pan
+    prires    <- pri    - vhat.pri
+    morenares <- morena - vhat.left
+})
+
 ## function to simplify lagging and deltas
 inegi.cycle.fr.emm <- function(emm){
     library(plyr)
@@ -1208,6 +1236,18 @@ dat2 <- slide(dat2, Var = "dincballot2",      NewVar = "dincballot",      TimeVa
 dat2 <- slide(dat2, Var = "vhat.pan2",        NewVar = "vhat.pan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 dat2 <- slide(dat2, Var = "vhat.pri2",        NewVar = "vhat.pri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 dat2 <- slide(dat2, Var = "vhat.left2",       NewVar = "vhat.left",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "diballmorena2",    NewVar = "diballmorena",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "diballnomorena2",  NewVar = "diballnomorena",  TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dimorena2",        NewVar = "dimorena",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "diballpri2",       NewVar = "diballpri",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "diballnopri2",     NewVar = "diballnopri",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dipri2",           NewVar = "dipri",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "diballpan2",       NewVar = "diballpan",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "diballnopan2",     NewVar = "diballnopan",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "dipan2",           NewVar = "dipan",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "morenares2",       NewVar = "morenares",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "prires2",          NewVar = "prires",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+dat2 <- slide(dat2, Var = "panres2",          NewVar = "panres",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 ##
 drop.c <- which(colnames(dat2) %in% drop.c)
 dat2 <- dat2[, -drop.c]
@@ -1222,6 +1262,7 @@ summary(datlag$pri)
 ## deltas for cross-temp regs
 ## sort all
 table(colnames(dat)==colnames(datlag))
+data.frame(dat=colnames(dat), lag=colnames(datlag))
 dat[1,]
 datlag[1,]
 dat    <- dat   [order(dat$emm),   ]
@@ -1239,10 +1280,9 @@ table(delta$dincprd)
 table(delta$dincmorena)
 
 
-## get electoral histories: incumbent-reelection.r in same dir has code lines 424:472 1311:1467
-
 ## use left nor prd/morena: lines 1469:1536 1966:1971 2024:2177
 ## run regs: lines 2356:2642
+
 
 ## Lucardi/Rosas case selector needed
 summary(datlag$mg)
@@ -1252,6 +1292,7 @@ table(datlag$mg<.05)
 table(datlag$mg<.025, useNA = "ifany") ## éste suena mucho mejor
 sel.lr <- which(datlag$mg<.15)
 table(dat$winlast[sel.lr])
+
 
 ## single yr
 dat <- dat[order(dat$emm),]; datlag <- datlag[order(datlag$emm),]; ids <- ids[order(ids$emm),] ## sort all objects
@@ -1269,20 +1310,35 @@ dat2$mclag <-     datlag$mc
 dat2$morenalag <- datlag$morena
 ##
 colnames(dat2)
-summary(lm(pan ~    (dincpan * dincballot)    + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>1996))
-summary(lm(pri ~    (dincpri * dincballot)    + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>1996))
+summary(lm(pan ~    (dincpan * dincballot)    + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2005))
+summary(lm(pri ~    (dincpri * dincballot)    + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2005))
 summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + vhat.left + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2014))
+##
+## alternative to interactions
+##
+summary(lm(pan    ~ dipan + diballnopan + diballpan   + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2005))
+##
+summary(lm(pri    ~ dipri + diballnopri + diballpri   + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2005))
+##
+summary(lm(morena    ~ dimorena + diballnomorena + diballmorena   + dgovmorena    + dpresmorena    + vhat.left  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2014))
+x
 
 ## cross-temp
 delta <- delta[order(delta$emm),]; ids <- ids[order(ids$emm),] ## sort all objects
 ## add ids to dat
 delta2 <- cbind(ids, delta[,-1]) ## duplicate
-delta2[1,]
+delta2[10000,]
 summary(lm(pan    ~ (dincpan * dincballot)    + dgovpan    + dprespan    + as.factor(trienio), data = delta2, subset = yr>1996))
 summary(lm(pri    ~ (dincpri * dincballot)    + dgovpri    + dprespri    + as.factor(trienio), data = delta2, subset = yr>2001))
 summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + as.factor(trienio), data = delta2, subset = yr>2013))
 
-summary(lm(pan    ~ (dincpan * dincballot)    + dgovpan    + dprespan    + dconcgo + as.factor(trienio), data = delta2, subset = yr>2001))
+summary(lm(pan ~ dipan + diballnopan + diballpan + dgovpan    + dprespan + dconcgo   + as.factor(trienio), data = delta2, subset = yr>1996))
+summary(lm(pri ~ dipri + diballnopri + diballpri + dgovpri    + dprespri    + as.factor(trienio), data = delta2, subset = yr>1996))
+summary(lm(morena    ~ dimorena + diballnomorena + diballmorena + dgovmorena    + dpresmorena    + as.factor(trienio), data = delta2, subset = yr>2014))
+
+summary(lm(panres ~ dipan + diballnopan + diballpan + dgovpan    + dprespan + dconcgo   + as.factor(trienio), data = delta2, subset = yr>1996))
+summary(lm(prires ~ dipri + diballnopri + diballpri + dgovpri    + dprespri    + as.factor(trienio), data = delta2, subset = yr>1996))
+summary(lm(morenares ~ dimorena + diballnomorena + diballmorena + dgovmorena    + dpresmorena    + dconcgo + as.factor(trienio), data = delta2, subset = yr>2014))
 
 summary(lm(pan ~ dcoalpan + dcoalpri, data = dat)) ## Para ilustrar endogeneidad
 ls()

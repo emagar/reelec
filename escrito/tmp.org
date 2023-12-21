@@ -1,44 +1,6 @@
 
 
 
-The dependent variable is vote change since last cycle. The strategy of analysis is similar to Levitt (1994) and Cox and Magar (1999). To explain it, let \$v_{it}$ be one party's vote share (inspecting parties separately) in municipality $i$ at times $t=1$ and $t=2$. Start with two cross-sectional equations, one for $t=1$, one for $t=2$:
-
-\begin{equation}
-
-v_{i1} = \alpha_{i1} + \iota \text{dinc}_{i1} + \pi \text{dparty}_{i1} + \xi \text{dinc}_{i1} \text{dparty}_{i1} + \tau Z_{i1} + \sigma X_i + \epsilon_{i1}
-
-\end{equation}
-
-\begin{equation}
-
-v_{i2} = \alpha_{i2} + \iota \text{dinc}_{i2} + \pi \text{dparty}_{i2} + \xi \text{dinc}_{i2} \text{dparty}_{i2} + \tau Z_{i2} + \sigma X_i + \epsilon_{i2}
-
-\end{equation}
-
-Here, $\text{dinc}_{it}$ is 1 if the incumbent municipal president was on cycle $t$'s ballot, seeking consecutive reelection, and 0 otherwise; $\text{dparty}_{it}$ is 1 if the outgoing municipal administration shares the party label with the candidate inspected, 0 otherwise; $Z_{it}$ is a vector of observed time-varying covariates (such as ...); and $X_i$ is a vector of municipal time-invariant covariates (some, such as ..., unobserved). Note that, with the exception of the constant $\alpha_{it}$ and the error term $\epsilon_{it}$, all regression coefficients are constant across three-year election cycles (they have no $t$ index). Subtracting the first equation from the second gets:
-
-\begin{equation}
-v_{i2} - v_{i1} = (\alpha_2 - \alpha_1) + \iota (\text{dinc}_{i2} - \text{dinc}_{i1})
-                  + \gamma (\text{dparty}_{i2} - \text{dparty}_{i1})
-                  + \xi (\text{dinc}_{i2} \text{dparty}_{i2} - \text{dinc}_{i1} \text{dparty}_{i1})
-                  + \tau (Z_{i2} - Z_{i1})
-                  + (\epsilon_{i2} - \epsilon_{i1})
-\end{equation}
-
-
-, and interest is in the period change $\Delta v_{i2} = v_{i2} - v_{i1}$ -- ie. the subtraction of the 
-
-
-                                   This first differences model reflects change in mean levels. Here are some dummy value combinations:
-
-| $x_1$ |  $x_2$ |  $z_1$ |  $z_2$ | $\Delta y$                         |
-|:----: |:-----: |:-----: |:-----: | :--------------------------------- |
-|     0 |      0 |      0 |      0 | $\Delta \alpha$                    |
-|     1 |      0 |      0 |      0 | $\Delta \alpha  - \beta$           |
-|     0 |      1 |      0 |      0 | $\Delta \alpha  + \beta$           |
-|     1 |      1 |      0 |      0 | $\Delta \alpha$                    |
-|     1 |      1 |      0 |      1 | $\Delta \alpha + \gamma + \lambda$ |
-|     1 |      1 |      1 |      1 | $\Delta \alpha$                    |
 
 When one factor is present in both periods, the cross-temporal effect cancels out, leaviong the mean outcome as if absent in both periods. 
 

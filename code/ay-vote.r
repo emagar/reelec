@@ -23,67 +23,72 @@ rm(pth)
 #########################
 ## get municipal votes ##
 #########################
-dat  <- read.csv(paste0(dd, "aymu1970-on.coalSplit.csv"), stringsAsFactors = FALSE)
+vot  <- read.csv(paste0(dd, "aymu1970-on.coalSplit.csv"), stringsAsFactors = FALSE)
 ## get coal agg version to take some info
 vcoa <- read.csv(paste0(dd, "aymu1970-on.coalAgg.csv"),   stringsAsFactors = FALSE)
-table(dat$emm==vcoa$emm) # same order?
+table(vot$emm==vcoa$emm) # same order?
 ## clean
-dat <- within(dat, notas <- NULL)
+vot <- within(vot, notas <- NULL)
 ## add info from vcoa
-dat$dextra <- vcoa$dextra
-dat$win    <- vcoa$win
-dat$mg <- round((vcoa$v01 - vcoa$v02) / vcoa$efec, digits = 4)
+vot$dextra <- vcoa$dextra
+vot$win    <- vcoa$win
+vot$mg <- round((vcoa$v01 - vcoa$v02) / vcoa$efec, digits = 4)
 ## compute coal dummies
 sel <- grep("l[0-9]+", colnames(vcoa))
 l <- vcoa[,sel]
-dat$dcoalpan <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pan|pan-", x)) > 0, 1, 0))
-dat$dcoalpri <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pri|pri-", x)) > 0, 1, 0))
-dat$dcoalprd <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-prd|prd-", x)) > 0, 1, 0))
-dat$dcoalmor <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-morena|morena-", x)) > 0, 1, 0))
-dat$dcoalpve <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pvem|pvem-", x)) > 0, 1, 0))
-dat$dcoalpt  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pt|pt-", x)) > 0, 1, 0))
-dat$dcoalmc  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-mc|mc-", x)) > 0, 1, 0))
+vot$dcoalpan <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pan|pan-", x)) > 0, 1, 0))
+vot$dcoalpri <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pri|pri-", x)) > 0, 1, 0))
+vot$dcoalprd <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-prd|prd-", x)) > 0, 1, 0))
+vot$dcoalmor <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-morena|morena-", x)) > 0, 1, 0))
+vot$dcoalpve <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pvem|pvem-", x)) > 0, 1, 0))
+vot$dcoalpt  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pt|pt-", x)) > 0, 1, 0))
+vot$dcoalmc  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-mc|mc-", x)) > 0, 1, 0))
 ##
 ## drop before 1994
-sel <- which(dat$yr<1994)
-dat <- dat[-sel,]
+sel <- which(vot$yr<1994)
+vot <- vot[-sel,]
 ## clean
 rm(l,vcoa)
 ##
 ## drop Belisario Domínguez, litigio after 2nd election
-drop.r <- grep("xxx", dat$emm)
-dat <- dat[-drop.r,]
+drop.r <- grep("xxx", vot$emm)
+vot <- vot[-drop.r,]
 rm(drop.r)
-## drop these obs from analysis: races cancelled, missing, pending and others
-## 6ago2020: check which cancelled don't have extraord data. drop them? would break lags... check in incumbents block too
-table(dat$status)
-drop.r <- grep("cancelled|missing|litigio|pending", dat$status)
-dat <- dat[-drop.r,]
+## drop these obs from analysis
+table(vot$status)
+##drop.r <- grep("cancelled|missing|litigio|pending", vot$status)
+drop.r <- grep("cancelled|litigio", vot$status)
+vot <- vot[-drop.r,]
+rm(drop.r)
+## Fill NAs missing cases
+sel.r <- grep("missing|pending|appoint", vot$status)
+sel.c <- grep("^v[0-9]{2}", colnames(vot))
+vot[sel.r, sel.c] <- NA
 ##
-## drop runoffs where held in san luis potosí (win/mg retain eventual winner/margin)
-sel <- grep("san-[0-9]+b", dat$emm) # these are first round races that led to runoff
-tmp <- dat$emm[sel] ## get their ids
+## drop runoffs held in san luis potosí (win/mg retain eventual winner/margin)
+sel <- grep("san-[0-9]+b", vot$emm) # these are first round races that led to runoff
+tmp <- vot$emm[sel] ## get their ids
 tmp <- sub(pattern = "^([a-z]+[-][0-9]+)b([.0-9]+)$", replacement = "\\1\\2", tmp) ## drop bs
-sel2 <- which(dat$emm %in% tmp) ## select runoffs
-dat$win[sel] <- dat$win[sel2] ## replace 1st round winners with runoff winners
-dat$mg[sel]  <- dat$mg[sel2]  ## replace 1st round margin with runoff margin
-dat <- dat[-sel2,] ## and drop runoffs
+sel2 <- which(vot$emm %in% tmp) ## select runoffs
+vot$win[sel] <- vot$win[sel2] ## replace 1st round winners with runoff winners
+vot$mg[sel]  <- vot$mg[sel2]  ## replace 1st round margin with runoff margin
+vot <- vot[-sel2,] ## and drop runoffs
 rm(sel,sel2,tmp)
 ##
 ## drop oaxaca cases that eventually became usos y costumbres
 tmp <- c(1, 3, 8, 11, 12, 15, 17:20, 22, 24, 27, 29, 31, 33, 35:38, 42, 45:48, 50, 51, 54, 58, 60:65, 69, 71, 72, 74, 76:78, 83:87, 91:93, 94:98, 99:101, 104:111, 113:115, 117:123, 125:129, 131:133, 135, 137, 138:140, 142, 144:149, 151:156, 158, 159, 161:165, 167, 170, 172:176, 178, 179, 183, 186, 189:197, 200:224, 226:231, 233:236, 238:244, 246:253, 255:258, 260, 262:276, 279:281, 282:284, 286:289, 291:293, 296, 297, 299, 301, 303, 304, 306, 311, 313, 314:318, 320:323, 325, 326, 328:333, 335:337, 340:344, 346, 347, 349:359, 361:363, 365, 366, 368:374, 376, 378:380, 382:384, 386, 388, 389, 391:396, 398, 399, 401, 403:412, 416, 419, 420, 422:426, 428:430, 432, 433, 435, 437, 438, 440, 442:446, 448:454, 457, 458, 460, 461, 463:466, 468, 470, 471, 473, 475:481, 487, 488, 490:504, 506, 509:512, 514, 516:519, 521:524, 526:536, 538, 541:544, 546:548, 550, 552:554, 556, 560:564, 566, 568, 569, 16, 82, 310, 348, 367, 400, 88)
 ## ojo: 88 returned from uyc in 2013
 tmp <- tmp + 20000
-tmp1 <- as.numeric(dat$inegi)
+tmp1 <- as.numeric(vot$inegi)
 sel <- which(tmp1 %in% tmp)
-dat$emm[sel]
-## tmp <- dat$emm[sel]
+vot$emm[sel]
+## tmp <- vot$emm[sel]
 ## tmp[order(tmp)]
-if (length(sel)>0) dat <- dat[-sel,]
+if (length(sel)>0) vot <- vot[-sel,]
 
 ## # lo usé para detectar casos en aymu.incumbents con info que no correspondía con aymu.coalAgg
 ## sel <- c("emm", "edon", "mun", "munn", "ife", "inegi", "yr", "dy", "mo", "win")
-## i <- merge(x = inc, y = dat[,sel],
+## i <- merge(x = inc, y = vot[,sel],
 ##            by = c("emm", "edon", "mun", "munn", "ife", "inegi", "yr", "mo", "dy", "win"),
 ##            all = TRUE)
 ## write.csv(i, file = paste(dd, "tmp.csv", sep = ""), row.names = FALSE)
@@ -91,7 +96,7 @@ if (length(sel)>0) dat <- dat[-sel,]
 #################################################################
 ## prepare object with pan pri prd pvem pt mc morena oth votes ##
 #################################################################
-v7 <- dat # duplicate for manipulation
+v7 <- vot # duplicate for manipulation
 v7 <- within(v7, edon <- date <- dextra <- mg <- mun <- inegi <- ife <- ncand <- ncoal <- win <- efec <- lisnom <- NULL) # drop cols
 v7 <- within(v7, dcoalpan <- dcoalpri <- dcoalprd <- dcoalmor <- dcoalpve <- dcoalpt <- dcoalmc <- NULL) # can be dropped, all coals split
 v7$status <- NA ## may be used to record manip progress
@@ -403,15 +408,14 @@ v7 <- tmp
 ## clean
 v7$n <- v7$status <- NULL
 ##
-rm(tmp,drop.r,i,sel,sel.r,tmp1,tmp2)
+rm(tmp,i,sel,sel.r,sel.c,tmp1,tmp2)
 
 ## compute vote shares
 v7[1,]
 sel.c <- c("pan","pri","prd","pvem","pt","mc","morena","oth")
 v <- v7[,sel.c] # subset votes columns
 efec <- rowSums(v) # re-compute effective vote to remove rounding
-efec[which(efec==0)] <- 1 # put 1 vote to missing races to avoid indeterminate shares
-v[1,]
+efec[which(efec==0)] <- NA # put NA vote to missing races
 v <- round(v / efec, digits = 4)
 table(rowSums(v))
 v$oth <- 1 - rowSums(v[,-8]) # oth will absorb any dif from 1 due to rounding
@@ -419,7 +423,7 @@ table(rowSums(v))
 v7[,sel.c] <- v # return vote shares to data
 v7$efec <- efec
 v7[1,]
-dat[1,]
+vot[1,]
 rm(efec,sel.c,v)
 
 ## ## Transform left=prd up to morena, left=morena+prd < 2018, then left=morena since then
@@ -437,37 +441,55 @@ rm(efec,sel.c,v)
 ## v6 <- v6[moveme(names(v6), "left before prd")]
 ## v6[1,]
 
-## return to dat
-dat[1,]
-dat <- cbind(dat, v7[,c("pan","pri","prd","pvem","pt","mc","morena","oth")])
-summary(dat$efec - v7$efec)
-##dat$efec <- v7$efec # commenting this line keeps rounded efec
+## return to vot
+vot[1,]
+vot <- cbind(vot, v7[,c("pan","pri","prd","pvem","pt","mc","morena","oth")])
+summary(vot$efec - v7$efec)
+##vot$efec <- v7$efec # commenting this line keeps rounded efec
 # keep named vote cols, drop rest
-dat <- within(dat, v01 <- v02 <- v03 <- v04 <- v05 <- v06 <- v07 <- v08 <- v09 <- v10 <- v11 <- v12 <- v13 <- v14 <- v15 <- v16 <- v17 <- v18 <- v19 <- v20 <- v21 <- v22 <- v23 <- v24 <- v25 <- NULL)
-dat <- within(dat, l01 <- l02 <- l03 <- l04 <- l05 <- l06 <- l07 <- l08 <- l09 <- l10 <- l11 <- l12 <- l13 <- l14 <- l15 <- l16 <- l17 <- l18 <- l19 <- l20 <- l21 <- l22 <- l23 <- l24 <- l25 <- NULL)
+vot <- within(vot, v01 <- v02 <- v03 <- v04 <- v05 <- v06 <- v07 <- v08 <- v09 <- v10 <- v11 <- v12 <- v13 <- v14 <- v15 <- v16 <- v17 <- v18 <- v19 <- v20 <- v21 <- v22 <- v23 <- v24 <- v25 <- NULL)
+vot <- within(vot, l01 <- l02 <- l03 <- l04 <- l05 <- l06 <- l07 <- l08 <- l09 <- l10 <- l11 <- l12 <- l13 <- l14 <- l15 <- l16 <- l17 <- l18 <- l19 <- l20 <- l21 <- l22 <- l23 <- l24 <- l25 <- NULL)
 ## inspect
-dat[1,]
-table(dat$status)
+vot[1,]
+table(vot$status)
 ##
 ## clean
 rm(v7)
 
 ## Change san luis ids followed by runoff
-sel <- grep("san-[0-9]+b", dat$emm) # these are first round races that led to runoff
-tmp <- dat$emm[sel]
+sel <- grep("san-[0-9]+b", vot$emm) # these are first round races that led to runoff
+tmp <- vot$emm[sel]
 tmp <- sub(pattern = "(san-[0-9]+)b([.0-9]+$)", replacement = "\\1\\2", tmp)
-dat$emm[sel] <- tmp
+vot$emm[sel] <- tmp
 rm(tmp,sel)
 
+## Save data
+getwd()
+save.image(file = "tmp.RData")
+
+######################
+## read saved image ##
+######################
+library(DataCombine) # easy lags
+rm(list = ls())
+##
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
+setwd(wd)
+load(file = "tmp.RData")
+
+## Fill missing NAs
+sel.r <- which(vot$efec==0)
+vot[sel.r,c("pan","pri","prd","pvem","pt","mc","morena","oth","efec")] <- NA
 
 #####################################################################
 ## Get incumbency data                                             ##
 ## relies on prior.inc.part, added to aymu.incumbent.csv, for this ##
 #####################################################################
 inc <- read.csv(paste0(dd, "aymu1989-on.incumbents.csv"), stringsAsFactors = FALSE)
-## drop pre-1995 and some cols
+## drop pre-1995 and unanalyzed cols
 sel.r <- which(inc$yr < 1994)
-sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","runnerup","part2nd","mg","dlegacy","who"))
+sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","runnerup","dlegacy","who","drepe","drepg"))
 inc <- inc[-sel.r,-sel.c]
 ## change conve top mc
 inc$part <- sub("conve|cdppn", "mc", inc$part)
@@ -485,14 +507,18 @@ tail(inc) ## check lag or lead
 inc$cycle.lag <- NULL
 ##
 ## lag to create race-prior variables ##
-inc <- slide(inc, Var = "race.after", NewVar = "race.prior",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+inc <- slide(inc, Var = "race.after", NewVar = "race.prior", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+inc <- slide(inc, Var = "part",       NewVar = "win.prior",  TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+inc <- slide(inc, Var = "part2nd",    NewVar = "run.prior",  TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+inc <- slide(inc, Var = "mg",         NewVar = "mg.prior",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 ##
 ## merge inc into dat
-#sel <- which(inc$emm %notin% dat$emm)
+#sel <- which(inc$emm %notin% vot$emm)
 #data.frame(emm=inc$emm[sel], yr=inc$yr[sel], mun=inc$mun[sel], incumbent=inc$incumbent[sel])
-dat <- merge(x = dat, y = inc[,c("emm","race.prior","prior.inc.part")], by = "emm", all.x = TRUE, all.y = FALSE)
+vot <- merge(x = vot, y = inc[,c("emm","race.prior","prior.inc.part","part2nd","win.prior","run.prior","mg.prior")], by = "emm", all.x = TRUE, all.y = FALSE)
+vot <- vot[,moveme(colnames(vot), "part2nd after win; mg.prior after mg; run.prior after mg; win.prior after mg")]
 ## compute incumbent dummies
-dat <- within(dat, {
+vot <- within(vot, {
     dincoth <- 0
     dincmorena <- 0
     dincmc <- 0
@@ -502,18 +528,17 @@ dat <- within(dat, {
     dincpri <- 0
     dincpan <- 0
 })
-sel.r <- grep("Reelected|Reran", dat$race.prior)
-dat2 <- dat[sel.r,] # subset for manipulation
-dat2[1,]
-prior.inc.part <- dat2$prior.inc.part ## indicate progress here
+sel.r <- grep("Reelected|Reran", vot$race.prior)
+vot2 <- vot[sel.r,] # subset for manipulation
+prior.inc.part <- vot2$prior.inc.part ## indicate progress here
 ## code dummies (emptying race.prior as it proceeds)
-sel <- grep("pan",    prior.inc.part); dat2$dincpan   [sel] <- 1; prior.inc.part <- sub("pan",    "", prior.inc.part)
-sel <- grep("pri",    prior.inc.part); dat2$dincpri   [sel] <- 1; prior.inc.part <- sub("pri",    "", prior.inc.part)
-sel <- grep("prd",    prior.inc.part); dat2$dincprd   [sel] <- 1; prior.inc.part <- sub("prd",    "", prior.inc.part)
-sel <- grep("pvem",   prior.inc.part); dat2$dincpvem  [sel] <- 1; prior.inc.part <- sub("pvem",   "", prior.inc.part)
-sel <- grep("pt",     prior.inc.part); dat2$dincpt    [sel] <- 1; prior.inc.part <- sub("pt",     "", prior.inc.part)
-sel <- grep("mc",     prior.inc.part); dat2$dincmc    [sel] <- 1; prior.inc.part <- sub("mc",     "", prior.inc.part)
-sel <- grep("morena", prior.inc.part); dat2$dincmorena[sel] <- 1; prior.inc.part <- sub("morena", "", prior.inc.part)
+sel <- grep("pan",    prior.inc.part); vot2$dincpan   [sel] <- 1; prior.inc.part <- sub("pan",    "", prior.inc.part)
+sel <- grep("pri",    prior.inc.part); vot2$dincpri   [sel] <- 1; prior.inc.part <- sub("pri",    "", prior.inc.part)
+sel <- grep("prd",    prior.inc.part); vot2$dincprd   [sel] <- 1; prior.inc.part <- sub("prd",    "", prior.inc.part)
+sel <- grep("pvem",   prior.inc.part); vot2$dincpvem  [sel] <- 1; prior.inc.part <- sub("pvem",   "", prior.inc.part)
+sel <- grep("pt",     prior.inc.part); vot2$dincpt    [sel] <- 1; prior.inc.part <- sub("pt",     "", prior.inc.part)
+sel <- grep("mc",     prior.inc.part); vot2$dincmc    [sel] <- 1; prior.inc.part <- sub("mc",     "", prior.inc.part)
+sel <- grep("morena", prior.inc.part); vot2$dincmorena[sel] <- 1; prior.inc.part <- sub("morena", "", prior.inc.part)
 ##
 prior.inc.part <- sub("^(-+)$", "", prior.inc.part) ## slashes with no text to empty (will become dincoth=0)
 prior.inc.part <- sub("^concejo municipal$", "", prior.inc.part) ## will become dincoth=0
@@ -522,33 +547,33 @@ prior.inc.part <- sub("^incumbent out$", "", prior.inc.part) ## will become dinc
 table(prior.inc.part, useNA = "ifany") ## only minor parties or none should remain
 ##
 ## code dummy
-dat2$dincoth <- ifelse(prior.inc.part=="", 0, 1) ## empty to 0, rest to 1
+vot2$dincoth <- ifelse(prior.inc.part=="", 0, 1) ## empty to 0, rest to 1
 ## return to data
-dat[sel.r,] <- dat2
+vot[sel.r,] <- vot2
 ## clean
-rm(prior.inc.part,dat2,sel,sel.c,sel.r)
-dat$prior.inc.part <- NULL
+rm(prior.inc.part,vot2,sel,sel.c,sel.r)
+vot$prior.inc.part <- NULL
 ## inspect
-tail(dat)
+tail(vot)
 
-## For lags: dat xsts not square, use inc (which is) to add missing obs
+## For lags: vot xsts not square, use inc (which is) to add missing obs
 ## add cycle
-tmp <- dat$emm
+tmp <- vot$emm
 tmp <- sub("^[a-z]+-([0-9]{2})[ab]?[.][0-9]+$", "\\1", tmp) ## ab for anuladas and pre-runoffs
 table(tmp)
 tmp <- as.numeric(tmp)
-dat$cycle <- tmp
+vot$cycle <- tmp
 rm(tmp)
 ##
-table(dat$cycle)
+table(vot$cycle)
 table(inc$cycle)
 ##
 tmp <- inc[, c("emm","cycle")] ## keep ids and temp ids only
-tmp <- merge(x=dat, y=tmp, by=c("emm","cycle"), all=TRUE)
+tmp <- merge(x=vot, y=tmp, by=c("emm","cycle"), all=TRUE)
 tmp <- tmp[order(tmp$emm),]
 dim(tmp)
 dim(inc)
-dim(dat)
+dim(vot)
 ## drop these after merge
 sel.r <- which(tmp$emm %in% c("cps-15.xxx", "cps-16.xxx", "cps-17.xxx", "oax-09.088", "oax-10.088", "oax-11.088", "oax-12.088", "oax-13.088", "oax-14.088", "oax-15.088", "oax-16.088", "oax-17.088", "oax-18.088"))
 tmp <- tmp[-sel.r,]
@@ -568,21 +593,27 @@ pth <- ifelse (Sys.info()["user"] %in% c("eric", "magar"),
 source( paste(pth, "inegi2ife.r", sep = "/") )
 rm(pth)
 tmp$ife[sel.r] <- inegi2ife(tmp$inegi[sel.r])
-rm(inegi2ife)
+rm(inegi2ife,ife2inegi,inegi2mun,ife2mun)
+## fill missin yr
+tmp$yr[sel.r][grep("oax-09", tmp$emm[sel.r])] <- 1995
+tmp$yr[sel.r][grep("oax-11", tmp$emm[sel.r])] <- 2001
+tmp$yr[sel.r][grep("oax-12", tmp$emm[sel.r])] <- 2004
+tmp$yr[sel.r][grep("oax-13", tmp$emm[sel.r])] <- 2007
+tmp$yr[sel.r][grep("zac-09", tmp$emm[sel.r])] <- 1995
 ## replace dat with manipulatd object
-dat <- tmp
+vot <- tmp
 rm(edon, inegi, tmp, sel.r, inc)
 
 ## Compute electoral calendar variables
 ## add missing dates manually
-date <- dat$date
+date <- vot$date
 sel.r <- which(is.na(date))
 date[sel.r] <- c(rep(19951112, 16), 20011007, rep(20041003, 2), 20071007, 19950806)
-dat$date <- date
+vot$date <- date
 ## ## commented: dates stopped workibng with R upgrade
 ## ## date format
 ## library(lubridate)
-## dat$date <- ymd(dat$date)
+## vot$date <- ymd(vot$date)
 ## date <- ymd(date)
 ## summary(date) # no NAs
 ##
@@ -606,19 +637,19 @@ to.num <- function(x) str_replace_all(x, c("jan"="01", "feb"="02", "mar"="03", "
 cal <- as.data.frame(sapply(cal, to.num))
 ##for (i in 1:length(sel.c)) cal[,sel.c[i]] <- ymd(cal[,sel.c[i]]) ## proceed columnwise to retain date format
 ## dummies
-dat$dconcdf <- 0
-dat$dconcgo <- 0
+vot$dconcdf <- 0
+vot$dconcgo <- 0
 for (i in 1:32){
     #i <- 26
     sel <- cal[cal$edon==i, sel.c]
-    sel.r <- which(dat$date[dat$edon==i] %in% sel)
-    if (length(sel.r)>0) dat$dconcgo[dat$edon==i][sel.r] <- 1
+    sel.r <- which(vot$date[dat$edon==i] %in% sel)
+    if (length(sel.r)>0) vot$dconcgo[vot$edon==i][sel.r] <- 1
     sel <- cal[cal$elec=="dip", sel.c]
-    sel.r <- which(dat$date[dat$edon==i] %in% sel)
-    if (length(sel.r)>0) dat$dconcdf[dat$edon==i][sel.r] <- 1
+    sel.r <- which(vot$date[vot$edon==i] %in% sel)
+    if (length(sel.r)>0) vot$dconcdf[vot$edon==i][sel.r] <- 1
 }
-table(dat$dconcgo)
-table(dat$dconcdf)
+table(vot$dconcgo)
+table(vot$dconcdf)
 rm(cal)
 ## code reform date
 ## get electoral calendar
@@ -627,7 +658,7 @@ sel.r <- which(cal$elec=="ayun"); cal <- cal[sel.r, c("edon","elec","yr1st")] # 
 cal$elec <- NULL
 cal$yr1st[cal$edon==13] <- 3000
 cal$yr1st <- as.numeric(cal$yr1st)
-dat <- merge(x = dat, y = cal, by = "edon", all = TRUE)
+vot <- merge(x = vot, y = cal, by = "edon", all = TRUE)
 rm(cal,sel.r,date)
 
 ## Get governor parties
@@ -641,24 +672,24 @@ gov <- slide(gov, Var = "govin", NewVar = "govout", TimeVar = "govin", GroupVar 
 sel.r <- which(is.na(gov$govout))
 ##gov$govout[sel.r] <- gov$govin[sel.r] + years(6) - days(1) ## add future ends of term
 gov$govout[sel.r] <- gov$govin[sel.r] + 60000 ## add future ends of term (6 yrs)
-## Import gov pty to dat
-dat$govpty <- NA
+## Import gov pty to vot
+vot$govpty <- NA
 for (i in 1:32){ ## loop over states
     #i <- 1
     gov2 <- gov[gov$edon==i,]
-    dat2 <- dat[dat$edon==i,]
+    vot2 <- vot[vot$edon==i,]
     for (j in 1:nrow(gov2)){ ## loop over state cycles
         #j <- 2
-        sel.r <- which(dat2$date >= gov2$govin[j] & dat2$date < gov2$govout[j])
-        if (length(sel.r) > 0) dat2$govpty[sel.r] <- gov2$govpty[j]
+        sel.r <- which(vot2$date >= gov2$govin[j] & vot2$date < gov2$govout[j])
+        if (length(sel.r) > 0) vot2$govpty[sel.r] <- gov2$govpty[j]
     }
-    dat[dat$edon==i,] <- dat2 ## return to dat
+    vot[vot$edon==i,] <- vot2 ## return to vot
 }
-table(dat$govpty, useNA = "ifany")
+table(vot$govpty, useNA = "ifany")
 ## clean
-rm(dat2, gov, gov2, i, j, sel, sel.c, sel.r, year, to.eng)
+rm(vot2, gov, gov2, i, j, sel, sel.c, sel.r, year, to.eng)
 ## Code gov dummies
-dat <- within(dat, {
+vot <- within(vot, {
     dgovmorena <- as.numeric(govpty=="morena")
     dgovmc     <- as.numeric(govpty=="mc")
     dgovpvem   <- as.numeric(govpty=="pvem")
@@ -666,41 +697,41 @@ dat <- within(dat, {
     dgovpri    <- as.numeric(govpty=="pri")
     dgovpan    <- as.numeric(govpty=="pan")
 })
-## dat <- within(dat, {
-##     dpresmorena <- as.numeric(date >= ymd("20181201") & date < ymd("20241001"))
-##     dprespri    <- as.numeric( date <  ymd("20001201") |
-##                               (date >= ymd("20121201") & date < ymd("20181201")))
-##     dprespan    <- as.numeric(date >= ymd("20001201") & date < ymd("20121201"))
+## vot <- within(vot, {
+##     dpresmorena <- as.numeric(vote >= ymd("20181201") & vote < ymd("20241001"))
+##     dprespri    <- as.numeric( vote <  ymd("20001201") |
+##                               (vote >= ymd("20121201") & vote < ymd("20181201")))
+##     dprespan    <- as.numeric(vote >= ymd("20001201") & vote < ymd("20121201"))
 ## })
-dat <- within(dat, {
-    dpresmorena <- as.numeric(date >= 20181201 & date < 20241001)
-    dprespri    <- as.numeric(date <  20001201 |
-                             (date >= 20121201 & date < 20181201))
-    dprespan    <- as.numeric(date >= 20001201 & date < 20121201)
+vot <- within(vot, {
+    dpresmorena <- as.numeric(vote >= 20181201 & vote < 20241001)
+    dprespri    <- as.numeric(vote <  20001201 |
+                             (vote >= 20121201 & vote < 20181201))
+    dprespan    <- as.numeric(vote >= 20001201 & vote < 20121201)
 })
 
 ## Incumbent ayuntamiento party
-dat <- dat[order(dat$emm),]
-dat <- slide(dat, Var = "win", NewVar = "winlast", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1) ## lag 1
+vot <- vot[order(vot$emm),]
+vot <- slide(vot, Var = "win", NewVar = "winlast", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1) ## lag 1
 ## compute dummies --- equal 1 if party won alone or in coalition last cycle
-dat$daymorena <- dat$daymc     <- dat$daypt     <- dat$daypvem   <- dat$dayprd    <- dat$daypri    <- dat$daypan    <- 0
-sel.r <- grep("pan",    dat$winlast); dat$daypan   [sel.r] <- 1
-sel.r <- grep("pri",    dat$winlast); dat$daypri   [sel.r] <- 1
-sel.r <- grep("prd",    dat$winlast); dat$dayprd   [sel.r] <- 1
-sel.r <- grep("pvem",   dat$winlast); dat$daypvem  [sel.r] <- 1
-sel.r <- grep("pt",     dat$winlast); dat$daypt    [sel.r] <- 1
-sel.r <- grep("mc",     dat$winlast); dat$daymc    [sel.r] <- 1
-sel.r <- grep("morena", dat$winlast); dat$daymorena[sel.r] <- 1
+vot$daymorena <- vot$daymc     <- vot$daypt     <- vot$daypvem   <- vot$dayprd    <- vot$daypri    <- vot$daypan    <- 0
+sel.r <- grep("pan",    vot$winlast); vot$daypan   [sel.r] <- 1
+sel.r <- grep("pri",    vot$winlast); vot$daypri   [sel.r] <- 1
+sel.r <- grep("prd",    vot$winlast); vot$dayprd   [sel.r] <- 1
+sel.r <- grep("pvem",   vot$winlast); vot$daypvem  [sel.r] <- 1
+sel.r <- grep("pt",     vot$winlast); vot$daypt    [sel.r] <- 1
+sel.r <- grep("mc",     vot$winlast); vot$daymc    [sel.r] <- 1
+sel.r <- grep("morena", vot$winlast); vot$daymorena[sel.r] <- 1
 rm(sel.r)
 
 ## triennium cat var (cycle breaks sequence when state calendars change)
-dat$trienio <- cut(dat$yr, 
+vot$trienio <- cut(vot$yr, 
                    breaks=c(-Inf, seq(1992,2028,3), Inf),
                    labels=seq(from=1991, to=2030, by=3))
-dat <- dat[,moveme(names(dat), "trienio before status")]
+vot <- vot[,moveme(names(vot), "trienio before status")]
 
 ## state capital municipalities
-sel <- which(dat$ife  %in%  c( 1001,
+sel <- which(vot$ife  %in%  c( 1001,
                                2002,
                                3003,
                                4001,
@@ -732,7 +763,7 @@ sel <- which(dat$ife  %in%  c( 1001,
                               30089,
                               31050,
                               32056))
-dat$dcapital <- 0; dat$dcapital[sel] <- 1
+vot$dcapital <- 0; vot$dcapital[sel] <- 1
 rm(sel)
 
 ##################################################
@@ -867,35 +898,35 @@ alt$sdalt <- round(alt$sdalt, 1)
 #summary(alt$sdalt)
 #summary(alt$wsdalt)
 ##
-## add geo vars to dat
+## add geo vars to vot
 dim(alt)
 alt[1,]
-dat[1,]
-sel.c <- c("inegi","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt") # columns to merge into dat
-dat <- merge(x = dat, y = alt[,sel.c], by = "inegi", all.x = TRUE, all.y = FALSE)
+vot[1,]
+sel.c <- c("inegi","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt") # columns to merge into vot
+vot <- merge(x = vot, y = alt[,sel.c], by = "inegi", all.x = TRUE, all.y = FALSE)
 rm(i,sel,sel.r,sel.c,tmp) # clean
-summary(dat$sdalt)
+summary(vot$sdalt)
 ##
 
 ## re-define party-by-party incumbency variables
 ## rename vars: dincpan will now mean outgoing mayor is pan etc, dincballotpan that outgoing mayior is in ballot again
-colnames(dat) <- gsub("^dinc", "dincballot", colnames(dat))
+colnames(vot) <- gsub("^dinc", "dincballot", colnames(vot))
 ## generic dummy dincballot=1 if outgoing mayor (regardless of party) is in ballot again
-dat <- within(dat, {
+vot <- within(vot, {
     dincballot <- as.numeric(dincballotpan==1 | dincballotpri==1 | dincballotprd==1 | dincballotpvem==1 | dincballotpt==1 | dincballotmc==1 | dincballotmorena==1 | dincballototh==1)
 })
 ## rename accordingly daypan to dincpan etc
-colnames(dat) <- gsub("^day", "dinc", colnames(dat))
-dat[1,]
+colnames(vot) <- gsub("^day", "dinc", colnames(vot))
+vot[1,]
 
 ## Separate id and non-time varying vars into own data.frame
-colnames(dat)
-sel.c <- which(colnames(dat) %in% c("inegi","edon","cycle","yr","ife","mun","date","trienio","status","dcapital","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt"))
-ids <- dat$emm
-ids <- cbind(emm=ids, dat[,sel.c])
-dat <- dat[,-sel.c]
+colnames(vot)
+sel.c <- which(colnames(vot) %in% c("inegi","edon","cycle","yr","ife","mun","date","trienio","status","dcapital","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt"))
+ids <- vot$emm
+ids <- cbind(emm=ids, vot[,sel.c])
+vot <- vot[,-sel.c]
 ids[1,]
-dat[1,]
+vot[1,]
 
 ## Import municipal electoral histories for ids
 elhis <- data.frame()
@@ -911,7 +942,7 @@ elhis <- elhis[, sel.c]
 ## alpha and beta to ids
 tmp <- elhis[which(duplicated(elhis$ife)==FALSE), c("ife","alphahat.pan","alphahat.pri","alphahat.left","betahat.pan","betahat.left")]
 ids <- merge(x = ids, y = tmp, by = "ife", all.x = TRUE, all.y = FALSE)
-## vhats to dat
+## vhats to vot
 ## function to complete missing ifes
 pth <- ifelse (Sys.info()["user"] %in% c("eric", "magar"),
     "~/Dropbox/data/useful-functions",
@@ -1107,8 +1138,13 @@ elhis$emm <- paste0(elhis$edo, "-0", elhis$cycle, ".", tmp) ## adds zero heading
 elhis$emm <- sub("-0([1-9][0-9])", "-\\1", elhis$emm)       ## drop heading zero in emm when followed by non-zero and another digit
 elhis <- within(elhis, edo <- alphahat.pan <- alphahat.pri <- alphahat.left <- betahat.pan <- betahat.left <- NULL)
 ##
-dat <- merge(x = dat, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], by = "emm", all.x = TRUE, all.y = FALSE)
+vot <- merge(x = vot, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], by = "emm", all.x = TRUE, all.y = FALSE)
 
+
+## duplicate vot for lucardi-rosas selection criteria
+sel.c <- which(colnames(vot) %in% c("emm", "win", "part2nd", "mg", "win.prior", "run.prior", "mg.prior"))
+luro <- vot[, sel.c]
+vot$win.prior <- vot$run.prior <- vot$mg.prior <- NULL
 rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,tmp,to.num,yr) ## clean
 
 
@@ -1128,34 +1164,180 @@ setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
 
 ## alternative to interaction
-dat <- within(dat, {
-    #dinopan     <- as.numeric(dincpan==0 & dincballot==0) ## omited
-    dipan       <- as.numeric(dincpan==1 & dincballot==0)
-    diballnopan <- as.numeric(dincpan==0 & dincballot==1)
-    diballpan   <- as.numeric(dincpan==1 & dincballot==1)
+vot[1,]
+vot <- within(vot, {
+    #dinomorena     <- as.numeric(dincmorena==0 & dincballot==0) ## omited
+    dimorena       <- as.numeric(dincmorena==1 & dincballot==0)
+    diballnomorena <- as.numeric(dincmorena==0 & dincballot==1)
+    diballmorena   <- as.numeric(dincmorena==1 & dincballot==1)
+    ##
+    diprd       <- as.numeric(dincprd==1 & dincballot==0)
+    diballnoprd <- as.numeric(dincprd==0 & dincballot==1)
+    diballprd   <- as.numeric(dincprd==1 & dincballot==1)
     ##
     #dinopri     <- as.numeric(dincpri==0 & dincballot==0) ## omited
     dipri       <- as.numeric(dincpri==1 & dincballot==0)
     diballnopri <- as.numeric(dincpri==0 & dincballot==1)
     diballpri   <- as.numeric(dincpri==1 & dincballot==1)
     ##
-    #dinomorena     <- as.numeric(dincmorena==0 & dincballot==0) ## omited
-    dimorena       <- as.numeric(dincmorena==1 & dincballot==0)
-    diballnomorena <- as.numeric(dincmorena==0 & dincballot==1)
-    diballmorena   <- as.numeric(dincmorena==1 & dincballot==1)
+    #dinopan     <- as.numeric(dincpan==0 & dincballot==0) ## omited
+    dipan       <- as.numeric(dincpan==1 & dincballot==0)
+    diballnopan <- as.numeric(dincpan==0 & dincballot==1)
+    diballpan   <- as.numeric(dincpan==1 & dincballot==1)
 })
 
+
+#############################################################
+## Prepare different specifications of the DV for analysis ##
+#############################################################
+colnames(vot)
+vot[1,]
+## vot has raw vote shares
+res <- vot ## residual v - vhat
+v4t <- vot ## pan pri left oth shares
+r4t <- vot ## pan/pri left/pri oth/pri ratios
+##
+
+## duplicate vot for pan pri left oth breakdown
+vot <- vot[order(vot$emm),]; ids <- ids[order(ids$emm),]
+table(vot$emm==ids$emm)
+v4t <- vot
+v4t$left <- NA
+v4t$left[ids$yr<2015]                  <- vot$prd[ids$yr<2015]
+v4t$prd[ids$yr<2015]                   <- 0
+v4t$left[ids$yr>=2015 & ids$yr<2018]   <- v4t$prd[ids$yr>=2015 & ids$yr<2018] + v4t$morena[ids$yr>=2015 & ids$yr<2018]
+v4t$prd[ids$yr>=2015 & ids$yr<2018]    <- 0
+v4t$morena[ids$yr>=2015 & ids$yr<2018] <- 0
+v4t$left[ids$yr>=2018]                 <- v4t$morena[ids$yr>=2018]
+v4t$morena[ids$yr>=2018]               <- 0
+v4t <- within(v4t, oth <- 1 - pan - pri - left)
+v4t <- within(v4t, prd <- morena <- pvem <- pt <- mc <- NULL)
+v4t <- v4t[, moveme(colnames(v4t), "left after pri")]
+##
+v4t$dincballotleft <- NA
+v4t$dincballotleft[ids$yr<2015]                  <- vot$dincballotprd[ids$yr<2015]
+v4t$dincballotprd[ids$yr<2015]                   <- 0
+v4t$dincballotleft[ids$yr>=2015 & ids$yr<2018]   <- v4t$dincballotprd[ids$yr>=2015 & ids$yr<2018] + v4t$dincballotmorena[ids$yr>=2015 & ids$yr<2018]
+v4t$dincballotprd[ids$yr>=2015 & ids$yr<2018]    <- 0
+v4t$dincballotmorena[ids$yr>=2015 & ids$yr<2018] <- 0
+v4t$dincballotleft[ids$yr>=2018]                 <- v4t$dincballotmorena[ids$yr>=2018]
+v4t$dincballotmorena[ids$yr>=2018]               <- 0
+v4t <- within(v4t, dincballototh <- dincballototh + dincballotprd + dincballotmorena + dincballotpvem + dincballotpt + dincballotmc)
+v4t <- within(v4t, dincballototh <- as.numeric(dincballototh > 0))
+v4t <- within(v4t, dincballotprd <- dincballotmorena <- dincballotpvem <- dincballotpt <- dincballotmc <- NULL)
+v4t <- v4t[, moveme(colnames(v4t), "dincballotleft after dincballotpri")]
+##
+v4t$dgovprd <- v4t$dgovprd + v4t$dgovmorena
+colnames(v4t)[grep("dgovprd", colnames(v4t))] <- "dgovleft"
+v4t <- within(v4t, dgovoth <- as.numeric((dgovpvem + dgovmc) > 0))
+v4t <- within(v4t, dgovmorena <- dgovpvem <- dgovmc <- NULL)
+v4t <- v4t[, moveme(colnames(v4t), "dgovoth after dgovleft")]
+##
+colnames(v4t)[grep("dpresmorena", colnames(v4t))] <- "dpresleft"
+##
+v4t$dincleft <- NA
+v4t$dincleft[ids$yr<2015]                  <- vot$dincprd[ids$yr<2015]
+v4t$dincprd[ids$yr<2015]                   <- 0
+v4t$dincleft[ids$yr>=2015 & ids$yr<2018]   <- v4t$dincprd[ids$yr>=2015 & ids$yr<2018] + v4t$dincmorena[ids$yr>=2015 & ids$yr<2018]
+v4t$dincprd[ids$yr>=2015 & ids$yr<2018]    <- 0
+v4t$dincmorena[ids$yr>=2015 & ids$yr<2018] <- 0
+v4t$dincleft[ids$yr>=2018]                 <- v4t$dincmorena[ids$yr>=2018]
+v4t$dincmorena[ids$yr>=2018]               <- 0
+v4t <- within(v4t, dincoth <- dincprd + dincmorena + dincpvem + dincpt + dincmc)
+v4t <- within(v4t, dincoth <- as.numeric(dincoth > 0))
+v4t <- within(v4t, dincprd <- dincmorena <- dincpvem <- dincpt <- dincmc <- NULL)
+v4t <- v4t[, moveme(colnames(v4t), "dincleft after dincpri")]
+##
+v4t <- within(v4t, {
+    dimorena <- dimorena + diprd
+    diballmorena <- diballmorena + diballprd
+    diballnomorena <- as.numeric((diballnomorena + diballnoprd) > 0)
+})
+sel.c <- grep("di(ball)?(no)?morena", colnames(v4t))
+tmp <- colnames(v4t)[sel.c]
+tmp <- sub("di(ball)?(no)?morena", "di\\1\\2left", tmp)
+colnames(v4t)[sel.c] <- tmp
+v4t <- within(v4t, diprd <- diballprd <- diballnoprd <- NULL)
+rm(tmp,sel.c)
+##
+v4t$dcoalleft <- NA
+v4t$dcoalleft[ids$yr<2015]                <- v4t$dcoalprd[ids$yr<2015]
+v4t$dcoalleft[ids$yr>=2015 & ids$yr<2018] <- v4t$dcoalprd[ids$yr>=2015 & ids$yr<2018] + v4t$dcoalmor[ids$yr>=2015 & ids$yr<2018]
+v4t$dcoalleft[ids$yr>=2015 & ids$yr<2018] <- as.numeric(v4t$dcoalleft[ids$yr>=2015 & ids$yr<2018]>0)
+v4t$dcoalleft[ids$yr>=2018]               <- v4t$dcoalmor[ids$yr>=2018]
+v4t <- within(v4t, dcoalprd <- dcoalmor <- dcoalpve <- dcoalpt <- dcoalmc <- NULL)
+v4t <- v4t[, moveme(colnames(v4t), "dcoalleft after dcoalpri")]
+
+## Deal with zeroes as Aitchison
+## If .0005 is the maximum rounding error and unit u has C zeroes and D-C non-zeroes add
+## .0005 (C+1)(D-C) / D^2
+## to zero categories and subtract
+## .0005 (C+1)C / D^2
+## to each non-zero categories
+v4 <- v4t[, c("pan","pri","left","oth")] # take vote columns for manipulation
+tmp <- function(x){
+    C <- length(x[x==0])
+    if (is.na(sum(x))==TRUE) C <- 0
+    return(C)
+}
+C <- apply(v4, 1, tmp)
+## C = 3
+plus  <- .0005 * 4 * 1 / 16
+minus <- .0005 * 4 * 3 / 16
+sel.r <- which(C==3)
+for (i in 1:nrow(v4[sel.r,])){
+    sel.plus  <- which(v4[sel.r,][i,]==0)
+    sel.minus <- which(v4[sel.r,][i,]>0)
+    v4[sel.r,][i, sel.plus]  <- v4[sel.r,][i, sel.plus]  + plus
+    v4[sel.r,][i, sel.minus] <- v4[sel.r,][i, sel.minus] - minus
+}
+## C = 2
+plus  <- .0005 * 3 * 2 / 16
+minus <- .0005 * 3 * 2 / 16
+sel.r <- which(C==2)
+for (i in 1:nrow(v4[sel.r,])){
+    sel.plus  <- which(v4[sel.r,][i,]==0)
+    sel.minus <- which(v4[sel.r,][i,]>0)
+    v4[sel.r,][i, sel.plus]  <- v4[sel.r,][i, sel.plus]  + plus
+    v4[sel.r,][i, sel.minus] <- v4[sel.r,][i, sel.minus] - minus
+}
+## C = 1
+plus  <- .0005 * 2 * 3 / 16
+minus <- .0005 * 2 * 1 / 16
+sel.r <- which(C==1)
+for (i in 1:nrow(v4[sel.r,])){
+    sel.plus  <- which(v4[sel.r,][i,]==0)
+    sel.minus <- which(v4[sel.r,][i,]>0)
+    v4[sel.r,][i, sel.plus]  <- v4[sel.r,][i, sel.plus]  + plus
+    v4[sel.r,][i, sel.minus] <- v4[sel.r,][i, sel.minus] - minus
+}
+rm(i,plus,minus,sel.r,sel.minus, sel.plus)
+##
+## generate ratios (pri is denom)
+r4 <- v4t
+r4[,c("pan","left","oth")] <- v4[,-2] / v4$pri
+r4$pri <- NULL
+r4 <- within(r4, {
+    vhat.oth  <- (1 - vhat.pan - vhat.pri - vhat.left) / vhat.pri ## re-specify as ratio while keeping names
+    vhat.left <- vhat.left / vhat.pri                             ## re-specify as ratio while keeping names
+    vhat.pan  <- vhat.pan  / vhat.pri                             ## re-specify as ratio while keeping names
+})
+r4 <- within(r4, vhat.pan <- vhat.pri <- vhat.left <- NULL)
+rm(C, tmp, v4)
+
 ## residual DVs
-dat <- within(dat, {
-    panres    <- pan    - vhat.pan
-    prires    <- pri    - vhat.pri
-    morenares <- morena - vhat.left
+res <- vot
+res <- within(res, {
+    pan    <- pan    - vhat.pan
+    pri    <- pri    - vhat.pri
+    morena <- morena - vhat.left
+    oth    <- oth - (1 - vhat.pan - vhat.pri - vhat.left)
 })
 
 ## function to simplify lagging and deltas
 inegi.cycle.fr.emm <- function(emm){
     library(plyr)
-    #emm <- dat$emm[1:1000] # debug
+    #emm <- vot$emm[1:1000] # debug
     tmp <- data.frame(emm=emm)
     tmp$edo <- sub("^([a-z]{2,3})[-][0-9]{2}[.][0-9]{3}$", "\\1", emm)
     tmp$edon <- mapvalues(x=tmp$edo,
@@ -1172,105 +1354,105 @@ inegi.cycle.fr.emm <- function(emm){
 #################################
 ## lag variables by one period ##
 #################################
-dat <- dat[order(dat$emm),] # sort mun-chrono
+vot <- vot[order(vot$emm),] # sort mun-chrono
 ids <- ids[order(ids$emm),]
-dat2 <- dat
-colnames(dat2)[-1] <- paste0(colnames(dat2)[-1], "2") # rename cols except emm
-drop.c <- colnames(dat2)[-1] # save names to drop after manipulation
-dat2 <- cbind(dat2, inegi.cycle.fr.emm(dat2$emm))
-dat2[1,]
+vot2 <- vot
+colnames(vot2)[-1] <- paste0(colnames(vot2)[-1], "2") # rename cols except emm
+drop.c <- colnames(vot2)[-1] # save names to drop after manipulation
+vot2 <- cbind(vot2, inegi.cycle.fr.emm(vot2$emm))
+vot2[1,]
 ##
-dat2 <- slide(dat2, Var = "lisnom2",          NewVar = "lisnom",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "efec2",            NewVar = "efec",            TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "ncoal2",           NewVar = "ncoal",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "ncand2",           NewVar = "ncand",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dextra2",          NewVar = "dextra",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "win2",             NewVar = "win",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "mg2",              NewVar = "mg",              TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalpan2",        NewVar = "dcoalpan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalpri2",        NewVar = "dcoalpri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalprd2",        NewVar = "dcoalprd",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalmor2",        NewVar = "dcoalmor",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalpve2",        NewVar = "dcoalpve",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalpt2",         NewVar = "dcoalpt",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dcoalmc2",         NewVar = "dcoalmc",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "pan2",             NewVar = "pan",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "pri2",             NewVar = "pri",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "prd2",             NewVar = "prd",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "pvem2",            NewVar = "pvem",            TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "pt2",              NewVar = "pt",              TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "mc2",              NewVar = "mc",              TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "morena2",          NewVar = "morena",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "oth2",             NewVar = "oth",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "race.prior2",      NewVar = "race.prior",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincballotpan2",   NewVar = "dincballotpan",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincballotpri2",   NewVar = "dincballotpri",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincballotprd2",   NewVar = "dincballotprd",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincballotpvem2",  NewVar = "dincballotpvem",  TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincballotpt2",    NewVar = "dincballotpt",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincballotmc2",    NewVar = "dincballotmc",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincballotmorena2",NewVar = "dincballotmorena",TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincballototh2",   NewVar = "dincballototh",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dconcdf2",         NewVar = "dconcdf",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dconcgo2",         NewVar = "dconcgo",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "yr1st2",           NewVar = "yr1st",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "govpty2",          NewVar = "govpty",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovpan2",         NewVar = "dgovpan",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovpri2",         NewVar = "dgovpri",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovprd2",         NewVar = "dgovprd",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovpvem2",        NewVar = "dgovpvem",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovmc2",          NewVar = "dgovmc",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dgovmorena2",      NewVar = "dgovmorena",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dprespan2",        NewVar = "dprespan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dprespri2",        NewVar = "dprespri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dpresmorena2",     NewVar = "dpresmorena",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "winlast2",         NewVar = "winlast",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincpan2",         NewVar = "dincpan",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincpri2",         NewVar = "dincpri",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincprd2",         NewVar = "dincprd",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincpvem2",        NewVar = "dincpvem",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincpt2",          NewVar = "dincpt",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincmc2",          NewVar = "dincmc",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincmorena2",      NewVar = "dincmorena",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dincballot2",      NewVar = "dincballot",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "vhat.pan2",        NewVar = "vhat.pan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "vhat.pri2",        NewVar = "vhat.pri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "vhat.left2",       NewVar = "vhat.left",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "diballmorena2",    NewVar = "diballmorena",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "diballnomorena2",  NewVar = "diballnomorena",  TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dimorena2",        NewVar = "dimorena",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "diballpri2",       NewVar = "diballpri",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "diballnopri2",     NewVar = "diballnopri",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dipri2",           NewVar = "dipri",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "diballpan2",       NewVar = "diballpan",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "diballnopan2",     NewVar = "diballnopan",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "dipan2",           NewVar = "dipan",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "morenares2",       NewVar = "morenares",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "prires2",          NewVar = "prires",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
-dat2 <- slide(dat2, Var = "panres2",          NewVar = "panres",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "lisnom2",          NewVar = "lisnom",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "efec2",            NewVar = "efec",            TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "ncoal2",           NewVar = "ncoal",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "ncand2",           NewVar = "ncand",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dextra2",          NewVar = "dextra",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "win2",             NewVar = "win",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "mg2",              NewVar = "mg",              TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dcoalpan2",        NewVar = "dcoalpan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dcoalpri2",        NewVar = "dcoalpri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dcoalprd2",        NewVar = "dcoalprd",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dcoalmor2",        NewVar = "dcoalmor",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dcoalpve2",        NewVar = "dcoalpve",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dcoalpt2",         NewVar = "dcoalpt",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dcoalmc2",         NewVar = "dcoalmc",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "pan2",             NewVar = "pan",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "pri2",             NewVar = "pri",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "prd2",             NewVar = "prd",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "pvem2",            NewVar = "pvem",            TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "pt2",              NewVar = "pt",              TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "mc2",              NewVar = "mc",              TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "morena2",          NewVar = "morena",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "oth2",             NewVar = "oth",             TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "race.prior2",      NewVar = "race.prior",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincballotpan2",   NewVar = "dincballotpan",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincballotpri2",   NewVar = "dincballotpri",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincballotprd2",   NewVar = "dincballotprd",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincballotpvem2",  NewVar = "dincballotpvem",  TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincballotpt2",    NewVar = "dincballotpt",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincballotmc2",    NewVar = "dincballotmc",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincballotmorena2",NewVar = "dincballotmorena",TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincballototh2",   NewVar = "dincballototh",   TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dconcdf2",         NewVar = "dconcdf",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dconcgo2",         NewVar = "dconcgo",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "yr1st2",           NewVar = "yr1st",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "govpty2",          NewVar = "govpty",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dgovpan2",         NewVar = "dgovpan",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dgovpri2",         NewVar = "dgovpri",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dgovprd2",         NewVar = "dgovprd",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dgovpvem2",        NewVar = "dgovpvem",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dgovmc2",          NewVar = "dgovmc",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dgovmorena2",      NewVar = "dgovmorena",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dprespan2",        NewVar = "dprespan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dprespri2",        NewVar = "dprespri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dpresmorena2",     NewVar = "dpresmorena",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "winlast2",         NewVar = "winlast",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincpan2",         NewVar = "dincpan",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincpri2",         NewVar = "dincpri",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincprd2",         NewVar = "dincprd",         TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincpvem2",        NewVar = "dincpvem",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincpt2",          NewVar = "dincpt",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincmc2",          NewVar = "dincmc",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincmorena2",      NewVar = "dincmorena",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dincballot2",      NewVar = "dincballot",      TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "vhat.pan2",        NewVar = "vhat.pan",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "vhat.pri2",        NewVar = "vhat.pri",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "vhat.left2",       NewVar = "vhat.left",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "diballmorena2",    NewVar = "diballmorena",    TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "diballnomorena2",  NewVar = "diballnomorena",  TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dimorena2",        NewVar = "dimorena",        TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "diballpri2",       NewVar = "diballpri",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "diballnopri2",     NewVar = "diballnopri",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dipri2",           NewVar = "dipri",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "diballpan2",       NewVar = "diballpan",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "diballnopan2",     NewVar = "diballnopan",     TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "dipan2",           NewVar = "dipan",           TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "morenares2",       NewVar = "morenares",       TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "prires2",          NewVar = "prires",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+vot2 <- slide(vot2, Var = "panres2",          NewVar = "panres",          TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 ##
-drop.c <- which(colnames(dat2) %in% drop.c)
-dat2 <- dat2[, -drop.c]
-dat2$inegi <- dat2$cycle <- NULL
-datlag <- dat2
-rm(dat2, drop.c) # clean
+drop.c <- which(colnames(vot2) %in% drop.c)
+vot2 <- vot2[, -drop.c]
+vot2$inegi <- vot2$cycle <- NULL
+votlag <- vot2
+rm(vot2, drop.c) # clean
 ##
 ## cómo lidio con missing periods? generan NAs en la serie del municipio donde ocurren
-summary(dat$pri)
-summary(datlag$pri)
+summary(vot$pri)
+summary(votlag$pri)
 
 ## deltas for cross-temp regs
 ## sort all
-table(colnames(dat)==colnames(datlag))
-data.frame(dat=colnames(dat), lag=colnames(datlag))
-dat[1,]
-datlag[1,]
-dat    <- dat   [order(dat$emm),   ]
-datlag <- datlag[order(datlag$emm),]
-sel.c <- setdiff(2:ncol(dat), grep("win|race.prior|govpty|winlast", colnames(dat))) ## ignore non-numeric vars in 1st diff
-delta <- dat
+table(colnames(vot)==colnames(votlag))
+data.frame(vot=colnames(vot), lag=colnames(votlag))
+vot[1,]
+votlag[1,]
+vot    <- vot   [order(vot$emm),   ]
+votlag <- votlag[order(votlag$emm),]
+sel.c <- setdiff(2:ncol(vot), grep("win|race.prior|govpty|winlast", colnames(vot))) ## ignore non-numeric vars in 1st diff
+delta <- vot
 for (i in sel.c){
-    delta[, i] <- dat[, i] - datlag[, i]
+    delta[, i] <- vot[, i] - votlag[, i]
 }
 rm(i,sel.c,inegi.cycle.fr.emm)
 ##
@@ -1285,47 +1467,47 @@ table(delta$dincmorena)
 
 
 ## Lucardi/Rosas case selector needed
-summary(datlag$mg)
-table(datlag$mg<.15) ## éste es el que aparentemente usan
-table(datlag$mg<.1)
-table(datlag$mg<.05)
-table(datlag$mg<.025, useNA = "ifany") ## éste suena mucho mejor
-sel.lr <- which(datlag$mg<.15)
-table(dat$winlast[sel.lr])
+summary(votlag$mg)
+table(votlag$mg<.15) ## éste es el que aparentemente usan
+table(votlag$mg<.1)
+table(votlag$mg<.05)
+table(votlag$mg<.025, useNA = "ifany") ## éste suena mucho mejor
+sel.lr <- which(votlag$mg<.15)
+table(vot$winlast[sel.lr])
 
 
 ## single yr
-dat <- dat[order(dat$emm),]; datlag <- datlag[order(datlag$emm),]; ids <- ids[order(ids$emm),] ## sort all objects
-## add ids to dat
-dat2 <- cbind(ids, dat[,-1]) ## duplicate
-dat2[1,]
+vot <- vot[order(vot$emm),]; votlag <- votlag[order(votlag$emm),]; ids <- ids[order(ids$emm),] ## sort all objects
+## add ids to vot
+vot2 <- cbind(ids, vot[,-1]) ## duplicate
+vot2[1,]
 ##
 ## get lags
-dat2$panlag <-    datlag$pan
-dat2$prilag <-    datlag$pri
-dat2$prdlag <-    datlag$prd
-dat2$pvemlag <-   datlag$pvem
-dat2$ptlag <-     datlag$pt
-dat2$mclag <-     datlag$mc
-dat2$morenalag <- datlag$morena
+vot2$panlag <-    votlag$pan
+vot2$prilag <-    votlag$pri
+vot2$prdlag <-    votlag$prd
+vot2$pvemlag <-   votlag$pvem
+vot2$ptlag <-     votlag$pt
+vot2$mclag <-     votlag$mc
+vot2$morenalag <- votlag$morena
 ##
-colnames(dat2)
-summary(lm(pan ~    (dincpan * dincballot)    + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2005))
-summary(lm(pri ~    (dincpri * dincballot)    + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2005))
-summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + vhat.left + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2014))
+colnames(vot2)
+summary(lm(pan ~    (dincpan * dincballot)    + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2005))
+summary(lm(pri ~    (dincpri * dincballot)    + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2005))
+summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + vhat.left + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2014))
 ##
 ## alternative to interactions
 ##
-summary(lm(pan    ~ dipan + diballnopan + diballpan   + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2005))
+summary(lm(pan    ~ dipan + diballnopan + diballpan   + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2005))
 ##
-summary(lm(pri    ~ dipri + diballnopri + diballpri   + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2005))
+summary(lm(pri    ~ dipri + diballnopri + diballpri   + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2005))
 ##
-summary(lm(morena    ~ dimorena + diballnomorena + diballmorena   + dgovmorena    + dpresmorena    + vhat.left  + popshincab + wsdalt + lats + as.factor(trienio), data = dat2, subset = yr>2014))
+summary(lm(morena    ~ dimorena + diballnomorena + diballmorena   + dgovmorena    + dpresmorena    + vhat.left  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2014))
 x
 
 ## cross-temp
 delta <- delta[order(delta$emm),]; ids <- ids[order(ids$emm),] ## sort all objects
-## add ids to dat
+## add ids to vot
 delta2 <- cbind(ids, delta[,-1]) ## duplicate
 delta2[10000,]
 summary(lm(pan    ~ (dincpan * dincballot)    + dgovpan    + dprespan    + as.factor(trienio), data = delta2, subset = yr>1996))
@@ -1340,9 +1522,9 @@ summary(lm(panres ~ dipan + diballnopan + diballpan + dgovpan    + dprespan + dc
 summary(lm(prires ~ dipri + diballnopri + diballpri + dgovpri    + dprespri    + as.factor(trienio), data = delta2, subset = yr>1996))
 summary(lm(morenares ~ dimorena + diballnomorena + diballmorena + dgovmorena    + dpresmorena    + dconcgo + as.factor(trienio), data = delta2, subset = yr>2014))
 
-summary(lm(pan ~ dcoalpan + dcoalpri, data = dat)) ## Para ilustrar endogeneidad
+summary(lm(pan ~ dcoalpan + dcoalpri, data = vot)) ## Para ilustrar endogeneidad
 ls()
-dim(dat)
+dim(vot)
 
 
 

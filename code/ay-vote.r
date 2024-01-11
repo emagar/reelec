@@ -466,6 +466,10 @@ load(file = "tmp.RData")
 ## Fill missing NAs
 sel.r <- which(vot$efec==0)
 vot[sel.r,c("pan","pri","prd","pvem","pt","mc","morena","oth","efec")] <- NA
+## inegi to num
+vot$inegi <- as.numeric(vot$inegi)
+vot$ife   <- as.numeric(vot$ife)
+
 
 #####################################################################
 ## Get incumbency data                                             ##
@@ -483,10 +487,10 @@ inc <- inc[-sel.r,-sel.c]
 inc$part <- sub("conve|cdppn", "mc", inc$part)
 inc$prior.inc.part <- sub("conve|cdppn", "mc", inc$prior.inc.part)
 inc$inc.part.after <- sub("conve|cdppn", "mc", inc$inc.part.after)
-## verify time series' structure (for lags)
-library(DataCombine) # easy lags
+## verify time series cross section's structure (for grouped lags)
 inc$cycle <- as.numeric(sub("^[a-z]+[-]([0-9]+)[.].+$", "\\1", inc$emm))
-inc <- inc[order(inc$emm),] # verify sorted before lags
+inc <- inc[order(inc$inegi, inc$cycle),] # verify sorted before lags
+inc$ord <- 1:nrow(inc)
 inc <- slide(inc, Var = "cycle", NewVar = "cycle.lag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 verif <- inc$cycle - inc$cycle.lag
 table(verif) # verify: all should be 1 then ok to lag
@@ -565,6 +569,9 @@ dim(vot)
 ## drop these after merge
 sel.r <- which(tmp$emm %in% c("cps-15.xxx", "cps-16.xxx", "cps-17.xxx", "oax-09.088", "oax-10.088", "oax-11.088", "oax-12.088", "oax-13.088", "oax-14.088", "oax-15.088", "oax-16.088", "oax-17.088", "oax-18.088"))
 tmp <- tmp[-sel.r,]
+dim(tmp)
+dim(inc)
+dim(vot)
 ## fill missing ids in new obs
 sel.r <- which(is.na(tmp$inegi))
 if (length(sel.r) > 0){
@@ -591,7 +598,7 @@ if (length(sel.r) > 0){
     tmp$yr[sel.r][grep("zac-09", tmp$emm[sel.r])] <- 1995
     ## replace dat with manipulatd object
     vot <- tmp
-    rm(edon, inegi, tmp, sel.r, inc)
+    rm(edon, inegi, tmp, sel.r)
     ##
     ## Compute electoral calendar variables
     ## add missing dates manually
@@ -609,7 +616,8 @@ if (length(sel.r) > 0){
 ##
 table(is.na(tmp$yr))
 table(is.na(tmp$date))
-
+##
+rm(inc) ## clean
 ##
 ## get electoral calendar
 cal <- read.csv(file = paste0(dd, "../../calendariosReelec/data/fechasEleccionesMexicoDesde1994.csv"))
@@ -643,18 +651,17 @@ for (i in 1:32){
     sel.r <- which(vot$date[vot$edon==i] %in% sel)
     if (length(sel.r)>0) vot$dconcdf[vot$edon==i][sel.r] <- 1
 }
-table(vot$dconcgo)
-table(vot$dconcdf)
+table(go=vot$dconcgo, df=vot$dconcdf)
 rm(cal)
 ## code reform date
-## get electoral calendar
+## get electoral calendar again
 cal <- read.csv(file = paste0(dd, "../../calendariosReelec/data/fechasEleccionesMexicoDesde1994.csv"))
 sel.r <- which(cal$elec=="ayun"); cal <- cal[sel.r, c("edon","elec","yr1st")] # subset ayun
 cal$elec <- NULL
 cal$yr1st[cal$edon==13] <- 3000
 cal$yr1st <- as.numeric(cal$yr1st)
 vot <- merge(x = vot, y = cal, by = "edon", all = TRUE)
-rm(cal,sel.r,date)
+rm(cal,sel.r)
 
 ## Get governor parties
 gov <- read.csv(file = paste0(dd, "../../mxBranches/statesBranches/32stategovts.csv"))
@@ -707,7 +714,7 @@ vot <- within(vot, {
 })
 
 ## Incumbent ayuntamiento party
-vot <- vot[order(vot$emm),]
+vot <- vot[order(vot$inegi, vot$cycle),]
 vot <- slide(vot, Var = "win", NewVar = "winlast", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1) ## lag 1
 ## compute dummies --- equal 1 if party won alone or in coalition last cycle
 vot$daymorena <- vot$daymc     <- vot$daypt     <- vot$daypvem   <- vot$dayprd    <- vot$daypri    <- vot$daypan    <- 0
@@ -720,7 +727,7 @@ sel.r <- grep("mc",     vot$winlast); vot$daymc    [sel.r] <- 1
 sel.r <- grep("morena", vot$winlast); vot$daymorena[sel.r] <- 1
 rm(sel.r)
 
-## triennium cat var (cycle breaks sequence when state calendars change)
+## triennium cat var (cycle sequence breaks when state calendars change)
 vot$trienio <- cut(vot$yr, 
                    breaks=c(-Inf, seq(1992,2028,3), Inf),
                    labels=seq(from=1991, to=2030, by=3))
@@ -804,7 +811,7 @@ alt[5:10,]
 alt$long <- gsub("[°'\" WN]", "", alt$long)
 alt$lat <- gsub("[°'\" WN]", "", alt$lat)
 ## 2020 alt
-sel.r <- grep("^00[-]", alt$alt)
+sel.r <- grep("^00[-]", alt$alt) ## negative altitudes with leading zeroes
 table(alt$alt[sel.r])
 alt$alt <- gsub("^00[-]", "-", alt$alt)
 ## numeric vars
@@ -913,16 +920,16 @@ vot <- within(vot, {
 })
 ## rename accordingly daypan to dincpan etc
 colnames(vot) <- gsub("^day", "dinc", colnames(vot))
-vot[1,]
+
 
 ## Separate id and non-time varying vars into own data.frame
-colnames(vot)
-sel.c <- which(colnames(vot) %in% c("inegi","edon","cycle","yr","ife","mun","date","trienio","status","dcapital","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt"))
-ids <- vot$emm
-ids <- cbind(emm=ids, vot[,sel.c])
-vot <- vot[,-sel.c]
-ids[1,]
 vot[1,]
+vot <- vot[order(vot$inegi, vot$cycle),]
+vot$ord <- 1:nrow(vot)
+sel.c <- which(colnames(vot) %in% c("inegi","edon","cycle","yr","ife","mun","date","trienio","status","yr1st","dcapital","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt"))
+ids <- cbind(emm=vot$emm, ord=vot$ord, vot[,sel.c])
+vot <- vot[,-sel.c]
+vot <- vot[,moveme(colnames(vot), "ord first")]
 
 ## Import municipal electoral histories for ids
 elhis <- data.frame()
@@ -935,6 +942,9 @@ for (yr in seq(1994,2024,3)){
 ## keep selected vars only
 sel.c <- grep("yr|ife|vhat|alpha|beta", colnames(elhis))
 elhis <- elhis[, sel.c]
+## compute oth vars
+elhis <- within(elhis, vhat.oth <- 1 - vhat.pan - vhat.pri - vhat.left)
+elhis <- elhis[, moveme(colnames(elhis), "vhat.oth after vhat.left")]
 ## alpha and beta to ids
 tmp <- elhis[which(duplicated(elhis$ife)==FALSE), c("ife","alphahat.pan","alphahat.pri","alphahat.left","betahat.pan","betahat.left")]
 ids <- merge(x = ids, y = tmp, by = "ife", all.x = TRUE, all.y = FALSE)
@@ -1145,7 +1155,6 @@ rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,tmp,yr) ## clean
 
 
 ## Save data
-getwd()
 save.image(file = "ay-mu-vote-analysis.RData")
 
 ######################
@@ -1159,10 +1168,14 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
 setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
 
-rm(inc) # clean
-##
-## alternative to interaction
+## turnout
 vot[1,]
+
+table(is.na(vot$lisnom), ids$yr)
+359 360 362 413:427 
+x
+
+## alternative to interaction
 vot <- within(vot, {
     #dinomorena     <- as.numeric(dincmorena==0 & dincballot==0) ## omited
     dimorena       <- as.numeric(dincmorena==1 & dincballot==0)
@@ -1197,8 +1210,9 @@ r4  <- vo4 ## pan/pri left/pri oth/pri ratios
 ##
 
 ## duplicate vot for pan pri left oth breakdown
-vot <- vot[order(vot$emm),]; ids <- ids[order(ids$emm),]
+vot <- vot[order(vot$ord),]; ids <- ids[order(ids$ord),]
 table(vot$emm==ids$emm)
+table(vot$ord==ids$ord)
 vo4 <- vot
 vo4$left <- NA
 vo4$left[ids$yr<2015]                  <- vot$prd[ids$yr<2015]
@@ -1268,8 +1282,9 @@ vo4 <- vo4[, moveme(colnames(vo4), "dcoalleft after dcoalpri")]
 
 ## zeroes problematic for ratio-to-pri-vote DV...
 table(pri.null=vo4$pri==0)
-sel <- which(vo4$pri==0); data.frame(emm=vo4$emm[sel], yr=vo4$yr[sel])
-x
+sel <- which(vo4$pri==0); data.frame(emm=vo4$emm[sel], yr=ids$yr[sel])
+## Make these cases NAs to drop them from regressions
+vo4[sel, c("pan","pri","left","oth")] <- NA
 
 ## Deal with zeroes as Aitchison
 ## If .00005 is the maximum rounding error and unit u has C zeroes and D-C non-zeroes add
@@ -1321,14 +1336,15 @@ rm(i,plus,minus,sel.r,sel.minus, sel.plus)
 r4 <- vo4
 r4[,c("pan","left","oth")] <- v4[,-2] / v4$pri
 r4$pri <- NULL
-r4 <- within(r4, {
-    vhat.oth  <- (1 - vhat.pan - vhat.pri - vhat.left) / vhat.pri ## re-specify as ratio while keeping names
-})
-r4 <- within(r4, {
-    vhat.left <- vhat.left / vhat.pri                             ## re-specify as ratio while keeping names
-    vhat.pan  <- vhat.pan  / vhat.pri                             ## re-specify as ratio while keeping names
-})
-r4 <- within(r4, vhat.pri <- NULL)
+## ## re-specify vhats as ratio while keeping names
+## r4 <- within(r4, {
+##     vhat.oth  <- (1 - vhat.pan - vhat.pri - vhat.left) / vhat.pri
+## })
+## r4 <- within(r4, {
+##     vhat.left <- vhat.left / vhat.pri
+##     vhat.pan  <- vhat.pan  / vhat.pri
+## })
+## r4 <- within(r4, vhat.pri <- NULL)
 rm(C, tmp, v4)
 
 ## residual DVs
@@ -1375,11 +1391,11 @@ table(ids$emm == r4 $emm)
 ## xsts lag all cols except emm (emm must be column 1) ##
 #########################################################
 lagall <- function(dat=NA){
-    cols  <- colnames(dat)[-1] ## get colnames except emm
+    cols  <- colnames(dat)[-1:-2] ## get colnames except emm ord
     cols2 <- paste0(cols, "2") ## rename cols except emm
-    colnames(dat)[-1] <- cols2
+    colnames(dat)[-1:-2] <- cols2
     dat <- cbind(dat, inegi.cycle.fr.emm(dat$emm)) ## add cycle and inegi from emm
-    dat <- dat[order(dat$cycle, dat$inegi),]       ## sort prior to sliding
+    dat <- dat[order(dat$ord),]       ## sort prior to sliding
     for (i in 1:length(cols2)){
         dat <- slide(dat, Var = cols2[i], NewVar = cols[i], TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
     }
@@ -1407,31 +1423,31 @@ table(colnames(vo4)==colnames(vo4lag))
 table(colnames (r4)==colnames (r4lag))
 table(colnames(res)==colnames(reslag))
 ## sort
-votlag <- votlag[order(votlag$emm),]
-vo4lag <- vo4lag[order(vo4lag$emm),]
-r4lag  <-  r4lag[order (r4lag$emm),]
-reslag <- reslag[order(reslag$emm),]
-vot    <- vot   [order(vot$emm),]
-vo4    <- vo4   [order(vo4$emm),]
-r4     <- r4    [order (r4$emm),]
-res    <- res   [order(res$emm),]
+votlag <- votlag[order(votlag$ord),]
+vo4lag <- vo4lag[order(vo4lag$ord),]
+r4lag  <-  r4lag[order (r4lag$ord),]
+reslag <- reslag[order(reslag$ord),]
+vot    <-    vot[order   (vot$ord),]
+vo4    <-    vo4[order   (vo4$ord),]
+r4     <-     r4[order    (r4$ord),]
+res    <-    res[order   (res$ord),]
 table(votlag$emm == vot$emm)
 table(vo4lag$emm == vo4$emm)
-table( r4lag$emm == r4 $emm)
+table(r4lag $emm == r4 $emm)
 ##
 ##data.frame(vot=colnames(vot), lag=colnames(votlag))
 deltas <- function(dat=NA,datlag=NA){
     ## sort all
-    dat    <- dat   [order(dat$emm),   ]
-    datlag <- datlag[order(datlag$emm),]
-    emm <- dat$emm ## save emm to re-paste later
+    dat    <- dat   [order(dat   $ord),   ]
+    datlag <- datlag[order(datlag$ord),]
+    emm <- dat[, c("emm","ord")] ## save emm and ord to re-paste later
     ## keep numeric cols only
     dat    <- dat   [, sapply(dat, class)    %in% c('numeric', 'integer')]
     datlag <- datlag[, sapply(datlag, class) %in% c('numeric', 'integer')]
     ##  subtract
     datdelta <- dat - datlag
     ## add emm again
-    datdelta <- cbind(emm=emm, datdelta)
+    datdelta <- cbind(emm, datdelta)
     return(datdelta)
     ## sel.c <- setdiff(2:ncol(vot), grep("win|race.prior|govpty|winlast", colnames(vot))) ## ignore non-numeric vars in 1st diff
     ## delta <- vot
@@ -1450,46 +1466,74 @@ table(votdelta$dincpan)
 table(votdelta$dincpri)
 table(votdelta$dincprd)
 table(r4delta$dincleft)
-
-
+##
 table(vot$emm == votlag$emm)
 table(vo4$emm == vo4lag$emm)
 table( r4$emm ==  r4lag$emm)
 table(res$emm == reslag$emm)
 table(vot$emm ==     r4$emm)
+##
+rm(deltas,sel)
+
+## wrap lm commands in function
+mylm <- function(dv, predictors, data, subset = NULL){
+    ## data <- r4
+    ## dv <- "log(pan)"
+    ## predictors <- c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab")
+    ## subset <- "ord>2005"
+    ## predictors <- c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab")
+    ##
+    dv2 <- sub("^log[(]([a-z]+)[)]", "\\1", dv) ## drop log if any
+    if (dv2 %notin% c("pan","pri","morena","left","oth")) stop("Wrong party")
+    data <- data[order(data$ord),] # sort
+    ids  <- ids [order(ids $ord),] # sort
+    data <- cbind(ids, data[,-1])  # merge
+    ## subset
+    if (!is.null(subset)){
+        subset <- sub ("^([a-z])", "data$\\1",  subset)
+        subset <- gsub(" ([a-z])", " data$\\1", subset)
+        subset <- str2expression(subset)
+        data <- data[eval(subset),]
+    }
+    ## ## drop NAs in dv
+    ## sel <- paste0("!is.na(data$", dv, ")")
+    ## sel <- str2expression(sel)
+    ## sel <- eval(sel)
+    ## data <- data[sel,]
+    ##
+    ## add dv to party-specific predictors
+    sel <- grep("^di|^dgov|^dpres|^vhat.", predictors)
+    #sel <- which(predictors %in% c("dinc", "dincballot", "dgov", "dpres", "vhat.", "di", "diballno", "diballpan"))
+    predictors[sel] <- paste0(predictors[sel], dv2)
+    ## collapse predictors
+    predictors <- paste(predictors, collapse = " + ")
+    formula <- paste(dv, predictors, sep = " ~ ")
+    model <- lm(formula = formula, data = data)
+    return(model)
+}
+
+## add turnout
 
 ## single yr
-vot <- vot[order(vot$emm),]; votlag <- votlag[order(votlag$emm),]; ids <- ids[order(ids$emm),] ## sort all objects
-## add ids to vot
-vot2 <- cbind(ids, vot[,-1]) ## duplicate
-vot2[1,]
+tmp <- mylm(dv="log(pan)", data=r4, subset="yr>2005", predictors = c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
 ##
-## get lags
-vot2$panlag <-    votlag$pan
-vot2$prilag <-    votlag$pri
-vot2$prdlag <-    votlag$prd
-vot2$pvemlag <-   votlag$pvem
-vot2$ptlag <-     votlag$pt
-vot2$mclag <-     votlag$mc
-vot2$morenalag <- votlag$morena
+tmp <- mylm(dv="log(pan)", data=r4, subset="yr>2005", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
 ##
-colnames(vot2)
-summary(lm(pan ~    (dincpan * dincballot)    + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2005))
-summary(lm(pri ~    (dincpri * dincballot)    + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2005))
-summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + vhat.left + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2014))
-summary(lm(left ~ (dincleft * dincballot) + dgovleft + dpresleft + vhat.left + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2014))
+tmp <- mylm(dv="pan", data=vo4, subset="yr>2005", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "ncand", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
 ##
-## alternative to interactions
+tmp <- mylm(dv="pan", data=res, subset="yr>2005", predictors = c("di", "diballno", "diball", "dgov", "dpres", "ncand", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
 ##
-summary(lm(pan    ~ dipan + diballnopan + diballpan   + dgovpan    + dprespan    + vhat.pan  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2005))
-##
-summary(lm(pri    ~ dipri + diballnopri + diballpri   + dgovpri    + dprespri    + vhat.pri  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2005))
-##
-summary(lm(morena    ~ dimorena + diballnomorena + diballmorena   + dgovmorena    + dpresmorena    + vhat.left  + popshincab + wsdalt + lats + as.factor(trienio), data = vot2, subset = yr>2014))
+tmp <- mylm(dv="pan", data=votdelta, subset="yr>2005", predictors = c("di", "diballno", "diball", "ncand", "dgov", "dpres")); summary(tmp)
+
+tmp <- lm(formula = ncand ~ dipan + diballnopan + diballpan + alphahat.pan, data=vo4); summary(tmp)
+
+ids[1,]
+
+colnames(vo4)
 x
 
-## cross-temp
-delta <- delta[order(delta$emm),]; ids <- ids[order(ids$emm),] ## sort all objects
+## single yr
+delta <- delta[order(delta$ord),]; ids <- ids[order(ids$ord),] ## sort all objects
 ## add ids to vot
 delta2 <- cbind(ids, delta[,-1]) ## duplicate
 delta2[10000,]

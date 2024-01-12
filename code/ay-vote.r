@@ -1169,10 +1169,60 @@ setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
 
 ## turnout
+p18 <- read.csv(file = paste0(dd, "../../censos/data/pob18/p18mu-for-municipal-elecs.csv"))
+p18[1,]
+p18$yr <- 1995; p18$p18 <- p18$p18_1995
+tmp2 <- p18
+tmp <- tmp2; tmp$yr <- 1996; tmp$p18 <- tmp$p18_1996; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 1997; tmp$p18 <- tmp$p18_1997; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 1998; tmp$p18 <- tmp$p18_1998; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 1999; tmp$p18 <- tmp$p18_1999; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2000; tmp$p18 <- tmp$p18_2000; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2001; tmp$p18 <- tmp$p18_2001; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2002; tmp$p18 <- tmp$p18_2002; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2003; tmp$p18 <- tmp$p18_2003; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2004; tmp$p18 <- tmp$p18_2004; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2005; tmp$p18 <- tmp$p18_2005; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2006; tmp$p18 <- tmp$p18_2006; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2007; tmp$p18 <- tmp$p18_2007; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2008; tmp$p18 <- tmp$p18_2008; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2009; tmp$p18 <- tmp$p18_2009; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2010; tmp$p18 <- tmp$p18_2010; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2011; tmp$p18 <- tmp$p18_2011; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2012; tmp$p18 <- tmp$p18_2012; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2013; tmp$p18 <- tmp$p18_2013; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2014; tmp$p18 <- tmp$p18_2014; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2015; tmp$p18 <- tmp$p18_2015; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2016; tmp$p18 <- tmp$p18_2016; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2017; tmp$p18 <- tmp$p18_2017; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2018; tmp$p18 <- tmp$p18_2018; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2019; tmp$p18 <- tmp$p18_2019; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2020; tmp$p18 <- tmp$p18_2020; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2021; tmp$p18 <- tmp$p18_2021; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2022; tmp$p18 <- tmp$p18_2022; p18 <- rbind(p18, tmp)
+rm(tmp,tmp2)
+p18 <- p18[, c("edon","ife","inegi","mun","yr","p18")]
+p18 <- within(p18, inegi.yr <- paste0(inegi, ".", yr))
+p18 <- p18[, c("inegi.yr","p18")]
+## merge
+vot <- vot[order(vot$ord),]; ids <- ids[order(ids$ord),]
+tmp <- ids[, c("ord","inegi","yr")]
+tmp <- within(tmp, inegi.yr <- paste0(inegi, ".", yr))
+tmp <- tmp[, c("ord","inegi.yr")]
+tmp <- merge(x = tmp, y = p18, by = "inegi.yr", all.x = TRUE, all.y = FALSE)
+dim(tmp)
+tmp[1:20,]
+## cbind
+tmp <- tmp[order(tmp$ord),]
+vot$p18 <- tmp$p18
 vot[1,]
-
+##
+## when lisnom complete, use it for alternative turnout
 table(is.na(vot$lisnom), ids$yr)
-359 360 362 413:427 
+##
+vot$partic <- vot$efec / vot$p18
+vot$partic[vot$p18==0] <- 0
+summary(vot$partic)
 x
 
 ## alternative to interaction

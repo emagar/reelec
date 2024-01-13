@@ -1223,6 +1223,9 @@ table(is.na(vot$lisnom), ids$yr)
 vot$partic <- vot$efec / vot$p18
 vot$partic[vot$p18==0] <- 0
 summary(vot$partic)
+##
+sel <- which(vot$partic>=1)
+vot[sel[1],]
 x
 
 ## alternative to interaction

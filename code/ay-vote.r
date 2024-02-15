@@ -1169,7 +1169,9 @@ setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
 
 ## turnout
-p18 <- read.csv(file = paste0(dd, "../../censos/data/pob18/p18mu-for-municipal-elecs.csv"))
+p18 <- read.csv(file = paste0(dd, "../../censos/data/pob18/p18mu-from-se-level-projection-aggregates.csv"))
+##p18 <- read.csv(file = paste0(dd, "../../censos/data/pob18/p18mu-for-municipal-elecs.csv"))
+colnames(p18) <- gsub("y","p18_",colnames(p18))
 p18[1,]
 p18$yr <- 1995; p18$p18 <- p18$p18_1995
 tmp2 <- p18
@@ -1200,6 +1202,7 @@ tmp <- tmp2; tmp$yr <- 2019; tmp$p18 <- tmp$p18_2019; p18 <- rbind(p18, tmp)
 tmp <- tmp2; tmp$yr <- 2020; tmp$p18 <- tmp$p18_2020; p18 <- rbind(p18, tmp)
 tmp <- tmp2; tmp$yr <- 2021; tmp$p18 <- tmp$p18_2021; p18 <- rbind(p18, tmp)
 tmp <- tmp2; tmp$yr <- 2022; tmp$p18 <- tmp$p18_2022; p18 <- rbind(p18, tmp)
+tmp <- tmp2; tmp$yr <- 2023; tmp$p18 <- tmp$p18_2023; p18 <- rbind(p18, tmp)
 rm(tmp,tmp2)
 p18 <- p18[, c("edon","ife","inegi","mun","yr","p18")]
 p18 <- within(p18, inegi.yr <- paste0(inegi, ".", yr))
@@ -1211,22 +1214,365 @@ tmp <- within(tmp, inegi.yr <- paste0(inegi, ".", yr))
 tmp <- tmp[, c("ord","inegi.yr")]
 tmp <- merge(x = tmp, y = p18, by = "inegi.yr", all.x = TRUE, all.y = FALSE)
 dim(tmp)
-tmp[1:20,]
+tmp[1:10,]
 ## cbind
 tmp <- tmp[order(tmp$ord),]
 vot$p18 <- tmp$p18
 vot[1,]
 ##
-## when lisnom complete, use it for alternative turnout
-table(is.na(vot$lisnom), ids$yr)
+
+## get federal lisnom for comparison
+## prep object that will receive all fed lisnoms
+ln <- data.frame()
 ##
-vot$partic <- vot$efec / vot$p18
-vot$partic[vot$p18==0] <- 0
-summary(vot$partic)
+y <- 1991; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=10017" , d$nota.emm)] <- 10017
+d$ife[grep("ife=18004" , d$nota.emm)] <- 18004
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
 ##
-sel <- which(vot$partic>=1)
-vot[sel[1],]
+y <- 1994; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=1010" , d$nota.emm)] <- 1010
+d$ife[grep("ife=1011" , d$nota.emm)] <- 1011
+d$ife[grep("ife=15122", d$nota.emm)] <- 15122
+d$ife[grep("ife=23008", d$nota.emm)] <- 23008
+d$ife[grep("ife=3005" , d$nota.emm)] <- 3005
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+##
+y <- 1997; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=12076", d$nota.emm)] <- 12076
+d$ife[grep("ife=2005" , d$nota.emm)] <- 2005
+d$ife[grep("ife=29045", d$nota.emm)] <- 29045
+d$ife[grep("ife=29046", d$nota.emm)] <- 29046
+d$ife[grep("ife=29047", d$nota.emm)] <- 29047
+d$ife[grep("ife=29048", d$nota.emm)] <- 29048
+d$ife[grep("ife=29049", d$nota.emm)] <- 29049
+d$ife[grep("ife=29050", d$nota.emm)] <- 29050
+d$ife[grep("ife=29051", d$nota.emm)] <- 29051
+d$ife[grep("ife=29052", d$nota.emm)] <- 29052
+d$ife[grep("ife=29053", d$nota.emm)] <- 29053
+d$ife[grep("ife=29054", d$nota.emm)] <- 29054
+d$ife[grep("ife=29055", d$nota.emm)] <- 29055
+d$ife[grep("ife=29056", d$nota.emm)] <- 29056
+d$ife[grep("ife=29057", d$nota.emm)] <- 29057
+d$ife[grep("ife=29058", d$nota.emm)] <- 29058
+d$ife[grep("ife=29059", d$nota.emm)] <- 29059
+d$ife[grep("ife=29060", d$nota.emm)] <- 29060
+d$ife[grep("ife=4011" , d$nota.emm)] <- 4011
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+##
+y <- 2000; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=4011" , d$nota.emm)] <- 4011
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+##
+y <- 2003; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=15123", d$nota.emm)] <- 15123
+d$ife[grep("ife=15124", d$nota.emm)] <- 15124
+d$ife[grep("ife=30211", d$nota.emm)] <- 30211
+d$ife[grep("ife=30212", d$nota.emm)] <- 30212
+d$ife[grep("ife=4011" , d$nota.emm)] <- 4011
+d$ife[grep("ife=7112" , d$nota.emm)] <- 7112
+d$ife[grep("ife=7113" , d$nota.emm)] <- 7113
+d$ife[grep("ife=7114" , d$nota.emm)] <- 7114
+d$ife[grep("ife=7115" , d$nota.emm)] <- 7115
+d$ife[grep("ife=7116" , d$nota.emm)] <- 7116
+d$ife[grep("ife=7117" , d$nota.emm)] <- 7117
+d$ife[grep("ife=7118" , d$nota.emm)] <- 7118
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+##
+y <- 2006; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=12080", d$nota.emm)] <- 12080
+d$ife[grep("ife=14125", d$nota.emm)] <- 14125
+d$ife[grep("ife=15125", d$nota.emm)] <- 15125
+d$ife[grep("ife=4011" , d$nota.emm)] <- 4011
+d$ife[grep("ife=7112" , d$nota.emm)] <- 7112
+d$ife[grep("ife=7113" , d$nota.emm)] <- 7113
+d$ife[grep("ife=7114" , d$nota.emm)] <- 7114
+d$ife[grep("ife=7115" , d$nota.emm)] <- 7115
+d$ife[grep("ife=7116" , d$nota.emm)] <- 7116
+d$ife[grep("ife=7117" , d$nota.emm)] <- 7117
+d$ife[grep("ife=7118" , d$nota.emm)] <- 7118
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+##
+y <- 2009; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=12077", d$nota.emm)] <- 12077
+d$ife[grep("ife=12078", d$nota.emm)] <- 12078
+d$ife[grep("ife=12079", d$nota.emm)] <- 12079
+d$ife[grep("ife=12080", d$nota.emm)] <- 12080
+d$ife[grep("ife=12081", d$nota.emm)] <- 12081
+d$ife[grep("ife=14125", d$nota.emm)] <- 14125
+d$ife[grep("ife=23009", d$nota.emm)] <- 23009
+d$ife[grep("ife=4011" , d$nota.emm)] <- 4011
+d$ife[grep("ife=7112" , d$nota.emm)] <- 7112
+d$ife[grep("ife=7113" , d$nota.emm)] <- 7113
+d$ife[grep("ife=7114" , d$nota.emm)] <- 7114
+d$ife[grep("ife=7115" , d$nota.emm)] <- 7115
+d$ife[grep("ife=7116" , d$nota.emm)] <- 7116
+d$ife[grep("ife=7117" , d$nota.emm)] <- 7117
+d$ife[grep("ife=7118" , d$nota.emm)] <- 7118
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+##
+y <- 2012; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=23009", d$nota.emm)] <- 23009
+d$ife[grep("ife=23010", d$nota.emm)] <- 23010
+d$ife[grep("ife=4011" , d$nota.emm)] <- 4011
+d$ife[grep("ife=7112" , d$nota.emm)] <- 7112
+d$ife[grep("ife=7113" , d$nota.emm)] <- 7113
+d$ife[grep("ife=7114" , d$nota.emm)] <- 7114
+d$ife[grep("ife=7115" , d$nota.emm)] <- 7115
+d$ife[grep("ife=7116" , d$nota.emm)] <- 7116
+d$ife[grep("ife=7117" , d$nota.emm)] <- 7117
+d$ife[grep("ife=7118" , d$nota.emm)] <- 7118
+d$ife[grep("ife=7121" , d$nota.emm)] <- 7121
+d$ife[grep("ife=7122" , d$nota.emm)] <- 7122
+d$ife[grep("ife=7123" , d$nota.emm)] <- 7123
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+##
+y <- 2015; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=23009", d$nota.emm)] <- 23009
+d$ife[grep("ife=23010", d$nota.emm)] <- 23010
+d$ife[grep("ife=23011", d$nota.emm)] <- 23011
+d$ife[grep("ife=7112" , d$nota.emm)] <- 7112
+d$ife[grep("ife=7113" , d$nota.emm)] <- 7113
+d$ife[grep("ife=7114" , d$nota.emm)] <- 7114
+d$ife[grep("ife=7115" , d$nota.emm)] <- 7115
+d$ife[grep("ife=7116" , d$nota.emm)] <- 7116
+d$ife[grep("ife=7117" , d$nota.emm)] <- 7117
+d$ife[grep("ife=7118" , d$nota.emm)] <- 7118
+d$ife[grep("ife=7121" , d$nota.emm)] <- 7121
+d$ife[grep("ife=7122" , d$nota.emm)] <- 7122
+d$ife[grep("ife=7123" , d$nota.emm)] <- 7123
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+##
+y <- 2018; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=7119", d$nota.emm)] <- 7119
+d$ife[grep("ife=7120", d$nota.emm)] <- 7120
+d$ife[grep("ife=7121", d$nota.emm)] <- 7121
+d$ife[grep("ife=7122", d$nota.emm)] <- 7122
+d$ife[grep("ife=7123", d$nota.emm)] <- 7123
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+##
+y <- 2021; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,".csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+d$ife[grep("ife=17034", d$nota.emm)] <- 17034
+d$ife[grep("ife=17035", d$nota.emm)] <- 17035
+d$ife[grep("ife=17036", d$nota.emm)] <- 17036
+# drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
+rm(d,y)
+
+## merge to vot
+t <- ids[,c("ord","emm","ife","yr")] ## will receive fed lisnom for merge
+t$lisnom <- NA
+##table(t$yr)
+##
+sel.l <- which(ln$yr ==       1994    )
+sel.t <- which( t$yr %in% 1993  : 1995)
+t2 <- t[sel.t,]; t2$yr <-     1994    ; t2$lisnom <- NULL ## subset and drop lisnom to void duplic names in merge
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+##
+sel.l <- which(ln$yr ==       1997    )
+sel.t <- which( t$yr %in% 1996  : 1998)
+t2 <- t[sel.t,]; t2$yr <-     1997    ; t2$lisnom <- NULL ## subset
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+##
+sel.l <- which(ln$yr ==       2000    )
+sel.t <- which( t$yr %in% 1999  : 2001)
+t2 <- t[sel.t,]; t2$yr <-     2000    ; t2$lisnom <- NULL ## subset
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+##
+sel.l <- which(ln$yr ==       2003    )
+sel.t <- which( t$yr %in% 2002  : 2004)
+t2 <- t[sel.t,]; t2$yr <-     2003    ; t2$lisnom <- NULL ## subset
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+##
+sel.l <- which(ln$yr ==       2006    )
+sel.t <- which( t$yr %in% 2005  : 2007)
+t2 <- t[sel.t,]; t2$yr <-     2006    ; t2$lisnom <- NULL ## subset
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+##
+sel.l <- which(ln$yr ==       2009    )
+sel.t <- which( t$yr %in% 2008  : 2010)
+t2 <- t[sel.t,]; t2$yr <-     2009    ; t2$lisnom <- NULL ## subset
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+##
+sel.l <- which(ln$yr ==       2012    )
+sel.t <- which( t$yr %in% 2011  : 2013)
+t2 <- t[sel.t,]; t2$yr <-     2012    ; t2$lisnom <- NULL ## subset
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+##
+sel.l <- which(ln$yr ==       2015    )
+sel.t <- which( t$yr %in% 2014  : 2016)
+t2 <- t[sel.t,]; t2$yr <-     2015    ; t2$lisnom <- NULL ## subset
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+##
+sel.l <- which(ln$yr ==       2018    )
+sel.t <- which( t$yr %in% 2017  : 2019)
+t2 <- t[sel.t,]; t2$yr <-     2018    ; t2$lisnom <- NULL ## subset
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+##
+sel.l <- which(ln$yr ==       2021    )
+sel.t <- which( t$yr %in% 2020  : 2022)
+t2 <- t[sel.t,]; t2$yr <-     2021    ; t2$lisnom <- NULL ## subset
+t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+t2 <- t2[order(t2$ord),]
+t2$lisnom -> t$lisnom[sel.t] ## return
+## ##
+## sel.l <- which(ln$yr ==       2024    )
+## sel.t <- which( t$yr %in% 2023  : 2025)
+## t2 <- t[sel.t,]; t2$yr <-     2024    ; t2$lisnom <- NULL ## subset
+## t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+## t2$lisnom -> t$lisnom[sel.t] ## return
+t$lisnom
+## sort
+t <- t[order(t$ord),]
+## empty fed lisnom in vot
+vot$lisnom.fed <- t$lisnom
+## San Pedro Mixtepec dis 26 has huge mismatch in fed lisnom, use mun lisnom
+sel <- which(ids$ife==20317)
+vot$lisnom.fed[sel] <- vot$lisnom[sel]
+##
+
+## use fed lisnom to fill in missings
+
+
+## compare
+tmp <- (vot$lisnom.fed - vot$lisnom)*100/ vot$lisnom.fed
+summary(tmp)
+summary(vot$lisnom)
+summary(vot$lisnom.fed)
+sel <- which(tmp < -100)
+sel <- which(tmp > 30)
+cbind(yr=ids$yr[sel], ife=ids$ife[sel], vot[sel, c("emm", "efec","lisnom","lisnom.fed")], tmp=tmp[sel])
+write.csv(tmp2, file="/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/tmp.csv", row.names=FALSE)
+## tot > lisnom
+sel <- which(vot$efec > .95 * vot$lisnom)
+cbind(yr=ids$yr[sel], ife=ids$ife[sel], vot[sel, c("emm", "efec","lisnom","lisnom.fed")], tmp=tmp[sel])
+
+m <- 3003; with(ln[ln$ife==m,], plot(yr, lisnom, main=ids$mun[ids$ife==m][1]))
 x
+
+
+## when lisnom complete, use it for alternative turnout
+table(miss.ln=is.na(vot$lisnom), ids$yr)
+table(miss.18=is.na(vot$p18), ids$yr)
+table(vot$p18==0, ids$yr)
+table(vot$p18<0, ids$yr)
+##
+vot$turnout <- vot$efec / vot$p18
+summary(vot$turnout)
+##
+## Numerous cases of efec > p18
+sel <- which(vot$turnout[ids$yr>2002]>=1)
+vot[ids$yr>2002,][sel[32],]
+ids[ids$yr>2002,][sel[32],]
+unique(ids$inegi[ids$yr>2002][sel])
+sel.r <- which(ids$inegi==19035)
+plot(x=ids$yr[sel.r],y=vot$p18[sel.r], ylim = c(0,max(vot$p18[sel.r],vot$lisnom[sel.r], na.rm=TRUE)), main = ids$mun[sel.r][1])
+points(x=ids$yr[sel.r],y=vot$lisnom[sel.r], pch=20)
 
 ## alternative to interaction
 vot <- within(vot, {

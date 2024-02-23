@@ -1160,6 +1160,8 @@ save.image(file = "ay-mu-vote-analysis.RData")
 ######################
 ## read saved image ##
 ######################
+#source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/ay.r") ## slow!!
+
 library(DataCombine) # easy lags
 rm(list = ls())
 ##
@@ -1333,6 +1335,9 @@ d$ife[grep("ife=7115" , d$nota.emm)] <- 7115
 d$ife[grep("ife=7116" , d$nota.emm)] <- 7116
 d$ife[grep("ife=7117" , d$nota.emm)] <- 7117
 d$ife[grep("ife=7118" , d$nota.emm)] <- 7118
+## ## any duplicate casilla?
+## table(dup=duplicated(paste(d$edon, d$seccion, d$casilla, sep="-")))
+## with(d[duplicated(paste(d$edon, d$seccion, d$casilla, sep="-"))==TRUE,], table(dup.only=casilla, edon=edon))
 ## drop cols
 d <- d[, c("ife","lisnom")]; d$yr <- y
 ## agg
@@ -1437,7 +1442,7 @@ table(d$nota.emm)
 d$ife[grep("ife=17034", d$nota.emm)] <- 17034
 d$ife[grep("ife=17035", d$nota.emm)] <- 17035
 d$ife[grep("ife=17036", d$nota.emm)] <- 17036
-# drop cols
+## drop cols
 d <- d[, c("ife","lisnom")]; d$yr <- y
 ## agg
 d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
@@ -1535,26 +1540,38 @@ vot$lisnom.fed <- t$lisnom
 sel <- which(ids$ife==20317)
 vot$lisnom.fed[sel] <- vot$lisnom[sel]
 ##
-
 ## use fed lisnom to fill in missings
+sel <- which(is.na(vot$lisnom)==TRUE & is.na(vot$lisnom.fed)==FALSE)
+vot$lisnom[sel] <- vot$lisnom.fed[sel]
+## ##
+## ## compare
+## tmp <- (vot$lisnom.fed - vot$lisnom)*100/ vot$lisnom.fed
+## summary(tmp)
+## summary(vot$lisnom)
+## summary(vot$lisnom.fed)
+## sel <- which(tmp < -100)
+## sel <- which(tmp > 10 & tmp <20)
+## sel <- which(ids$edon==7 & ids$yr==2012)
+## cbind(yr=ids$yr[sel], ife=ids$ife[sel], vot[sel, c("emm", "efec","lisnom","lisnom.fed")], tmp=tmp[sel])
+## write.csv(tmp2, file="/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/tmp.csv", row.names=FALSE)
+## ## tot > lisnom
+## sel <- which(vot$efec > .95 * vot$lisnom)
+## cbind(yr=ids$yr[sel], ife=ids$ife[sel], vot[sel, c("emm", "efec","lisnom","lisnom.fed")], tmp=tmp[sel])
 
-
-## compare
-tmp <- (vot$lisnom.fed - vot$lisnom)*100/ vot$lisnom.fed
-summary(tmp)
-summary(vot$lisnom)
-summary(vot$lisnom.fed)
-sel <- which(tmp < -100)
-sel <- which(tmp > 30)
-cbind(yr=ids$yr[sel], ife=ids$ife[sel], vot[sel, c("emm", "efec","lisnom","lisnom.fed")], tmp=tmp[sel])
-write.csv(tmp2, file="/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/tmp.csv", row.names=FALSE)
-## tot > lisnom
-sel <- which(vot$efec > .95 * vot$lisnom)
-cbind(yr=ids$yr[sel], ife=ids$ife[sel], vot[sel, c("emm", "efec","lisnom","lisnom.fed")], tmp=tmp[sel])
-
-m <- 3003; with(ln[ln$ife==m,], plot(yr, lisnom, main=ids$mun[ids$ife==m][1]))
-x
-
+## turnout relative to lisnom
+#within(vot, tot <- efec + nr + nul) # recompute tot
+## vot <- within(vot, turn.ln <- tot / lisnom)
+vot <- within(vot, turn.ln <- efec / lisnom)
+summary(vot$turn.ln)
+## cases where turnout exceeds 1: will increase lisnom to leave it at .99
+sel <- which(ids$yr > 1996 & vot$turn.ln > .98)
+vot$lisnom[sel] <- vot$efec[sel] / .99
+vot$turn.ln[sel] <- .99
+## ## used to debug
+## sel <- which(ids$yr > 1996 & vot$turn.ln > .98)
+## cbind(yr=ids$yr[sel], ife=ids$ife[sel], vot[sel, c("emm", "efec","lisnom","lisnom.fed")], turn.ln=vot$turn.ln[sel])
+## sel <- which(ids$edon==31 & ids$yr==2001)
+## write.csv(vot[sel, c("emm", "efec","lisnom","lisnom.fed")], file="/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/tmp.csv", row.names=FALSE)
 
 ## when lisnom complete, use it for alternative turnout
 table(miss.ln=is.na(vot$lisnom), ids$yr)
@@ -1562,17 +1579,12 @@ table(miss.18=is.na(vot$p18), ids$yr)
 table(vot$p18==0, ids$yr)
 table(vot$p18<0, ids$yr)
 ##
-vot$turnout <- vot$efec / vot$p18
-summary(vot$turnout)
+## ## p18 still below efec in many cases
+## vot$turn.18 <- vot$efec / vot$p18
+## summary(vot$turn.18)
+## with(vot, table(p18<lisnom))
+## with(vot, table(turn.18 > 1))
 ##
-## Numerous cases of efec > p18
-sel <- which(vot$turnout[ids$yr>2002]>=1)
-vot[ids$yr>2002,][sel[32],]
-ids[ids$yr>2002,][sel[32],]
-unique(ids$inegi[ids$yr>2002][sel])
-sel.r <- which(ids$inegi==19035)
-plot(x=ids$yr[sel.r],y=vot$p18[sel.r], ylim = c(0,max(vot$p18[sel.r],vot$lisnom[sel.r], na.rm=TRUE)), main = ids$mun[sel.r][1])
-points(x=ids$yr[sel.r],y=vot$lisnom[sel.r], pch=20)
 
 ## alternative to interaction
 vot <- within(vot, {

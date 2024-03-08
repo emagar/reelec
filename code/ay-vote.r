@@ -1222,7 +1222,7 @@ tmp <- tmp[order(tmp$ord),]
 vot$p18 <- tmp$p18
 vot[1,]
 ##
-
+##
 ## get federal lisnom for comparison
 ## prep object that will receive all fed lisnoms
 ln <- data.frame()
@@ -1450,7 +1450,7 @@ d <- d[duplicated(d$ife)==FALSE,]
 ## paste to data
 ln <- rbind(ln, d)
 rm(d,y)
-
+##
 ## merge to vot
 t <- ids[,c("ord","emm","ife","yr")] ## will receive fed lisnom for merge
 t$lisnom <- NA
@@ -1557,16 +1557,16 @@ vot$lisnom[sel] <- vot$lisnom.fed[sel]
 ## ## tot > lisnom
 ## sel <- which(vot$efec > .95 * vot$lisnom)
 ## cbind(yr=ids$yr[sel], ife=ids$ife[sel], vot[sel, c("emm", "efec","lisnom","lisnom.fed")], tmp=tmp[sel])
-
+##
 ## turnout relative to lisnom
 #within(vot, tot <- efec + nr + nul) # recompute tot
 ## vot <- within(vot, turn.ln <- tot / lisnom)
 vot <- within(vot, turn.ln <- efec / lisnom)
 summary(vot$turn.ln)
-## cases where turnout exceeds 1: will increase lisnom to leave it at .99
+## cases where turnout exceeds 1: will increase lisnom to leave it at .98
 sel <- which(ids$yr > 1996 & vot$turn.ln > .98)
-vot$lisnom[sel] <- vot$efec[sel] / .99
-vot$turn.ln[sel] <- .99
+vot$lisnom[sel] <- vot$efec[sel] / .98
+vot$turn.ln[sel] <- .98
 ## ## used to debug
 ## sel <- which(ids$yr > 1996 & vot$turn.ln > .98)
 ## cbind(yr=ids$yr[sel], ife=ids$ife[sel], vot[sel, c("emm", "efec","lisnom","lisnom.fed")], turn.ln=vot$turn.ln[sel])
@@ -1609,10 +1609,24 @@ vot <- within(vot, {
 })
 
 
+
+#################################################
+## Drop municipios with many missing elections ##
+#################################################
+sel.r <- which(ids$inegi %in%
+             c(20472 # missing 2001-2004-2007 
+             , 20130 # missing 2013 2018
+               ))
+vot <- vot[-sel.r,]
+ids <- ids[-sel.r,]
+
+
 #############################################################
 ## Prepare different specifications of the DV for analysis ##
 #############################################################
 colnames(vot)
+colnames(vot)[grep("ball", colnames(vot))]
+with(vot, table(dincballotpan, diballpan))
 vot[1,]
 ##         ## vot has raw vote shares
 res <- vot ## residual v - vhat
@@ -1625,6 +1639,7 @@ vot <- vot[order(vot$ord),]; ids <- ids[order(ids$ord),]
 table(vot$emm==ids$emm)
 table(vot$ord==ids$ord)
 vo4 <- vot
+## consolidate left
 vo4$left <- NA
 vo4$left[ids$yr<2015]                  <- vot$prd[ids$yr<2015]
 vo4$prd[ids$yr<2015]                   <- 0
@@ -1691,18 +1706,25 @@ vo4$dcoalleft[ids$yr>=2018]               <- vo4$dcoalmor[ids$yr>=2018]
 vo4 <- within(vo4, dcoalprd <- dcoalmor <- dcoalpve <- dcoalpt <- dcoalmc <- NULL)
 vo4 <- vo4[, moveme(colnames(vo4), "dcoalleft after dcoalpri")]
 
+
 ## zeroes problematic for ratio-to-pri-vote DV...
 table(pri.null=vo4$pri==0)
 sel <- which(vo4$pri==0); data.frame(emm=vo4$emm[sel], yr=ids$yr[sel])
-## Make these cases NAs to drop them from regressions
-vo4[sel, c("pan","pri","left","oth")] <- NA
+## ## Make these cases NAs to drop them from regressions
+## vo4[sel, c("pan","pri","left","oth")] <- NA
 
-## Deal with zeroes as Aitchison
-## If .00005 is the maximum rounding error and unit u has C zeroes and D-C non-zeroes add
+## Deal with zeroes as Aitchison (p. 268)
+## If delta=.00005 is the maximum rounding error and unit u has C zeroes and D-C non-zeroes add
 ## .00005 (C+1)(D-C) / D^2
 ## to zero categories and subtract
 ## .00005 (C+1)C / D^2
-## to each non-zero categories
+## to each non-zero categories.
+## In practice, adding something in [delta/5, 2*delta] will do. 
+##
+## turnout never zero, no need to manipulate
+table(vo4$turn.ln==0)
+table(vo4$turn.ln==1)
+##
 v4 <- vo4[, c("pan","pri","left","oth")] # take vote columns for manipulation
 tmp <- function(x){
     C <- length(x[x==0])             ## how many zeroes in row
@@ -1712,8 +1734,10 @@ tmp <- function(x){
 C <- apply(v4, 1, tmp)
 table(C)
 ## C = 3 zeroes
-plus  <- .00005 * 4 * 1 / 16
-minus <- .00005 * 4 * 3 / 16
+plus  <- .0001
+minus <- .0001 * 3
+## plus  <- .00005 * 4 * 1 / 16
+## minus <- .00005 * 4 * 3 / 16
 sel.r <- which(C==3)
 for (i in 1:nrow(v4[sel.r,])){
     sel.plus  <- which(v4[sel.r,][i,]==0)
@@ -1722,8 +1746,10 @@ for (i in 1:nrow(v4[sel.r,])){
     v4[sel.r,][i, sel.minus] <- v4[sel.r,][i, sel.minus] - minus
 }
 ## C = 2
-plus  <- .00005 * 3 * 2 / 16
-minus <- .00005 * 3 * 2 / 16
+plus  <- .0001
+minus <- .0001
+## plus  <- .00005 * 3 * 2 / 16
+## minus <- .00005 * 3 * 2 / 16
 sel.r <- which(C==2)
 for (i in 1:nrow(v4[sel.r,])){
     sel.plus  <- which(v4[sel.r,][i,]==0)
@@ -1732,8 +1758,10 @@ for (i in 1:nrow(v4[sel.r,])){
     v4[sel.r,][i, sel.minus] <- v4[sel.r,][i, sel.minus] - minus
 }
 ## C = 1
-plus  <- .00005 * 2 * 3 / 16
-minus <- .00005 * 2 * 1 / 16
+plus  <- .0001 * 3
+minus <- .0001
+## plus  <- .00005 * 2 * 3 / 16
+## minus <- .00005 * 2 * 1 / 16
 sel.r <- which(C==1)
 for (i in 1:nrow(v4[sel.r,])){
     sel.plus  <- which(v4[sel.r,][i,]==0)
@@ -1747,6 +1775,17 @@ rm(i,plus,minus,sel.r,sel.minus, sel.plus)
 r4 <- vo4
 r4[,c("pan","left","oth")] <- v4[,-2] / v4$pri
 r4$pri <- NULL
+r4$turn.ln <- r4$turn.ln / (1 - r4$turn.ln)
+##
+plot(r4$turn.ln[ids$yr > 1996])
+plot(r4$pan [ids$yr > 1996])
+plot(r4$left[ids$yr > 1996])
+plot(r4$oth [ids$yr > 1996])
+## ## debug
+## sel.r <- which(r4$left > 2000)
+## ids$emm[sel.r]
+## vot[sel.r,]
+##
 ## ## re-specify vhats as ratio while keeping names
 ## r4 <- within(r4, {
 ##     vhat.oth  <- (1 - vhat.pan - vhat.pri - vhat.left) / vhat.pri
@@ -1765,24 +1804,29 @@ res <- within(res, {
     pri    <- pri  - vhat.pri
     left   <- left - vhat.left
     oth    <- oth  - (1 - vhat.pan - vhat.pri - vhat.left)
+    ## turn.ln <- turn.ln - vhat.turn
 })
 
-## function to simplify lagging and deltas
-inegi.cycle.fr.emm <- function(emm){
-    library(plyr)
-    #emm <- vot$emm[1:1000] # debug
-    tmp <- data.frame(emm=emm)
-    tmp$edo <- sub("^([a-z]{2,3})[-][0-9]{2}[.][0-9]{3}$", "\\1", emm)
-    tmp$edon <- mapvalues(x=tmp$edo,
-                          from = c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic", "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac"),
-                          to = 1:32)
-    tmp$inegi <- sub("^[a-z]+[-][0-9]+[.]([0-9]{3})$", "\\1", emm)
-    tmp$inegi <- as.numeric(tmp$edon)*1000 + as.numeric(tmp$inegi)
-    tmp$cycle <- sub("^[a-z]+[-]([0-9]+)[.][0-9]{3}", "\\1", emm)
-    tmp$cycle <- as.numeric(tmp$cycle)
-    return(tmp[, c("inegi","cycle")])
-    #head(tmp)
-}
+## USE ids$cycle TO SIMPLIFY LAGGING AND DELTAS INSTEAD OF COMMENTED FUNCTION
+## ##
+## ## function to simplify lagging and deltas
+## inegi.cycle.fr.emm <- function(emm){
+##     library(plyr)
+##     #emm <- vot$emm[1:1000] # debug
+##     tmp <- data.frame(emm=emm)
+##     tmp$edo <- sub("^([a-z]{2,3})[-][0-9]{2}[.][0-9]{3}$", "\\1", emm)
+##     tmp$edon <- mapvalues(
+##         x=tmp$edo,
+##         from = c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic",
+##                  "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac"),
+##         to = 1:32)
+##     tmp$inegi <- sub("^[a-z]+[-][0-9]+[.]([0-9]{3})$", "\\1", emm)
+##     tmp$inegi <- as.numeric(tmp$edon)*1000 + as.numeric(tmp$inegi)
+##     tmp$cycle <- sub("^[a-z]+[-]([0-9]+)[.][0-9]{3}", "\\1", emm)
+##     tmp$cycle <- as.numeric(tmp$cycle)
+##     return(tmp[, c("inegi","cycle")])
+##     #head(tmp)
+## }
 
 
 #################################
@@ -1792,7 +1836,7 @@ ids <- ids[order(ids$emm),] # sort mun-chrono
 vot <- vot[order(vot$emm),]
 vo4 <- vo4[order(vo4$emm),]
 r4  <- r4 [order(r4 $emm),]
-##
+## check
 table(ids$emm == vot$emm)
 table(ids$emm == vo4$emm)
 table(ids$emm == r4 $emm)
@@ -1801,18 +1845,21 @@ table(ids$emm == r4 $emm)
 #########################################################
 ## xsts lag all cols except emm (emm must be column 1) ##
 #########################################################
-lagall <- function(dat=NA){
+lagall <- function(dat=NA, slideBy=-1){
     cols  <- colnames(dat)[-1:-2] ## get colnames except emm ord
     cols2 <- paste0(cols, "2") ## rename cols except emm
     colnames(dat)[-1:-2] <- cols2
-    dat <- cbind(dat, inegi.cycle.fr.emm(dat$emm)) ## add cycle and inegi from emm
+    cols2 -> colnames(dat)[-1:-2]
+    dat <- cbind(dat, ids[, c("cycle", "inegi")]) ## add cycle and inegi from ids
+    ##dat <- cbind(dat, inegi.cycle.fr.emm(dat$emm)) ## add cycle and inegi from emm
     dat <- dat[order(dat$ord),]       ## sort prior to sliding
     for (i in 1:length(cols2)){
-        dat <- slide(dat, Var = cols2[i], NewVar = cols[i], TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
+        dat <- slide(dat, Var = cols2[i], NewVar = cols[i], TimeVar = "cycle", GroupVar = "inegi", slideBy = slideBy)
     }
     drop.c <- which(colnames(dat) %in% cols2)
     dat <- dat[, -drop.c] # drop columns with "2" variables
     dat$inegi <- dat$cycle <- NULL # remove added inegi and cycle
+    dat <- dat[order(dat$emm),]    # sort
     return(dat)
 }
 ##
@@ -1820,11 +1867,41 @@ votlag <- lagall(vot)
 vo4lag <- lagall(vo4)
 r4lag  <- lagall(r4)
 reslag <- lagall(res)
+
+             
+
+## con missing period, usar lag-2nd dif para no perder dos obs
+sel.r <- which(ids$emm %in% c("cps-19.034", # in 2024
+                              "cps-17.058",
+                              "cps-19.125", # in 2024
+                              "oax-13.007",
+                              "oax-13.053",
+                              "oax-16.130",
+                              "pue-17.175",
+                              "ver-16.064"))
+## second difs
+tmp1 <- lagall(vot, slideBy=-2)
+tmp2 <- lagall(vo4, slideBy=-2)
+tmp3 <- lagall(r4 , slideBy=-2)
+tmp4 <- lagall(res, slideBy=-2)
 ##
+votlag[sel.r,] <- tmp1[sel.r,]
+vo4lag[sel.r,] <- tmp2[sel.r,]
+r4lag [sel.r,] <- tmp3[sel.r,]
+reslag[sel.r,] <- tmp4[sel.r,]
+
+## eric  x
 ## cómo lidio con missing periods? generan NAs en la serie del municipio donde ocurren
-summary(vot$pri)
-summary(votlag$pri)
-rm(lagall,inegi.cycle.fr.emm)
+summary(r4   $pan[ids$yr>2002])
+summary(r4lag$pan[ids$yr>2002])
+sel.r <- which(is.na(r4lag$pan)==TRUE & ids$yr > 2002)
+data.frame(emm=ids$emm[sel.r], status=ids$status[sel.r])
+i <- i+1; r4lag[sel.r[i],]; ids[sel.r[i],]
+xx
+
+
+
+
 
 ################################
 ## deltas for cross-temp regs ##

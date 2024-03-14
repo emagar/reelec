@@ -44,11 +44,20 @@ vot$dcoalpve <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-
 vot$dcoalpt  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pt|pt-", x)) > 0, 1, 0))
 vot$dcoalmc  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-mc|mc-", x)) > 0, 1, 0))
 ##
-## drop before 1994
-sel <- which(vot$yr<1994)
+## keep copy with all votes to use in some hard lags below
+tmp.votpre1996 <- vot
+## keep 1997-on
+sel <- which(vot$yr<1996)
 vot <- vot[-sel,]
+
+## ## drop municpios that had any usos y costumbres vote
+## ## Other than two cases that were uyc only in 1995, municipios that became uyc at any time since 1995 are included in this vector of ife codes
+## sel <- c(20001, 20003, 20004, 20009, 20010, 20013, 20014, 20559, 20018, 20019, 20021, 20022, 20023, 20025, 20027, 20187, 20029, 20033, 20034, 20035, 20040, 20042, 20020, 20068, 20073, 20556, 20045, 20046, 20047, 20049, 20050, 20053, 20054, 20058, 20036, 20060, 20061, 20062, 20063, 20064, 20065, 20070, 20074, 20075, 20079, 20080, 20081, 20082, 20083, 20084, 20085, 20088, 20089, 20090, 20091, 20092, 20093, 20094, 20095, 20096, 20097, 20098, 20101, 20102, 20103, 20104, 20105, 20106, 20107, 20108, 20110, 20111, 20112, 20113, 20114, 20116, 20117, 20118, 20119, 20120, 20122, 20123, 20124, 20125, 20126, 20128, 20129, 20130, 20132, 20134, 20135, 20136, 20137, 20139, 20141, 20142, 20143, 20144, 20145, 20146, 20148, 20149, 20150, 20151, 20152, 20153, 20155, 20156, 20158, 20159, 20160, 20161, 20162, 20163, 20165, 20169, 20168, 20171, 20172, 20173, 20174, 20176, 20177, 20180, 20188, 20191, 20192, 20185, 20186, 20193, 20194, 20195, 20196, 20197, 20198, 20201, 20202, 20203, 20204, 20205, 20206, 20207, 20209, 20208, 20210, 20211, 20212, 20213, 20214, 20215, 20216, 20217, 20218, 20219, 20220, 20221, 20222, 20223, 20224, 20226, 20227, 20228, 20229, 20230, 20231, 20233, 20234, 20235, 20236, 20238, 20239, 20240, 20241, 20242, 20243, 20244, 20246, 20247, 20248, 20249, 20250, 20251, 20253, 20254, 20255, 20256, 20257, 20259, 20260, 20264, 20262, 20263, 20265, 20266, 20267, 20268, 20269, 20270, 20271, 20272, 20273, 20274, 20275, 20277, 20279, 20280, 20281, 20282, 20284, 20285, 20286, 20287, 20289, 20290, 20291, 20294, 20295, 20297, 20299, 20301, 20302, 20304, 20308, 20309, 20311, 20312, 20313, 20314, 20315, 20317, 20318, 20319, 20320, 20321, 20323, 20324, 20326, 20327, 20328, 20329, 20330, 20331, 20333, 20335, 20336, 20337, 20338, 20339, 20340, 20341, 20343, 20344, 20345, 20346, 20347, 20348, 20349, 20350, 20351, 20352, 20353, 20354, 20355, 20356, 20357, 20358, 20359, 20361, 20362, 20363, 20365, 20366, 20367, 20368, 20369, 20370, 20371, 20372, 20373, 20374, 20375, 20377, 20379, 20380, 20381, 20383, 20384, 20385, 20387, 20391, 20389, 20390, 20393, 20394, 20395, 20396, 20397, 20398, 20400, 20401, 20406, 20408, 20402, 20404, 20405, 20409, 20410, 20411, 20412, 20413, 20417, 20420, 20399, 20421, 20423, 20424, 20425, 20426, 20428, 20429, 20430, 20431, 20433, 20434, 20436, 20438, 20439, 20441, 20443, 20444, 20445, 20446, 20447, 20449, 20450, 20451, 20452, 20453, 20454, 20455, 20458, 20461, 20460, 20462, 20464, 20465, 20466, 20467, 20469, 20471, 20472, 20474, 20476, 20477, 20478, 20479, 20480, 20482, 20483, 20488, 20489, 20491, 20492, 20493, 20494, 20495, 20496, 20497, 20498, 20499, 20500, 20501, 20502, 20503, 20504, 20505, 20508, 20510, 20511, 20512, 20514, 20516, 20517, 20518, 20519, 20521, 20522, 20523, 20524, 20526, 20527, 20528, 20529, 20530, 20531, 20532, 20533, 20535, 20540, 20541, 20538, 20542, 20544, 20546, 20547, 20548, 20551, 20552, 20554, 20403, 20561, 20562, 20278, 20563, 20564, 20565, 20567, 20569, 7064, 16024, 17034, 17035, 17036)
+## sel.r <- which(vot$ife %in% sel)
+## vot <- vot[-sel,] ## drop them
+##
 ## clean
-rm(l,vcoa)
+rm(l,vcoa,sel,sel.r)
 ##
 ## drop Belisario Domínguez, litigio after 2nd election
 drop.r <- grep("xxx", vot$emm)
@@ -484,7 +493,7 @@ inc <- inc[-sel.r,-sel.c]
 
 
 ## change conve to mc
-inc$part <- sub("conve|cdppn", "mc", inc$part)
+inc$part           <- sub("conve|cdppn", "mc", inc$part)
 inc$prior.inc.part <- sub("conve|cdppn", "mc", inc$prior.inc.part)
 inc$inc.part.after <- sub("conve|cdppn", "mc", inc$inc.part.after)
 ## verify time series cross section's structure (for grouped lags)
@@ -548,6 +557,7 @@ vot$prior.inc.part <- NULL
 ## inspect
 tail(vot)
 
+
 ## For lags: vot xsts not square, use inc (which is) to add missing obs
 ## add cycle
 tmp <- vot$emm
@@ -557,8 +567,8 @@ tmp <- as.numeric(tmp)
 vot$cycle <- tmp
 rm(tmp)
 ##
-table(vot$cycle)
-table(inc$cycle)
+table( vot $cycle)
+table( inc $cycle)
 ##
 tmp <- inc[, c("emm","cycle")] ## keep ids and temp ids only
 tmp <- merge(x=vot, y=tmp, by=c("emm","cycle"), all=TRUE)
@@ -575,43 +585,42 @@ dim(vot)
 ## fill missing ids in new obs
 sel.r <- which(is.na(tmp$inegi))
 if (length(sel.r) > 0){
-    edon <- sub("^([a-z]+)-.+$", "\\1", tmp$emm[sel.r])
-    edon <- ifelse(edon=="oax", 20, 32)
-    tmp$edon[sel.r] <- edon
-    inegi <- as.numeric(sub("^[a-z]+-[0-9]+[.]([0-9]+)$", "\\1", tmp$emm[sel.r]))
-    inegi <- edon*1000 + inegi
-    tmp$inegi[sel.r] <- inegi
     ## function to complete missing ifes
     pth <- ifelse (Sys.info()["user"] %in% c("eric", "magar"),
                    "~/Dropbox/data/useful-functions",
                    "https://raw.githubusercontent.com/emagar/useful-functions/master"
                    )
     source( paste(pth, "inegi2ife.r", sep = "/") )
+    source( paste(pth, "edo2edon.r", sep = "/") )
     rm(pth)
-    tmp$ife[sel.r] <- inegi2ife(tmp$inegi[sel.r])
-    rm(inegi2ife,ife2inegi,inegi2mun,ife2mun)
-    ## fill missin yr
-    tmp$yr[sel.r][grep("oax-09", tmp$emm[sel.r])] <- 1995
-    tmp$yr[sel.r][grep("oax-11", tmp$emm[sel.r])] <- 2001
-    tmp$yr[sel.r][grep("oax-12", tmp$emm[sel.r])] <- 2004
-    tmp$yr[sel.r][grep("oax-13", tmp$emm[sel.r])] <- 2007
-    tmp$yr[sel.r][grep("zac-09", tmp$emm[sel.r])] <- 1995
-    ## replace dat with manipulatd object
-    vot <- tmp
-    rm(edon, inegi, tmp, sel.r)
+    edon <- sub("^([a-z]+)-.+$", "\\1", tmp$emm[sel.r])
+    edon <- edo2edon(edon)
+    tmp$edon[sel.r] <- edon
+    inegi <- as.numeric(sub("^[a-z]+-[0-9]+[.]([0-9]+)$", "\\1", tmp$emm[sel.r]))
+    inegi <- edon*1000 + inegi
+    tmp$inegi[sel.r] <- inegi
     ##
-    ## Compute electoral calendar variables
-    ## add missing dates manually
-    date <- vot$date
-    sel.r <- which(is.na(date))
-    date[sel.r] <- c(rep(19951112, 16), 20011007, rep(20041003, 2), 20071007, 19950806)
-    vot$date <- date
-    ## ## commented: dates stopped working with R upgrade
-    ## ## date format
-    ## library(lubridate)
-    ## vot$date <- ymd(vot$date)
-    ## date <- ymd(date)
-    ## summary(date) # no NAs
+    tmp$ife[sel.r] <- inegi2ife(tmp$inegi[sel.r])
+    rm(inegi2ife,ife2inegi,inegi2mun,ife2mun,edo2edon,edon2edo)
+    ## fill missing yr
+    tmp2 <- sub("([a-z]+[-][0-9]{2})[.][0-9]{3}", "\\1", tmp$emm[sel.r]) ## get edo-cycle
+    tmp2 <- data.frame(edocy=tmp2, yr=NA, date=NA)
+    ## function returniong the mode, from https://stackoverflow.com/questions/2547402/how-to-find-the-statistical-mode
+    Mode <- function(x) {
+        ux <- unique(x)
+        ux[which.max(tabulate(match(x, ux)))]
+    }
+    for (i in 1:nrow(tmp2)){
+        sel <- grep(tmp2$edocy[i], tmp.votpre1996$emm)
+        tmp2$yr  [i] <- Mode(tmp.votpre1996$yr  [sel]) ## return the modal date (assumes off-yr extra elecs are minority of cycle's yrs)
+        tmp2$date[i] <- Mode(tmp.votpre1996$date[sel]) ## return the modal year 
+    }
+    ## return yrs and dates
+    tmp$yr  [sel.r] <- tmp2$yr
+    tmp$date[sel.r] <- tmp2$date
+    ## replace dat with manipulated object
+    vot <- tmp
+    rm(edon, inegi, sel.r, sel, i, Mode, tmp2)
 }
 ##
 table(is.na(tmp$yr))
@@ -689,7 +698,7 @@ for (i in 1:32){ ## loop over states
 }
 table(vot$govpty, useNA = "ifany")
 ## clean
-rm(tmp, vot2, gov, gov2, i, j, sel, sel.c, sel.r, year, to.eng, to.num)
+rm(vot2, gov, gov2, i, j, sel, sel.c, sel.r, year, to.eng, to.num)
 
 ## Code gov dummies
 vot <- within(vot, {
@@ -923,7 +932,7 @@ colnames(vot) <- gsub("^day", "dinc", colnames(vot))
 
 
 ## Separate id and non-time varying vars into own data.frame
-vot[1,]
+vot[1000,]
 vot <- vot[order(vot$inegi, vot$cycle),]
 vot$ord <- 1:nrow(vot)
 sel.c <- which(colnames(vot) %in% c("inegi","edon","cycle","yr","ife","mun","date","trienio","status","yr1st","dcapital","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt"))
@@ -1144,8 +1153,10 @@ elhis$emm <- paste0(elhis$edo, "-0", elhis$cycle, ".", tmp) ## adds zero heading
 elhis$emm <- sub("-0([1-9][0-9])", "-\\1", elhis$emm)       ## drop heading zero in emm when followed by non-zero and another digit
 elhis <- within(elhis, edo <- alphahat.pan <- alphahat.pri <- alphahat.left <- betahat.pan <- betahat.left <- NULL)
 ##
-vot <- merge(x = vot, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], by = "emm", all.x = TRUE, all.y = FALSE)
-
+vot[1000,]
+elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")][2,]
+vot2 <- merge(x = vot, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], by = "emm", all.x = TRUE, all.y = FALSE)
+tail(vot2)
 
 ## duplicate vot for lucardi-rosas selection criteria
 sel.c <- which(colnames(vot) %in% c("emm", "win", "part2nd", "mg", "win.prior", "run.prior", "mg.prior"))
@@ -1621,6 +1632,7 @@ vot <- vot[-sel.r,]
 ids <- ids[-sel.r,]
 
 
+
 #############################################################
 ## Prepare different specifications of the DV for analysis ##
 #############################################################
@@ -1722,8 +1734,7 @@ sel <- which(vo4$pri==0); data.frame(emm=vo4$emm[sel], yr=ids$yr[sel])
 ## In practice, adding something in [delta/5, 2*delta] will do. 
 ##
 ## turnout never zero, no need to manipulate
-table(vo4$turn.ln==0)
-table(vo4$turn.ln==1)
+table(vo4$turn.ln > 0 & vo4$turn.ln < 1)
 ##
 v4 <- vo4[, c("pan","pri","left","oth")] # take vote columns for manipulation
 tmp <- function(x){
@@ -1776,11 +1787,11 @@ r4 <- vo4
 r4[,c("pan","left","oth")] <- v4[,-2] / v4$pri
 r4$pri <- NULL
 r4$turn.ln <- r4$turn.ln / (1 - r4$turn.ln)
-##
-plot(r4$turn.ln[ids$yr > 1996])
-plot(r4$pan [ids$yr > 1996])
-plot(r4$left[ids$yr > 1996])
-plot(r4$oth [ids$yr > 1996])
+## ## check
+## plot(r4$turn.ln[ids$yr > 1996])
+## plot(r4$pan [ids$yr > 1996])
+## plot(r4$left[ids$yr > 1996])
+## plot(r4$oth [ids$yr > 1996])
 ## ## debug
 ## sel.r <- which(r4$left > 2000)
 ## ids$emm[sel.r]
@@ -1842,6 +1853,7 @@ table(ids$emm == vo4$emm)
 table(ids$emm == r4 $emm)
 
 
+
 #########################################################
 ## xsts lag all cols except emm (emm must be column 1) ##
 #########################################################
@@ -1868,17 +1880,32 @@ vo4lag <- lagall(vo4)
 r4lag  <- lagall(r4)
 reslag <- lagall(res)
 
-             
 
 ## con missing period, usar lag-2nd dif para no perder dos obs
 sel.r <- which(ids$emm %in% c("cps-19.034", # in 2024
                               "cps-17.058",
                               "cps-19.125", # in 2024
+                              "oax-10.005",
+                              "oax-10.025",
+                              "oax-10.066",
+                              "oax-10.075",
+                              "oax-10.089",
+                              "oax-10.141",
+                              "oax-10.143",
+                              "oax-10.171",
+                              "oax-10.232",
+                              "oax-10.327",
+                              "oax-10.339",
+                              "oax-10.377",
+                              "oax-10.441",
+                              "oax-10.505",
+                              "oax-10.557",
                               "oax-13.007",
                               "oax-13.053",
                               "oax-16.130",
                               "pue-17.175",
-                              "ver-16.064"))
+                              "ver-16.064",
+                              "zac-10.039"))
 ## second difs
 tmp1 <- lagall(vot, slideBy=-2)
 tmp2 <- lagall(vo4, slideBy=-2)
@@ -1890,18 +1917,95 @@ vo4lag[sel.r,] <- tmp2[sel.r,]
 r4lag [sel.r,] <- tmp3[sel.r,]
 reslag[sel.r,] <- tmp4[sel.r,]
 
+
+## Save data to debug
+save.image(file = "tmp.RData")
+
+######################
+## read saved image ##
+######################
+library(DataCombine) # easy lags
+rm(list = ls())
+##
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
+setwd(wd)
+load(file = "tmp.RData")
+
+## Drop pre-1997
+sel.r <- which(ids$yr < 1997)
+ids <- ids[-sel.r,]
+vot <- vot[-sel.r,]
+vo4 <- vo4[-sel.r,]
+r4  <- r4 [-sel.r,]
+
+AQUI ALGO NO JALA...
+
+###########################################################################
+## check that NAs in current are all appointed municipios, and drop them ##
+###########################################################################
+sel.r <- which(is.na(vot$pan)==TRUE)# & ids$yr > 1996)
+table(ids$status[sel.r], useNA = "ifany")
+table(ids$yr[sel.r], useNA = "ifany")
+data.frame(emm=ids$emm[sel.r], yr=ids$yr[sel.r])
+ids    <- ids   [-sel.r,]
+vot    <- vot   [-sel.r,]
+vo4    <- vo4   [-sel.r,]
+r4     <- r4    [-sel.r,]
+res    <- res   [-sel.r,]
+votlag <- votlag[-sel.r,]
+vo4lag <- vo4lag[-sel.r,]
+r4lag  <- r4lag [-sel.r,]
+reslag <- reslag[-sel.r,]
+rm(sel.r)
+#####################################################
+## Drop 1st obs here, missing previous 3 so no lag ##
+#####################################################
+sel.r <- which(ids$emm=="oax-10.232")
+ids    <- ids   [-sel.r,]
+vot    <- vot   [-sel.r,]
+vo4    <- vo4   [-sel.r,]
+r4     <- r4    [-sel.r,]
+res    <- res   [-sel.r,]
+votlag <- votlag[-sel.r,]
+vo4lag <- vo4lag[-sel.r,]
+r4lag  <- r4lag [-sel.r,]
+reslag <- reslag[-sel.r,]
+
+
+
 ## eric  x
 ## cómo lidio con missing periods? generan NAs en la serie del municipio donde ocurren
-summary(r4   $pan[ids$yr>2002])
-summary(r4lag$pan[ids$yr>2002])
-sel.r <- which(is.na(r4lag$pan)==TRUE & ids$yr > 2002)
-data.frame(emm=ids$emm[sel.r], status=ids$status[sel.r])
-i <- i+1; r4lag[sel.r[i],]; ids[sel.r[i],]
-xx
+summary(r4   $pan[ids$yr>1996])
+summary(r4lag$pan[ids$yr>1996])
+## check that NAs in lags are all new municipios
+sel.r <- which(is.na(r4lag$pan)==TRUE & ids$yr > 1996)
+table(ids$status[sel.r])
+##
+ids    <- ids   [-sel.r,]
+vot    <- vot   [-sel.r,]
+vo4    <- vo4   [-sel.r,]
+r4     <- r4    [-sel.r,]
+res    <- res   [-sel.r,]
+votlag <- votlag[-sel.r,]
+vo4lag <- vo4lag[-sel.r,]
+r4lag  <- r4lag [-sel.r,]
+reslag <- reslag[-sel.r,]
+## # used to debug
+## data.frame(emm=ids$emm[sel.r], status=ids$status[sel.r])
+## i <- i+1; r4lag[sel.r[i],]; ids[sel.r[i],]
 
-
-
-
+## drop prior to 1997
+sel.r <- which(ids$yr < 1997)
+ids    <- ids   [-sel.r,]
+vot    <- vot   [-sel.r,]
+vo4    <- vo4   [-sel.r,]
+r4     <- r4    [-sel.r,]
+res    <- res   [-sel.r,]
+votlag <- votlag[-sel.r,]
+vo4lag <- vo4lag[-sel.r,]
+r4lag  <- r4lag [-sel.r,]
+reslag <- reslag[-sel.r,]
 
 ################################
 ## deltas for cross-temp regs ##
@@ -1922,6 +2026,10 @@ res    <-    res[order   (res$ord),]
 table(votlag$emm == vot$emm)
 table(vo4lag$emm == vo4$emm)
 table(r4lag $emm == r4 $emm)
+sel.r <- which(votlag$emm != vot$emm)
+
+sel <- 8830:8839; data.frame(ord=vot$ord[sel], emm=vot$emm[sel], ordlag=votlag$ord[sel], emmlag=votlag$emm[sel])
+x
 ##
 ##data.frame(vot=colnames(vot), lag=colnames(votlag))
 deltas <- function(dat=NA,datlag=NA){

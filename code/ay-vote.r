@@ -1935,7 +1935,57 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
 setwd(wd)
 load(file = "tmp.RData")
 
+## get 2020 census indicators
+## generate pob in localidades < 10k hab
+my_fun <- function(path){
+    tmp <- read.csv(path)
+    tmp <- tmp[, c("ENTIDAD","MUN","NOM_MUN","LOC","NOM_LOC","POBTOT")]
+    colnames(tmp) <- c("edon","inegi","municipio","loc","localidad","ptot")
+    tmp <- tmp[(tmp$inegi>0 & tmp$loc>0),]
+    tmp$drural <- as.numeric(tmp$ptot < 10000)  ## poblados with less 10k considered rural
+    tmp$inegi <- tmp$edon*1000 + tmp$inegi
+    tmp$prural <- tmp$ptot * tmp$drural
+    tmp$prural <- ave(tmp$prural, as.factor(tmp$inegi), FUN=function(x) sum(x, na.rm=TRUE))
+    tmp$ptot   <- ave(tmp$ptot,   as.factor(tmp$inegi), FUN=function(x) sum(x, na.rm=TRUE))
+    tmp <- tmp[duplicated(tmp$inegi)==FALSE,]
+    tmp <- within(tmp, {
+        ruralsh <- round(prural / ptot, 3);
+        edon <- loc <- localidad <- drural <- NULL;
+    })
+    return(tmp)
+}
+##
+rur2020 <- data.frame()
+for (i in 1:9){
+    path <- paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/raw/2020censo/localidades/poblacion/ITER_0", i, "CSV20.csv")
+    tmp2 <- my_fun(path)
+    rur2020 <- rbind(rur2020, tmp2)
+}
+for (i in 10:32){
+    path <- paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/raw/2020censo/localidades/poblacion/ITER_", i, "CSV20.csv")
+    tmp2 <- my_fun(path)
+    rur2020 <- rbind(rur2020, tmp2)
+}
+##head(rur2020)
+##
+## sum san quintin to ensenada (san quintinn won't elect ayuntamiento until 2024)
+sel.r <- which(rur2020$inegi %in% c(2001, 2006))
+rur2020$ruralsh[sel.r] <- round(sum(rur2020$prural[sel.r]) / sum(rur2020$ptot[sel.r]), 3)
+##
+## paste ruralsh in ids (not a time-varying quantity)
+ids <- merge(x = ids, y = rur2020[,c("inegi","municipio","ruralsh")], by = "inegi", all.x = TRUE, all.y = FALSE)
+rm(sel.r, ruralsh)
+##
+## add p5li
+p5li <- read.csv("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/data/censo2020-mu.csv")
+p5li$p5lish <- round(p5li$P5_HLI / p5li$P_5YMAS, 3)
+ids2 <- merge(x = ids, y = p5li[,c("inegi","p5lish")], by = "inegi", all.x = TRUE, all.y = FALSE)
+ids2 <- ids2[-which(duplicated(ids2$ord)),] ## quick fix to a bug: some obs are duplicated by merge ???
+ids <- ids2
+rm(p5li,rur2020)
+rm(i,ln,my_fun,p18,path,sel,sel.l,sel.t,t,t2,tmp2)
 
+##
 ## sort
 ids    <-    ids[order(   ids$ord),]
 votlag <- votlag[order(votlag$ord),]
@@ -2016,25 +2066,14 @@ table(colnames(vot)==colnames(votlag))
 table(colnames(vo4)==colnames(vo4lag))
 table(colnames (r4)==colnames (r4lag))
 table(colnames(res)==colnames(reslag))
-## sort
-votlag <- votlag[order(votlag$ord),]
-vo4lag <- vo4lag[order(vo4lag$ord),]
-r4lag  <-  r4lag[order (r4lag$ord),]
-reslag <- reslag[order(reslag$ord),]
-vot    <-    vot[order   (vot$ord),]
-vo4    <-    vo4[order   (vo4$ord),]
-r4     <-     r4[order    (r4$ord),]
-res    <-    res[order   (res$ord),]
+## check order
 table(votlag$emm == vot$emm)
 table(vo4lag$emm == vo4$emm)
 table(r4lag $emm == r4 $emm)
-sel.r <- which(votlag$emm != vot$emm)
-
-sel <- 8830:8839; data.frame(ord=vot$ord[sel], emm=vot$emm[sel], ordlag=votlag$ord[sel], emmlag=votlag$emm[sel])
-x
+table(reslag$emm == res$emm)
 ##
 ##data.frame(vot=colnames(vot), lag=colnames(votlag))
-deltas <- function(dat=NA,datlag=NA){
+deltas <- function(dat=NA, datlag=NA){
     ## sort all
     dat    <- dat   [order(dat   $ord),   ]
     datlag <- datlag[order(datlag$ord),]
@@ -2060,16 +2099,16 @@ vo4delta <- deltas(dat=vo4, datlag=vo4lag)
 r4delta  <- deltas(dat= r4, datlag= r4lag)
 resdelta <- deltas(dat=res, datlag=reslag)
 ##
-table(votdelta$dincpan)
-table(votdelta$dincpri)
-table(votdelta$dincprd)
-table(r4delta$dincleft)
+table(votdelta$dincpan, useNA = "always")
+table(votdelta$dincpri, useNA = "always")
+table(votdelta$dincprd, useNA = "always")
+table(r4delta$dincleft, useNA = "always")
 ##
 table(vot$emm == votlag$emm)
 table(vo4$emm == vo4lag$emm)
 table( r4$emm ==  r4lag$emm)
 table(res$emm == reslag$emm)
-table(vot$emm ==     r4$emm)
+table(vot$emm ==    ids$emm)
 ##
 rm(deltas,sel)
 
@@ -2081,8 +2120,8 @@ mylm <- function(dv, predictors, data, subset = NULL){
     ## subset <- "ord>2005"
     ## predictors <- c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab")
     ##
-    dv2 <- sub("^log[(]([a-z]+)[)]", "\\1", dv) ## drop log if any
-    if (dv2 %notin% c("pan","pri","morena","left","oth")) stop("Wrong party")
+    dv2 <- sub("^log[(]([a-z.]+)[)]", "\\1", dv) ## drop log if any
+    if (dv2 %notin% c("pan","pri","morena","left","oth","turn.ln")) stop("Wrong party")
     data <- data[order(data$ord),] # sort
     ids  <- ids [order(ids $ord),] # sort
     data <- cbind(ids, data[,-1])  # merge
@@ -2102,7 +2141,7 @@ mylm <- function(dv, predictors, data, subset = NULL){
     ## add dv to party-specific predictors
     sel <- grep("^di|^dgov|^dpres|^vhat.", predictors)
     #sel <- which(predictors %in% c("dinc", "dincballot", "dgov", "dpres", "vhat.", "di", "diballno", "diballpan"))
-    predictors[sel] <- paste0(predictors[sel], dv2)
+    if (length(sel)>0 & dv2!="turn.ln") predictors[sel] <- paste0(predictors[sel], dv2)
     ## collapse predictors
     predictors <- paste(predictors, collapse = " + ")
     formula <- paste(dv, predictors, sep = " ~ ")
@@ -2110,46 +2149,28 @@ mylm <- function(dv, predictors, data, subset = NULL){
     return(model)
 }
 
-## add turnout
-
-## single yr
-tmp <- mylm(dv="log(pan)", data=r4, subset="yr>2005", predictors = c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
+## models
+tmp <- mylm(dv="log(pan)", data=r4, subset="yr>1999", predictors = c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "ruralsh", "p5lish", "as.factor(trienio)")); summary(tmp)
 ##
-tmp <- mylm(dv="log(pan)", data=r4, subset="yr>2005", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="log(pan)", data=r4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "ruralsh", "p5lish", "as.factor(trienio)")); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=vo4, subset="yr>2005", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "ncand", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="pan", data=vo4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "ncand", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=res, subset="yr>2005", predictors = c("di", "diballno", "diball", "dgov", "dpres", "ncand", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="pan", data=res, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "ncand", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=votdelta, subset="yr>2005", predictors = c("di", "diballno", "diball", "ncand", "dgov", "dpres")); summary(tmp)
+tmp <- mylm(dv="pan", data=r4delta, subset="yr>1999", predictors = c("di", "diballno", "diball", "ncand", "dgov", "dpres")); summary(tmp)
+##
+tmp <- mylm(dv="log(turn.ln)", data=r4, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "popshincab", "wsdalt", "lats", "ruralsh", "p5lish",  "as.factor(trienio)")); summary(tmp)
+##
+tmp <- mylm(dv="turn.ln", data=r4delta, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)")); summary(tmp)
 
-tmp <- lm(formula = ncand ~ dipan + diballnopan + diballpan + alphahat.pan, data=vo4); summary(tmp)
 
-ids[1,]
-
-colnames(vo4)
-x
-
-## single yr
-delta <- delta[order(delta$ord),]; ids <- ids[order(ids$ord),] ## sort all objects
-## add ids to vot
-delta2 <- cbind(ids, delta[,-1]) ## duplicate
-delta2[10000,]
-summary(lm(pan    ~ (dincpan * dincballot)    + dgovpan    + dprespan    + as.factor(trienio), data = delta2, subset = yr>1996))
-summary(lm(pri    ~ (dincpri * dincballot)    + dgovpri    + dprespri    + as.factor(trienio), data = delta2, subset = yr>2001))
-summary(lm(morena ~ (dincmorena * dincballot) + dgovmorena + dpresmorena + as.factor(trienio), data = delta2, subset = yr>2013))
-
-summary(lm(pan ~ dipan + diballnopan + diballpan + dgovpan    + dprespan + dconcgo   + as.factor(trienio), data = delta2, subset = yr>1996))
-summary(lm(pri ~ dipri + diballnopri + diballpri + dgovpri    + dprespri    + as.factor(trienio), data = delta2, subset = yr>1996))
-summary(lm(morena    ~ dimorena + diballnomorena + diballmorena + dgovmorena    + dpresmorena    + as.factor(trienio), data = delta2, subset = yr>2014))
-
-summary(lm(panres ~ dipan + diballnopan + diballpan + dgovpan    + dprespan + dconcgo   + as.factor(trienio), data = delta2, subset = yr>1996))
-summary(lm(prires ~ dipri + diballnopri + diballpri + dgovpri    + dprespri    + as.factor(trienio), data = delta2, subset = yr>1996))
-summary(lm(morenares ~ dimorena + diballnomorena + diballmorena + dgovmorena    + dpresmorena    + dconcgo + as.factor(trienio), data = delta2, subset = yr>2014))
 
 summary(lm(pan ~ dcoalpan + dcoalpri, data = vot)) ## Para ilustrar endogeneidad
 ls()
 dim(vot)
+
+ 
 
 
 

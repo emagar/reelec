@@ -7,11 +7,12 @@ dgo2022/
 
 .Rhistory
 
+# emacs backup files
 *.*~
+auto/
 
+# LaTex stuff 
 *.aux
 *.blg
 *.log
 *.bbl
-
-auto/

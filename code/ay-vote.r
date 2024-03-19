@@ -558,7 +558,7 @@ vot$prior.inc.part <- NULL
 ## inspect
 tail(vot)
 
-## 15mar24: This block might chg
+## 15mar24: Lack of squareness dealt differently --- drops missing yrs so that lag uses last available obs
 ## For lags: vot xsts not square, use inc (which is) to add missing obs
 ## add cycle
 tmp <- vot$emm
@@ -802,7 +802,7 @@ rm(sel)
 ## alt$drop <- NULL
 ## alt[1:15,]
 ##
-## With 2020 censo
+## From 2020 censo
 alt <- data.frame() # prep
 for (i in 1:9){
     tmp <- read.csv(paste0("../../censos/raw/2020censo/localidades/poblacion/ITER_0", i, "CSV20.csv"))
@@ -922,6 +922,47 @@ rm(i,sel,sel.r,sel.c,tmp) # clean
 summary(vot$sdalt)
 ##
 
+###################################################################################
+## Luminosity                                                                    ##
+## Read seccion-level 2020 populations and generate pop-weighted municipal stats ##
+###################################################################################
+cese <- read.csv("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/data/censo2020-se.csv")
+cese <- cese[, c("edon","seccion","inegi","ife","POBTOT")] # trim columns
+colnames(cese)[5] <- "ptot"
+cese$seccion <- cese$edon*10000 + cese$seccion
+head(cese)
+##
+## Gets state conversion function
+pth <- ifelse (Sys.info()["user"] %in% c("eric", "magar"),
+    "~/Dropbox/data/useful-functions",
+    "https://raw.githubusercontent.com/emagar/useful-functions/master"
+    )
+source( paste(pth, "edo2edon.r", sep = "/") )
+rm(pth)
+##
+## reads seccion-level 2018 luminosity data, adds 2020 population
+lumu <- data.frame()
+for (i in 1:32){
+    ##i <- 2
+    pth <- paste0("/home/eric/Downloads/Desktop/data/mapas/luminosity/data/secciones/", edon2edo(i), "/lum2018.csv")
+    luse <- read.csv(pth)  ## read state's se-level luminosity
+    luse$seccion <- luse$edon*10000 + luse$seccion
+    luse <- merge(x = luse, y = cese[, c("seccion", "ife", "ptot")], by = "seccion", all.x = TRUE, all.y = FALSE) ## add ptot inegi
+    luse$ife <- luse$edon*1000 + luse$ife
+    luse$PTOT <- ave(luse$ptot, as.factor(luse$ife), FUN=function(x) sum(x, na.rm=TRUE)) ## sum municipal pops
+    luse$meanwpop <- luse$mean * luse$ptot / luse$PTOT  ## step to generate meanwpop
+    luse$meanwpop <- round(ave(luse$meanwpop, as.factor(luse$ife), FUN=function(x) sum(x, na.rm=TRUE)), 3) ## generate meanwpop
+    tmp <- luse[duplicated(luse$ife)==FALSE, c("ife", "meanwpop")]
+    lumu <- rbind(lumu, tmp)
+    ##luse[1,]
+}
+summary(lumu)
+##
+vot <- merge(x = vot, y = lumu, by = "ife", all.x = TRUE, all.y = FALSE)
+vot$lumwpop20 <- vot$meanwpop; vot$meanwpop <- NULL
+##
+rm(cese,lumu,i,pth,tmp)
+
 ## re-define party-by-party incumbency variables
 ## rename vars: dincpan will now mean outgoing mayor is pan etc, dincballotpan that outgoing mayior is in ballot again
 colnames(vot) <- gsub("^dinc", "dincballot", colnames(vot))
@@ -937,7 +978,7 @@ colnames(vot) <- gsub("^day", "dinc", colnames(vot))
 vot[1000,]
 vot <- vot[order(vot$inegi, vot$cycle),]
 vot$ord <- 1:nrow(vot)
-sel.c <- which(colnames(vot) %in% c("inegi","edon","cycle","yr","ife","mun","date","trienio","status","yr1st","dcapital","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt"))
+sel.c <- which(colnames(vot) %in% c("inegi","edon","cycle","yr","ife","mun","date","trienio","status","yr1st","dcapital","longs","lats","effloc","popshincab","wmeanalt","wsdalt","meanalt","sdalt","lumwpop20"))
 ids <- cbind(emm=vot$emm, ord=vot$ord, vot[,sel.c])
 vot <- vot[,-sel.c]
 vot <- vot[,moveme(colnames(vot), "ord first")]
@@ -1162,25 +1203,10 @@ vot <- merge(x = vot, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], b
 ## duplicate vot for lucardi-rosas selection criteria
 sel.c <- which(colnames(vot) %in% c("emm", "win", "part2nd", "mg", "win.prior", "run.prior", "mg.prior"))
 luro <- vot[, sel.c]
+luro$yr <- ids$yr
 vot$win.prior <- vot$run.prior <- vot$mg.prior <- NULL
 rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,tmp,yr) ## clean
 
-
-## Save data
-save.image(file = "ay-mu-vote-analysis.RData")
-
-######################
-## read saved image ##
-######################
-#source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/ay.r") ## slow!!
-
-library(DataCombine) # easy lags
-rm(list = ls())
-##
-dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
-setwd(wd)
-load(file = "ay-mu-vote-analysis.RData")
 
 ## turnout
 p18 <- read.csv(file = paste0(dd, "../../censos/data/pob18/p18mu-from-se-level-projection-aggregates.csv"))
@@ -1921,19 +1947,6 @@ table(ids$status[sel], ids$yr[sel], useNA = "ifany")
 ## r4lag [sel.r,] <- tmp3[sel.r,]
 ## reslag[sel.r,] <- tmp4[sel.r,]
 
-## Save data to debug
-save.image(file = "tmp.RData")
-
-######################
-## read saved image ##
-######################
-library(DataCombine) # easy lags
-rm(list = ls())
-##
-dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
-setwd(wd)
-load(file = "tmp.RData")
 
 ## get 2020 census indicators
 ## generate pob in localidades < 10k hab
@@ -2110,8 +2123,24 @@ table( r4$emm ==  r4lag$emm)
 table(res$emm == reslag$emm)
 table(vot$emm ==    ids$emm)
 ##
-rm(deltas,sel)
+rm(deltas)
 
+## Save data
+save.image(file = "ay-mu-vote-analysis.RData")
+
+######################
+## read saved image ##
+######################
+#source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/ay.r") ## slow!!
+
+library(DataCombine) # easy lags
+rm(list = ls())
+##
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
+setwd(wd)
+load(file = "ay-mu-vote-analysis.RData")
+##
 ## wrap lm commands in function
 mylm <- function(dv, predictors, data, subset = NULL){
     ## data <- r4
@@ -2150,21 +2179,88 @@ mylm <- function(dv, predictors, data, subset = NULL){
 }
 
 ## models
-tmp <- mylm(dv="log(pan)", data=r4, subset="yr>1999", predictors = c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "ruralsh", "p5lish", "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="log(pan)", data=r4, subset="yr>1999", predictors = c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
 ##
-tmp <- mylm(dv="log(pan)", data=r4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "ruralsh", "p5lish", "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="log(pan)", data=r4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=vo4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "ncand", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="pan", data=vo4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "ncand", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=res, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "ncand", "popshincab", "wsdalt", "lats", "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="pan", data=res, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "ncand", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
 ##
 tmp <- mylm(dv="pan", data=r4delta, subset="yr>1999", predictors = c("di", "diballno", "diball", "ncand", "dgov", "dpres")); summary(tmp)
 ##
-tmp <- mylm(dv="log(turn.ln)", data=r4, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "popshincab", "wsdalt", "lats", "ruralsh", "p5lish",  "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="pan", data=r4delta, subset="yr>1999", predictors = c("dincballot * dinc", "ncand", "dgov", "dpres")); summary(tmp)
+##
+tmp <- mylm(dv="log(turn.ln)", data=r4, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
+##
+tmp <- mylm(dv="turn.ln", data=r4delta, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)")); summary(tmp)
 ##
 tmp <- mylm(dv="turn.ln", data=r4delta, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)")); summary(tmp)
 
+## replicate lucardi rosas
+##
+## rename prd/morena as left. left is prd pre-2015, morena since 2018, or either in between
+luro$win       <- sub("morena", "left", luro$win)
+luro$part2nd   <- sub("morena", "left", luro$part2nd)
+luro$win.prior <- sub("morena", "left", luro$win.prior)
+luro$run.prior <- sub("morena", "left", luro$run.prior)
+ltmp <- luro[luro$yr < 2018,]
+ltmp$win       <- sub("prd", "left", ltmp$win)
+ltmp$part2nd   <- sub("prd", "left", ltmp$part2nd)
+ltmp$win.prior <- sub("prd", "left", ltmp$win.prior)
+ltmp$run.prior <- sub("prd", "left", ltmp$run.prior)
+ltmp -> luro[luro$yr < 2018,]
+rm(ltmp)
+## DVs
+luro$dpanwin  <- 0; luro$dpanwin [grep("pan" , luro$win)] <- 1
+luro$dpriwin  <- 0; luro$dpriwin [grep("pri" , luro$win)] <- 1
+luro$dleftwin <- 0; luro$dleftwin[grep("left", luro$win)] <- 1
+## 
+## pre-selectors (still need to filter margin)
+luro$dselpan <- 0
+tmp <- grep("pan", luro$win.prior)
+luro$dselpan[tmp] <- 1
+tmp <- grep("pan", luro$run.prior)
+luro$dselpan[tmp] <- 1
+##
+luro$dselpri <- 0
+tmp <- grep("pri", luro$win.prior)
+luro$dselpri[tmp] <- 1
+tmp <- grep("pri", luro$run.prior)
+luro$dselpri[tmp] <- 1
+##
+luro$dselleft <- 0
+tmp <- grep("left", luro$win.prior)
+luro$dselleft[tmp] <- 1
+tmp <- grep("left", luro$run.prior)
+luro$dselleft[tmp] <- 1
+##
+## Recompute margin according to party's 1st/runner-up status
+luro$mgpan <- NA
+tmp <- grep("pan", luro$win.prior)
+luro$mgpan[tmp] <- luro$mg[tmp]
+tmp <- grep("pan", luro$run.prior)
+luro$mgpan[tmp] <- -luro$mg[tmp]
+luro$mgpan[luro$dselpan==0] <- NA
+##
+luro$mgpri <- NA
+tmp <- grep("pri", luro$win.prior)
+luro$mgpri[tmp] <- luro$mg[tmp]
+tmp <- grep("pri", luro$run.prior)
+luro$mgpri[tmp] <- -luro$mg[tmp]
+luro$mgpri[luro$dselpri==0] <- NA
+##
+luro$mgleft <- NA
+tmp <- grep("left", luro$win.prior)
+luro$mgleft[tmp] <- luro$mg[tmp]
+tmp <- grep("left", luro$run.prior)
+luro$mgleft[tmp] <- -luro$mg[tmp]
+luro$mgleft[luro$dselleft==0] <- NA
 
+head(luro)
+
+
+x
 
 summary(lm(pan ~ dcoalpan + dcoalpri, data = vot)) ## Para ilustrar endogeneidad
 ls()

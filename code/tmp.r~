@@ -1,6 +1,21 @@
-geninegicycle <- function(emm){
-    library(plyr)
-    tmp <- data.frame(emm=emm)
-    tmp$edo <- sub("^([a-z]+)[-][0-9]+", "\\1", emm)
-    tmp$edon <- mapvalues(x=tmp$edo, from = c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic", "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac"), to = 1:32)
-    
+## Post-export commands: read seccion-level 2020 populations and generate pop-weighted municipal stats
+ce <- read.csv("/home/eric/Downloads/Desktop/MXelsCalendGovt/censos/data/censo2020-se.csv")
+ce <- ce[, c("edon","seccion","inegi","ife","POBTOT")] # trim columns
+colnames(ce)[5] <- "ptot"
+ce$seccion <- ce$edon*10000 + ce$seccion
+head(ce)
+
+## useful functions
+pth <- ifelse (Sys.info()["user"] %in% c("eric", "magar"),
+    "~/Dropbox/data/useful-functions",
+    "https://raw.githubusercontent.com/emagar/useful-functions/master"
+    )
+## Reads state conversion function
+source( paste(pth, "edo2edon.r", sep = "/") )
+rm(pth)
+
+## reads seccion-level luminosity data, re-writes with 2020 population
+for (i in 1:32){
+    ##i <- 2
+    pth <- paste0("/home/eric/Downloads/Desktop/data/mapas/luminosity/data/secciones/", edon2edo(i), "/lum2018.csv")
+se <- 

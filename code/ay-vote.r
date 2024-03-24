@@ -458,20 +458,7 @@ tmp <- sub(pattern = "(san-[0-9]+)b([.0-9]+$)", replacement = "\\1\\2", tmp)
 vot$emm[sel] <- tmp
 rm(tmp,sel)
 
-## Save data
-getwd()
-save.image(file = "tmp.RData")
 
-######################
-## read saved image ##
-######################
-library(DataCombine) # easy lags
-rm(list = ls())
-##
-dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
-wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
-setwd(wd)
-load(file = "tmp.RData")
 
 ## Fill missing NAs
 sel.r <- which(vot$efec==0)
@@ -1200,10 +1187,30 @@ vot[1000,]
 elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")][2,]
 vot <- merge(x = vot, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], by = "emm", all.x = TRUE, all.y = FALSE)
 
+
+
+## Save data
+getwd()
+save.image(file = "tmp.RData")
+
+######################
+## read saved image ##
+######################
+library(DataCombine) # easy lags
+rm(list = ls())
+##
+dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
+wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
+setwd(wd)
+load(file = "tmp.RData")
+
 ## duplicate vot for lucardi-rosas selection criteria
-sel.c <- which(colnames(vot) %in% c("emm", "win", "part2nd", "mg", "win.prior", "run.prior", "mg.prior"))
+sel.c <- which(colnames(vot) %in% c("ord", "emm", "win", "part2nd", "mg", "win.prior", "run.prior", "mg.prior", "dincballot", "dincballotpan", "dincballotpri", "dincballotprd", "dincballotmorena"))
 luro <- vot[, sel.c]
+luro <- luro[order(luro$ord),]; ids <- ids[order(ids$ord),]
+vot$dpostref <- as.numeric(ids$yr >= ids$yr1st)
 luro$yr <- ids$yr
+luro$dpostref <- vot$dpostref
 vot$win.prior <- vot$run.prior <- vot$mg.prior <- NULL
 rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,tmp,yr) ## clean
 
@@ -2204,12 +2211,12 @@ luro$win       <- sub("morena", "left", luro$win)
 luro$part2nd   <- sub("morena", "left", luro$part2nd)
 luro$win.prior <- sub("morena", "left", luro$win.prior)
 luro$run.prior <- sub("morena", "left", luro$run.prior)
-ltmp <- luro[luro$yr < 2018,]
+ltmp <- luro[luro$yr < 2015,]
 ltmp$win       <- sub("prd", "left", ltmp$win)
 ltmp$part2nd   <- sub("prd", "left", ltmp$part2nd)
 ltmp$win.prior <- sub("prd", "left", ltmp$win.prior)
 ltmp$run.prior <- sub("prd", "left", ltmp$run.prior)
-ltmp -> luro[luro$yr < 2018,]
+ltmp -> luro[luro$yr < 2015,]
 rm(ltmp)
 ## DVs
 luro$dpanwin  <- 0; luro$dpanwin [grep("pan" , luro$win)] <- 1
@@ -2235,32 +2242,414 @@ luro$dselleft[tmp] <- 1
 tmp <- grep("left", luro$run.prior)
 luro$dselleft[tmp] <- 1
 ##
-## Recompute margin according to party's 1st/runner-up status
+## Re-compute margin according to party's 1st/runner-up status
 luro$mgpan <- NA
-tmp <- grep("pan", luro$win.prior)
-luro$mgpan[tmp] <- luro$mg[tmp]
-tmp <- grep("pan", luro$run.prior)
-luro$mgpan[tmp] <- -luro$mg[tmp]
+tmp <- grep("pan",  luro$win.prior)
+luro$mgpan[tmp] <-  luro$mg.prior[tmp]
+tmp <- grep("pan",  luro$run.prior)
+luro$mgpan[tmp] <- -luro$mg.prior[tmp]
 luro$mgpan[luro$dselpan==0] <- NA
 ##
 luro$mgpri <- NA
 tmp <- grep("pri", luro$win.prior)
-luro$mgpri[tmp] <- luro$mg[tmp]
+luro$mgpri[tmp] <- luro$mg.prior[tmp]
 tmp <- grep("pri", luro$run.prior)
-luro$mgpri[tmp] <- -luro$mg[tmp]
+luro$mgpri[tmp] <- -luro$mg.prior[tmp]
 luro$mgpri[luro$dselpri==0] <- NA
 ##
 luro$mgleft <- NA
 tmp <- grep("left", luro$win.prior)
-luro$mgleft[tmp] <- luro$mg[tmp]
+luro$mgleft[tmp] <- luro$mg.prior[tmp]
 tmp <- grep("left", luro$run.prior)
-luro$mgleft[tmp] <- -luro$mg[tmp]
+luro$mgleft[tmp] <- -luro$mg.prior[tmp]
 luro$mgleft[luro$dselleft==0] <- NA
+##
+## left=prd|morena in 2015:17 generates no 1st/2nd left overlap
+intersect(grep("left", luro$win), grep("left", luro$part2nd))
+## ##
+## ## all prior incumbents version pending --- ojo: coalitions inflate party reelection rates
+## ## Pending. No sé si lo entiendo cabalmente: selecciono solamente partidos que participaron en t-2, para de ellos tomar los que quedaron en 1o o 2do lugares en t-1, y estimar prob elección en t ---> needs t-2 lags
+## luro <- within(luro, {
+##     dallwin <- 0;
+##     dselall <- 0;
+##     mgall <- NA;
+## }
+## ## pan
+## sel.r <- grep("pan", luro$win.prior)
+## luro$dselall[sel.r] <- 1
+## luro$win
+## ##
+## grep("^pvem$", luro$win.prior)
+## unique(luro$win.prior)
+## x
+## ## their sample: 1997--2010
+## sel.r <- which(luro$yr > 1996 & luro$yr < 2011)
+## luro <- luro[sel.r,]
+##
+##
+#################################################
+## ########################################### ##
+## ## restrict to cases with abs(mg) <= .15 ## ##
+## ########################################### ##
+#################################################
+summary(luro$mg.prior)
+sel.r <- which(luro$mg.prior <= 0.1)
+luro <- luro[sel.r,]
 
-head(luro)
+###############
+## ######### ##
+## ## PAN ## ##
+## ######### ##
+###############
+##
+tmp <- luro[luro$dselpan==1,] # subset
+##########################
+## restrict time period ##
+##########################
+sel.r <- which(tmp$yr > 1996 & tmp$yr < 2024)
+tmp <- tmp[sel.r,]
+## generalize party-specific variables
+tmp$dwin <- tmp$dpanwin
+tmp$mg   <- tmp$mgpan ## magpan is lagged +/- mg conditional of incumbency status
+##tmp$mg   <- tmp$mg.prior ## get lagged margin
+##tmp$dincballot <- tmp$dincballotpan
+tmp <- within(tmp, {
+    dneg            <- as.numeric( mgpan<0 )
+    dnegxmg         <- dneg * mg
+    dnegxpost       <- dneg      * dpostref
+    dnegxmgxpost    <- dneg * mg * dpostref 
+    dnegxincball    <- dneg      * dincballot
+    dnegxmgxincball <- dneg * mg * dincballot 
+    dpos            <- 1 - dneg
+    dposxmg         <- dpos * mg
+    dposxpost       <- dpos      * dpostref
+    dposxmgxpost    <- dpos * mg * dpostref
+    dposxincball    <- dpos      * dincballot
+    dposxmgxincball <- dpos * mg * dincballot 
+})
+## dwin ~ dneg * ( 1 + mg + dincball + mg*dincball ) + dpos * ( 1 + mg + dincball + mg*dincball )
+## dwin ~ dneg*1 + dneg*mg + dneg*dincball + dneg*mg*dincball + dpos*1 + dpos*mg + dpos*dincball + dpos*mg*dincball
+## dwin ~ dneg   + dnegxmg + dnegxpost     + dnegxmgxpost     + dpos   + dposxmg   + dposxpost   + dposxmgxpost
+##
+## tmp2 <- lm(dwin ~ dneg + dpos + dnegxmg + dposxmg - 1, data = tmp) ## luc+rosas
+## summary(tmp2)
+## tmp3 <- predict.lm(tmp2)
+## tmp$yhat <- NA; tmp$yhat[sel] <- tmp3
+## plot(x = c(-.15,.15), y = c(0,1), type = "n")
+## abline(v=0)
+## segments(x0 = -.15, y0 = (tmp2$coefficients["dneg"] + tmp2$coefficients["dnegxmg"] * -.15), x1= 0, y1 = (tmp2$coefficients["dneg"]))
+## segments(x0 =  .15, y0 = (tmp2$coefficients["dpos"] + tmp2$coefficients["dposxmg"] *  .15), x1= 0, y1 = (tmp2$coefficients["dpos"]))
+## ##
+## tmp2 <- lm(dwin ~ dneg + dpos + dnegxmg + dposxmg - 1, data = tmp) ## luc+rosas años recientes
+## summary(tmp2)
+## ##
+rdpan.lr <- lm(dwin ~ dneg + dpos + dnegxmg + dposxmg - 1, data = tmp) ## luc+rosas años recientes
+summary.lm(rdpan.lr)
+## ##
+## tmp2 <- lm(dwin ~ dneg + dnegxpost + dnegxmg + dnegxmgxpost + dpos + dposxpost + dposxmg + dposxmgxpost - 1,
+##            data = tmp) ## controlando reforma
+## summary(tmp2)
+## ##
+rdpan <- lm(dwin ~ dneg + dnegxincball + dnegxmg + dnegxmgxincball + dpos + dposxincball + dposxmg + dposxmgxincball - 1,
+           data = tmp) ## controlando reforma
+summary.lm(rdpan)
+##
+## plot
+##png("../plots/pan-luro97-23-lpm.png")
+plot(x = c(-.1,.1), y = c(0,1), type = "n", main = "PAN \n LPM 1997-2023", xlab = expression("Margin"[t]), ylab = expression("Pr(win)"[t+1]))
+abline(v=0)
+##
+segments(x0 = -.1, y0 = (  rdpan$coefficients ["dneg"] +
+                            rdpan$coefficients ["dnegxmg"] * -.1  ),
+         x1=  0,   y1 = (  rdpan$coefficients ["dneg"]   ))
+segments(x0 =  .1, y0 = (  rdpan$coefficients ["dpos"] +
+                            rdpan$coefficients ["dposxmg"] *  .1  ),
+         x1=  0,   y1 = (  rdpan$coefficients ["dpos"]   ))
+##dev.off()
+##
+## plot
+##png("../plots/pan-luro97-23-lpm.png")
+plot(x = c(-.1,.1), y = c(0,1), type = "n", main = "PAN \n LPM 1997-2023", xlab = expression("Margin"[t]), ylab = expression("Pr(win)"[t+1]))
+abline(v=0)
+## incumbent not running
+segments(x0 = -.1, y0 = (  rdpan$coefficients ["dneg"] +
+                           rdpan$coefficients ["dnegxmg"] * -.1  ),
+         x1=  0,   y1 = (  rdpan$coefficients ["dneg"]   ))
+segments(x0 =  .1, y0 = (  rdpan$coefficients ["dpos"] +
+                           rdpan$coefficients ["dposxmg"] *  .1  ),
+         x1=  0,   y1 = (  rdpan$coefficients ["dpos"]   ))
+## incumbent running
+segments(x0 = -.1, y0 = ( (rdpan$coefficients ["dneg"] + rdpan$coefficients["dnegxincball"]) +
+                           (rdpan$coefficients ["dnegxmg"] + rdpan$coefficients["dnegxmgxincball"]) * -.1),
+         x1=  0,   y1 = (  rdpan$coefficients["dneg"] + rdpan$coefficients["dnegxincball"]), lty = 2)
+segments(x0 =  .1, y0 = ( (rdpan$coefficients ["dpos"] + rdpan$coefficients["dposxincball"]) +
+                           (rdpan$coefficients ["dposxmg"] + rdpan$coefficients["dposxmgxincball"]) *  .1),
+         x1=  0,   y1 = (  rdpan$coefficients["dpos"] + rdpan$coefficients["dposxincball"]), lty = 2)
+## legend
+legend("topright", legend = c("incumbent running","open seat"), lty = c(2,1))
+##dev.off()
+
+#######################
+#######################
+##  JAGS ESTIMATION  ##
+#######################
+#######################
+library(R2jags)
+antilogit <- function(X){ exp(X) / (exp(X)+1) }
+#####################
+## BASIC SWR MODEL ##
+#####################
+logitModel <- function() {
+    ### linear probability model with logit link
+    for (n in 1:N){                ## loop over observations
+        depvar[n] ~ dbern(p[n]);   
+        logit(p[n]) <- inprod(beta[],X[n,]);  ## FLEXIBLE SPECIFICATION FOR VARYING N OF REGRESSORS, PREPARE depvar AND X IN R
+    }
+    ############################
+    ## NON-INFORMATIVE PRIORS ##
+    ############################
+    for (k in 1:K){                ## loop over regressors
+        beta[k] ~ dnorm(0, .0001);
+    }
+}
+##
+######################################
+### EXTRA DATA PREP FOR JAGS MODEL ###
+######################################
+depvar <- tmp$dwin
+N <- length(depvar)
+X <- data.frame(dneg=tmp$dneg, dpos=tmp$dpos, dnegxmg=tmp$dnegxmg, dposxmg=tmp$dposxmg)
+##
+## labels to interpret parameters
+var.labels <- colnames(X)
+K <- length(var.labels)
+X <- as.matrix(X)
+### Data, initial values, and parameter vector for jags
+dl.data <- list("N", "K", "depvar", "X")
+dl.inits <- function (){
+    list (
+    beta=rnorm(K)
+    #beta=summary(fit2)$coefficients[,1] # use glm's estimates
+    )
+    }
+dl.parameters <- c("beta")
+#dm.parameters <- c("beta", "sigma", "depvar.hat")
+## test ride
+tmp <- jags (data=dl.data, inits=dl.inits, dl.parameters,
+             model.file=logitModel, n.chains=3,
+             n.iter=100, n.thin=10
+             )
+## estimate
+fit2jags <- jags (data=dl.data, inits=dl.inits, dl.parameters,
+                  model.file=logitModel, n.chains=3,
+                  n.iter=50000, n.thin=100,
+                  )
+#
+tmp <- fit2jags
+fit2jags <- update(fit2jags, 10000) # continue updating to produce 10000 new draws per chain
+traceplot(fit2jags) # visually check posterior parameter convergence
+#
+fit2jags$var.labels <- var.labels # add object to interpret coefficients
+summary(fit2jags$BUGSoutput$summary)
+
+# sims bayesian
+coefs <- fit2jags$BUGSoutput$sims.matrix; coefs <- coefs[,-grep("deviance", colnames(fit2jags$BUGSoutput$sims.matrix))]
+scenario <- c(
+    1 ## dneg <- c(0,1)
+  , 0 ## dpos <- c(0,1)
+  , -.1 ## dnegxmg
+  , 0 ## dposxmg
+)
+names(scenario) <- c("dneg", "dpos", "dnegxmg", "dposxmg")
+#
+n <- nrow(coefs)
+sc <- matrix(rep(scenario, n), nrow = n, byrow = TRUE)
+sc <- as.data.frame(sc)
+colnames(sc) <- c("dneg", "dpos", "dnegxmg", "dposxmg")
+tail(sc)
+## change dpos/dneg by alternating 0,1
+sc$dpos <- rep ( 1:0, n/2)
+sc$dneg <- 1 - sc$dpos
+sc$dposxmg <- c(round(seq(from= .15, to=0, length.out = (n-1)), 6), 0)
+sc$dnegxmg[2:n] <- -sc$dposxmg[1:(n-1)] # duplicate previous times minus 1
+sc$dposxmg <- sc$dposxmg * sc$dpos # make zeroes
+sc$dnegxmg <- sc$dnegxmg * sc$dneg # make zeroes
+sc <- as.matrix(sc)
+#
+tmp <- fit2jags$BUGSoutput$summary[grep("beta", rownames(fit2jags$BUGSoutput$summary)),1] # coef point pred (mean posterior)
+pointPred <- sc %*% diag(tmp) # right side achieves multiplication of matrix columns by vector
+pointPred <- antilogit(rowSums(pointPred)) # will plug this in sc later
+##
+pred <- sc * coefs
+pred <- antilogit(rowSums(pred)) # will plug this in sc later
+#
+sc <- as.data.frame(sc); colnames(sc) <- c("dneg", "dpos", "dnegxmg", "dposxmg")
+sc$pred <- pred; rm(pred)
+sc$pointPred <- pointPred; rm(pointPred)
+head(sc)
+##
+## plot
+##png("../plots/pan-luro97-23-mcmc.png")
+plot(x = c(-.15,.15), y = c(0,1), type = "n", main = "PAN \nMCMC logit link 1997-2023", xlab = expression("Margin"[t]), ylab = expression("Pr(win)"[t+1]))
+points(sc$dnegxmg[sc$dneg==1], sc$pred[sc$dneg==1], pch = 20, col = "gray")
+points(sc$dposxmg[sc$dpos==1], sc$pred[sc$dpos==1], pch = 20, col = "gray")
+abline(v=0)
+segments(x0 = -.15, y0 = (  sc$pointPred[sc$dnegxmg==-.15]  ),
+         x1=  0,    y1 = (  sc$pointPred[sc$dnegxmg==0 & sc$dneg==1]  ))
+segments(x0 =  .15, y0 = (  sc$pointPred[sc$dposxmg== .15]  ),
+         x1=  0,    y1 = (  sc$pointPred[sc$dposxmg==0 & sc$dpos==1]  ))
+## ## legend
+## legend("topright", legend = c("incumbent running","open seat"), lty = c(2,1))
+##dev.off()
+##
+## rename/save party estimation
+pan2jags <- fit2jags
+
+#########################################
+## SWR MODEL W POSTREFORM INTERACTIONS ##
+#########################################
+##
+######################################
+### EXTRA DATA PREP FOR JAGS MODEL ###
+######################################
+depvar <- tmp$dwin
+N <- length(depvar)
+X <- data.frame(
+    dneg=tmp$dneg, dnegxincball=tmp$dnegxincball, dnegxmg=tmp$dnegxmg, dnegxmgxincball=tmp$dnegxmgxincball
+  , dpos=tmp$dpos, dposxincball=tmp$dposxincball, dposxmg=tmp$dposxmg, dposxmgxincball=tmp$dposxmgxincball
+    )
+##
+## labels to interpret parameters
+var.labels <- colnames(X)
+K <- length(var.labels)
+X <- as.matrix(X)
+### Data, initial values, and parameter vector for jags
+dl.data <- list("N", "K", "depvar", "X")
+dl.inits <- function (){
+    list (
+    beta=rnorm(K)
+    ##beta=summary(fit2)$coefficients[,1] # use lm's estimates
+    )
+    }
+dl.parameters <- c("beta")
+#dm.parameters <- c("beta", "sigma", "depvar.hat")
+## test ride
+fit1jags <- jags (data=dl.data, inits=dl.inits, dl.parameters,
+             model.file=logitModel, n.chains=3,
+             n.iter=100, n.thin=10
+             )
+## estimate
+fit1jags <- jags (data=dl.data, inits=dl.inits, dl.parameters,
+                  model.file=logitModel, n.chains=3,
+                  n.iter=100000, n.thin=100,
+                  )
+#
+tmp.bak <- fit1jags
+fit1jags <- update(fit1jags, 10000) # continue updating to produce 10000 new draws per chain
+traceplot(fit1jags) # visually check posterior parameter convergence
+#
+fit1jags$var.labels <- var.labels # add object to interpret coefficients
+summary(fit1jags$BUGSoutput$summary)
+##
+# sims bayesian
+## pr(win)
+coefs <- fit1jags$BUGSoutput$sims.matrix; coefs <- coefs[,-grep("deviance", colnames(fit1jags$BUGSoutput$sims.matrix))]
+scenario <- c(
+    1 ## dneg <- c(0,1)
+  , 1 ## dnegxincball
+  , -.1 ## dnegxmg
+  , -.1 ## dnegxmgxincball
+  , 1 ## dpos <- c(0,1)
+  , 1 ## dposxincball
+  ,  .1 ## dposxmg
+  ,  .1 ## dposxmgxincball
+)
+names(scenario) <- var.labels
+##
+n <- nrow(coefs)
+sc <- matrix(rep(scenario, n), nrow = n, byrow = TRUE)
+sc <- as.data.frame(sc)
+colnames(sc) <- var.labels
+## change dpos/dneg by alternating 0,1
+sc$dneg <- rep ( 1:0, n/2)
+sc$dpos <- 1 - sc$dneg
+sc$dincball <- rep( c(0,0,1,1), n/4)
+tmp.mg <- seq(from= .1, to=0, length.out = n/4)
+tmp.mg <- rep(tmp.mg, 4)
+tmp.mg <- tmp.mg[order(-tmp.mg)]
+sc$mg <- tmp.mg; rm(tmp.mg)
+sc$dnegxincball <- sc$dneg * sc$dincball
+sc$dposxincball <- sc$dpos * sc$dincball
+sc$dnegxmg <- sc$dneg * -sc$mg
+sc$dposxmg <- sc$dpos *  sc$mg
+sc$dnegxmgxincball <- sc$dneg * -sc$mg * sc$dincball
+sc$dposxmgxincball <- sc$dpos *  sc$mg * sc$dincball
+sc$dincball <- sc$mg <- NULL
+head(sc)
+sc <- as.matrix(sc)
+#
+tmp.mean <- fit1jags$BUGSoutput$summary[grep("beta", rownames(fit1jags$BUGSoutput$summary)),1] # coef point pred (mean posterior)
+pointPred <- sc %*% diag(tmp.mean) # right side achieves multiplication of matrix columns by vector
+pointPred <- antilogit(rowSums(pointPred)) # will plug this in sc later
+##
+pred <- sc * coefs
+pred <- antilogit(rowSums(pred)) # will plug this in sc later
+#
+sc <- as.data.frame(sc); colnames(sc) <- var.labels
+sc$pred <- pred; rm(pred)
+sc$pointPred <- pointPred; rm(pointPred)
+head(sc)
+##
+## plot
+##png("../plots/pan-97-23-mcmc.png")
+plot(x = c(-.1,.1), y = c(0,1), type = "n", main = "PAN \nMCMC logit link 1997-2023", xlab = expression("Margin"[t]), ylab = expression("Pr(win)"[t+1]))
+points(sc$dnegxmg[sc$dneg==1 & sc$dnegxincball==1], sc$pred[sc$dneg==1 & sc$dnegxincball==1], pch = 19, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
+points(sc$dnegxmg[sc$dneg==1 & sc$dnegxincball==0], sc$pred[sc$dneg==1 & sc$dnegxincball==0], pch = 19, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
+##
+points(sc$dposxmg[sc$dpos==1 & sc$dposxincball==1], sc$pred[sc$dpos==1 & sc$dposxincball==1], pch = 19, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
+points(sc$dposxmg[sc$dpos==1 & sc$dposxincball==0], sc$pred[sc$dpos==1 & sc$dposxincball==0], pch = 19, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
+##
+abline(v=0)
+## incumbent on the ballot
+segments(x0 = -.1, y0 = (  sc$pointPred[sc$dnegxmg==-.1 & sc$dnegxincball==1]  ),
+         x1=  0,   y1 = (  sc$pointPred[sc$dnegxmg==0   & sc$dnegxincball==1]  ), lty = 2)
+segments(x0 =  .1, y0 = (  sc$pointPred[sc$dposxmg== .1 & sc$dposxincball==1]  ),
+         x1=  0,   y1 = (  sc$pointPred[sc$dposxmg==0   & sc$dposxincball==1]  ), lty = 2)
+## open seat
+segments(x0 = -.1, y0 = (  sc$pointPred[sc$dnegxmg==-.1 & sc$dnegxincball==0 & sc$dneg==1]  ),
+         x1=  0,   y1 = (  sc$pointPred[sc$dnegxmg==0   & sc$dnegxincball==0 & sc$dneg==1]  ), lty = 1)
+segments(x0 =  .1, y0 = (  sc$pointPred[sc$dposxmg== .1 & sc$dposxincball==0 & sc$dpos==1]  ),
+         x1=  0,   y1 = (  sc$pointPred[sc$dposxmg==0   & sc$dposxincball==0 & sc$dpos==1]  ), lty = 1)
+## legend
+legend("topright", legend = c("incumbent running","open seat"), lty = c(2,1))
+##dev.off()
+##
+## rename/save party estimation
+pan1jags <- fit1jags
+
+eric  x
+
+## ## así se hace en R un by yr mo: egen tmp=sum(invested) de stata
+## table(round(sc$dposxmg,2))
+## sc$ll <- ave(sc$pred, as.factor(sc$legyr*290 + sc$dsamePty), FUN=function(x) quantile(x, probs=.025), na.rm=TRUE)
+## sc$ul <- ave(sc$pred, as.factor(sc$legyr*290 + sc$dsamePty), FUN=function(x) quantile(x, probs=.975), na.rm=TRUE)
+## #
+## sc <- sc[-duplicated(as.factor(sc$legyr*290 + sc$dsamePty))==FALSE,]
+#
+## library(ggplot2)
+## #pdf (file = paste(gr, "predictedPr.pdf", sep = ""), width = 7, height = 4)
+## ggplot(sc, aes(x = legyr, y = pointPred)) +
+##   geom_ribbon(aes(ymin = ll, ymax = ul, fill = factor(dsamePty)), alpha = .2) +
+##   geom_line(aes(colour = factor(dsamePty)), size=1)
+## #dev.off()
+
+########################
+# simulations end here #
+########################
 
 
-x
+
+
 
 summary(lm(pan ~ dcoalpan + dcoalpri, data = vot)) ## Para ilustrar endogeneidad
 ls()

@@ -1,102 +1,72 @@
-#########################################
-## SWR MODEL W POSTREFORM INTERACTIONS ##
-#########################################
+## replicate lucardi rosas
 ##
-######################################
-### EXTRA DATA PREP FOR JAGS MODEL ###
-######################################
-depvar <- tmp$dwin
-N <- length(depvar)
-X <- data.frame(
-    dneg=tmp$dneg, dnegxincball=tmp$dnegxincball, dnegxmg=tmp$dnegxmg, dnegxmgxincball=tmp$dnegxmgxincball
-  , dpos=tmp$dpos, dposxincball=tmp$dposxincball, dposxmg=tmp$dposxmg, dposxmgxincball=tmp$dposxmgxincball
-    )
+## rename prd/morena as left. left is prd pre-2015, morena since 2018, or either in between
+luro$win       <- sub("morena", "left", luro$win)
+luro$part2nd   <- sub("morena", "left", luro$part2nd)
+luro$win.prior <- sub("morena", "left", luro$win.prior)
+luro$run.prior <- sub("morena", "left", luro$run.prior)
+luro$labs.prior <- sub("morena", "left", luro$labs.prior)
+ltmp <- luro[luro$yr < 2015,]
+ltmp$win       <- sub("prd", "left", ltmp$win)
+ltmp$part2nd   <- sub("prd", "left", ltmp$part2nd)
+ltmp$win.prior <- sub("prd", "left", ltmp$win.prior)
+ltmp$run.prior <- sub("prd", "left", ltmp$run.prior)
+ltmp$labs.prior <- sub("prd", "left", ltmp$labs.prior)
+ltmp -> luro[luro$yr < 2015,]
+rm(ltmp)
+## DVs
+luro$dpanwin    <- 0; luro$dpanwin   [grep("pan"   , luro$win)] <- 1
+luro$dpriwin    <- 0; luro$dpriwin   [grep("pri"   , luro$win)] <- 1
+luro$dleftwin   <- 0; luro$dleftwin  [grep("left"  , luro$win)] <- 1
+luro$dprdwin    <- 0; luro$dprdwin   [grep("prd"   , luro$win)] <- 1
+luro$dpvemwin   <- 0; luro$dpvemwin  [grep("pvem"  , luro$win)] <- 1
+luro$dptwin     <- 0; luro$dptwin    [grep("pt"    , luro$win)] <- 1
+luro$dmcwin     <- 0; luro$dmcwin    [grep("mc"    , luro$win)] <- 1
+luro <- within(luro, dothwin <- 1-dpanwin-dpriwin-dleftwin-dprdwin-dpvemwin-dptwin-dmcwin); luro$dothwin[luro$dothwin < 0] <- 0
+## 
+## pre-selectors (still need to filter margin)
+luro$dselpan <- 0
+tmp <- grep("pan", luro$win.prior)
+luro$dselpan[tmp] <- 1
+tmp <- grep("pan", luro$run.prior)
+luro$dselpan[tmp] <- 1
 ##
-## labels to interpret parameters
-var.labels <- colnames(X)
-K <- length(var.labels)
-X <- as.matrix(X)
-### Data, initial values, and parameter vector for jags
-dl.data <- list("N", "K", "depvar", "X")
-dl.inits <- function (){
-    list (
-    beta=rnorm(K)
-    ##beta=summary(fit2)$coefficients[,1] # use lm's estimates
-    )
-    }
-dl.parameters <- c("beta")
-#dm.parameters <- c("beta", "sigma", "depvar.hat")
-## test ride
-fit1jags <- jags (data=dl.data, inits=dl.inits, dl.parameters,
-             model.file=logitModel, n.chains=3,
-             n.iter=100, n.thin=10
-             )
-## estimate
-fit1jags <- jags (data=dl.data, inits=dl.inits, dl.parameters,
-                  model.file=logitModel, n.chains=3,
-                  n.iter=50000, n.thin=100,
-                  )
-#
-tmp.bak <- fit1jags
-fit1jags <- update(fit1jags, 10000) # continue updating to produce 10000 new draws per chain
-traceplot(fit1jags) # visually check posterior parameter convergence
-#
-fit1jags$var.labels <- var.labels # add object to interpret coefficients
-summary(fit1jags$BUGSoutput$summary)
-
-# sims bayesian
-antilogit <- function(X){ exp(X) / (exp(X)+1) }
-## pr(urgent)
-coefs <- fit1jags$BUGSoutput$sims.matrix; coefs <- coefs[,-grep("deviance", colnames(fit1jags$BUGSoutput$sims.matrix))]
-scenario <- c(
-    1 ## dneg <- c(0,1)
-  , 0 ## dpos <- c(0,1)
-  , -.1 ## dnegxmg
-  , 0 ## dposxmg
-)
-names(scenario) <- var.labels
-names(scenario) <- c("dneg", "dpos", "dnegxmg", "dposxmg")
+luro$dselpri <- 0
+tmp <- grep("pri", luro$win.prior)
+luro$dselpri[tmp] <- 1
+tmp <- grep("pri", luro$run.prior)
+luro$dselpri[tmp] <- 1
 ##
-n <- nrow(coefs)
-sc <- matrix(rep(scenario, n), nrow = n, byrow = TRUE)
-sc <- as.data.frame(sc)
-colnames(sc) <- c("dneg", "dpos", "dnegxmg", "dposxmg")
-tail(sc)
-## change dpos/dneg by alternating 0,1
-sc$dpos <- rep ( 1:0, n/2)
-sc$dneg <- 1 - sc$dpos
-sc$dposxmg <- c(round(seq(from= .15, to=0, length.out = (n-1)), 6), 0)
-sc$dnegxmg[2:n] <- -sc$dposxmg[1:(n-1)] # duplicate previous times minus 1
-sc$dposxmg <- sc$dposxmg * sc$dpos # make zeroes
-sc$dnegxmg <- sc$dnegxmg * sc$dneg # make zeroes
-sc <- as.matrix(sc)
-#
-tmp <- fit1jags$BUGSoutput$summary[grep("beta", rownames(fit1jags$BUGSoutput$summary)),1] # coef point pred (mean posterior)
-pointPred <- sc %*% diag(tmp) # right side achieves multiplication of matrix columns by vector
-pointPred <- antilogit(rowSums(pointPred)) # will plug this in sc later
+luro$dselleft <- 0
+tmp <- grep("left", luro$win.prior)
+luro$dselleft[tmp] <- 1
+tmp <- grep("left", luro$run.prior)
+luro$dselleft[tmp] <- 1
 ##
-pred <- sc * coefs
-pred <- antilogit(rowSums(pred)) # will plug this in sc later
-#
-sc <- as.data.frame(sc); colnames(sc) <- c("dneg", "dpos", "dnegxmg", "dposxmg")
-sc$pred <- pred; rm(pred)
-sc$pointPred <- pointPred; rm(pointPred)
-head(sc)
+luro$dselinc <- 0
+????
 ##
-## plot
-##png("../plots/pan-luro97-23-mcmc.png")
-plot(x = c(-.15,.15), y = c(0,1), type = "n", main = "PAN \nMCMC logit link 1997-2023", xlab = expression("Margin"[t]), ylab = expression("Pr(win)"[t+1]))
-points(sc$dnegxmg[sc$dneg==1], sc$pred[sc$dneg==1], pch = 20, col = "gray")
-points(sc$dposxmg[sc$dpos==1], sc$pred[sc$dpos==1], pch = 20, col = "gray")
-abline(v=0)
-segments(x0 = -.15, y0 = (  sc$pointPred[sc$dnegxmg==-.15]  ),
-         x1=  0,    y1 = (  sc$pointPred[sc$dnegxmg==0 & sc$dneg==1]  ))
-segments(x0 =  .15, y0 = (  sc$pointPred[sc$dposxmg== .15]  ),
-         x1=  0,    y1 = (  sc$pointPred[sc$dposxmg==0 & sc$dpos==1]  ))
-## ## legend
-## legend("topright", legend = c("incumbent running","open seat"), lty = c(2,1))
-##dev.off()
+## Re-compute margin according to party's 1st/runner-up status
+luro$mgpan <- NA
+tmp <- grep("pan",  luro$win.prior)
+luro$mgpan[tmp] <-  luro$mg.prior[tmp]
+tmp <- grep("pan",  luro$run.prior)
+luro$mgpan[tmp] <- -luro$mg.prior[tmp]
+luro$mgpan[luro$dselpan==0] <- NA
 ##
-
-## rename/save party estimation
-pan1jags <- fit1jags
+luro$mgpri <- NA
+tmp <- grep("pri", luro$win.prior)
+luro$mgpri[tmp] <- luro$mg.prior[tmp]
+tmp <- grep("pri", luro$run.prior)
+luro$mgpri[tmp] <- -luro$mg.prior[tmp]
+luro$mgpri[luro$dselpri==0] <- NA
+##
+luro$mgleft <- NA
+tmp <- grep("left", luro$win.prior)
+luro$mgleft[tmp] <- luro$mg.prior[tmp]
+tmp <- grep("left", luro$run.prior)
+luro$mgleft[tmp] <- -luro$mg.prior[tmp]
+luro$mgleft[luro$dselleft==0] <- NA
+##
+## left=prd|morena in 2015:17 generates no 1st/2nd left overlap
+intersect(grep("left", luro$win), grep("left", luro$part2nd))

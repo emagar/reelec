@@ -1204,17 +1204,6 @@ wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
 setwd(wd)
 load(file = "tmp.RData")
 
-## duplicate vot for lucardi-rosas selection criteria
-sel.c <- which(colnames(vot) %in% c("ord", "emm", "win", "part2nd", "mg", "win.prior", "run.prior", "mg.prior", "dincballot", "dincballotpan", "dincballotpri", "dincballotprd", "dincballotmorena"))
-luro <- vot[, sel.c]
-luro <- luro[order(luro$ord),]; ids <- ids[order(ids$ord),]
-vot$dpostref <- as.numeric(ids$yr >= ids$yr1st)
-luro$yr <- ids$yr
-luro$dpostref <- vot$dpostref
-vot$win.prior <- vot$run.prior <- vot$mg.prior <- NULL
-rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,tmp,yr) ## clean
-
-
 ## turnout
 p18 <- read.csv(file = paste0(dd, "../../censos/data/pob18/p18mu-from-se-level-projection-aggregates.csv"))
 ##p18 <- read.csv(file = paste0(dd, "../../censos/data/pob18/p18mu-for-municipal-elecs.csv"))
@@ -1667,6 +1656,18 @@ if (length(sel.r)>0){
     ids <- ids[-sel.r,]
 }
 
+## string with all party labels (for lucardi-rosas incumbent model)
+vot <- within(vot, {l1 <- l2 <- l3 <- l4 <- l5 <- l6 <- l7 <- l8 <- ""})
+sel.r <- which(vot$pan>0);    vot$l1[sel.r] <- "pan"
+sel.r <- which(vot$pri>0);    vot$l2[sel.r] <- "pri"
+sel.r <- which(vot$prd>0);    vot$l3[sel.r] <- "prd"
+sel.r <- which(vot$pvem>0);   vot$l4[sel.r] <- "pvem"
+sel.r <- which(vot$pt>0);     vot$l5[sel.r] <- "pt"
+sel.r <- which(vot$mc>0);     vot$l6[sel.r] <- "mc"
+sel.r <- which(vot$morena>0); vot$l7[sel.r] <- "morena"
+sel.r <- which(vot$oth>0);    vot$l8[sel.r] <- "oth"
+vot <- within(vot, labs <- paste(l1,l2,l3,l4,l5,l6,l7,l8, sep="-"))
+vot <- within(vot, l1 <- l2 <- l3 <- l4 <- l5 <- l6 <- l7 <- l8 <- NULL)
 
 #############################################################
 ## Prepare different specifications of the DV for analysis ##
@@ -1954,6 +1955,16 @@ table(ids$status[sel], ids$yr[sel], useNA = "ifany")
 ## r4lag [sel.r,] <- tmp3[sel.r,]
 ## reslag[sel.r,] <- tmp4[sel.r,]
 
+## duplicate vot for lucardi-rosas selection criteria
+sel.c <- which(colnames(vot) %in% c("ord", "emm", "win", "part2nd", "mg", "win.prior", "run.prior", "mg.prior", "dincballot", "dincballotpan", "dincballotpri", "dincballotprd", "dincballotmorena"))
+luro <- vot[, sel.c]
+luro <- luro[order(luro$ord),]; ids <- ids[order(ids$ord),]; votlag <- votlag[order(votlag$ord),]
+luro$labs.prior <- votlag$labs ## add prior cycle's party labels for l+r incumbent model
+vot$dpostref <- as.numeric(ids$yr >= ids$yr1st)
+luro$yr <- ids$yr
+luro$dpostref <- vot$dpostref
+vot$win.prior <- vot$run.prior <- vot$mg.prior <- NULL
+rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,yr) ## clean
 
 ## get 2020 census indicators
 ## generate pob in localidades < 10k hab

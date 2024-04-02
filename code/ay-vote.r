@@ -2104,7 +2104,7 @@ table(r4lag $emm == r4 $emm)
 table(reslag$emm == res$emm)
 ##
 ##data.frame(vot=colnames(vot), lag=colnames(votlag))
-deltas <- function(dat=NA, datlag=NA){
+deltas <- function(dat=NA, datlag=NA, uselog=FALSE){
     ## sort all
     dat    <- dat   [order(dat   $ord),   ]
     datlag <- datlag[order(datlag$ord),]
@@ -2113,7 +2113,12 @@ deltas <- function(dat=NA, datlag=NA){
     dat    <- dat   [, sapply(dat, class)    %in% c('numeric', 'integer')]
     datlag <- datlag[, sapply(datlag, class) %in% c('numeric', 'integer')]
     ##  subtract
-    datdelta <- dat - datlag
+    if (uselog==FALSE) datdelta <- dat - datlag
+    if (uselog==TRUE)  {
+        dat    <- dat   [, c("pan","left")] # keep vote cols only for log dif
+        datlag <- datlag[, c("pan","left")]
+        datdelta <- log(dat) - log(datlag)
+    }
     ## add emm again
     datdelta <- cbind(emm, datdelta)
     return(datdelta)
@@ -2128,6 +2133,9 @@ deltas <- function(dat=NA, datlag=NA){
 votdelta <- deltas(dat=vot, datlag=votlag)
 vo4delta <- deltas(dat=vo4, datlag=vo4lag)
 r4delta  <- deltas(dat= r4, datlag= r4lag)
+r4logdelta  <- deltas(dat= r4, datlag= r4lag, uselog = TRUE)
+r4delta[, c("pan","left")] <- r4logdelta[, c("pan","left")]; r4delta$oth <- NA  ## plug log difs
+rm(r4logdelta)
 resdelta <- deltas(dat=res, datlag=reslag)
 ##
 table(votdelta$dincpan, useNA = "always")

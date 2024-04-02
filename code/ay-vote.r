@@ -2104,7 +2104,7 @@ table(r4lag $emm == r4 $emm)
 table(reslag$emm == res$emm)
 ##
 ##data.frame(vot=colnames(vot), lag=colnames(votlag))
-deltas <- function(dat=NA, datlag=NA, uselog=FALSE){
+deltas <- function(dat=NA, datlag=NA){
     ## sort all
     dat    <- dat   [order(dat   $ord),   ]
     datlag <- datlag[order(datlag$ord),]
@@ -2113,14 +2113,9 @@ deltas <- function(dat=NA, datlag=NA, uselog=FALSE){
     dat    <- dat   [, sapply(dat, class)    %in% c('numeric', 'integer')]
     datlag <- datlag[, sapply(datlag, class) %in% c('numeric', 'integer')]
     ##  subtract
-    if (uselog==FALSE) datdelta <- dat - datlag
-    if (uselog==TRUE)  {
-        dat    <- dat   [, c("pan","left")] # keep vote cols only for log dif
-        datlag <- datlag[, c("pan","left")]
-        datdelta <- log(dat) - log(datlag)
-    }
+    datdelta <- dat - datlag
     ## add emm again
-    datdelta <- cbind(emm, datdelta)
+    datdelta <- cbind(emm=emm$emm, datdelta)
     return(datdelta)
     ## sel.c <- setdiff(2:ncol(vot), grep("win|race.prior|govpty|winlast", colnames(vot))) ## ignore non-numeric vars in 1st diff
     ## delta <- vot
@@ -2133,12 +2128,10 @@ deltas <- function(dat=NA, datlag=NA, uselog=FALSE){
 votdelta <- deltas(dat=vot, datlag=votlag)
 vo4delta <- deltas(dat=vo4, datlag=vo4lag)
 r4delta  <- deltas(dat= r4, datlag= r4lag)
-r4logdelta  <- deltas(dat= r4, datlag= r4lag, uselog = TRUE)
-r4delta[, c("pan","left")] <- r4logdelta[, c("pan","left")]; r4delta$oth <- NA  ## plug log difs
-rm(r4logdelta)
 resdelta <- deltas(dat=res, datlag=reslag)
 ##
-table(votdelta$dincpan, useNA = "always")
+table(votdelta$dincpan, useNA = "always") ### OJO CHECK alrededor de line 534... too few -1s !!!!!
+
 table(votdelta$dincpri, useNA = "always")
 table(votdelta$dincprd, useNA = "always")
 table(r4delta$dincleft, useNA = "always")
@@ -2150,6 +2143,14 @@ table(res$emm == reslag$emm)
 table(vot$emm ==    ids$emm)
 ##
 rm(deltas)
+
+## Data for error correction model: L stands for lags, D stands for deltas
+table(r4lag $emm == r4delta $emm) ## check order
+tmp <- r4lag; colnames(tmp)[-1:-2] <- paste0("L", colnames(tmp)[-1:-2])
+r4ecm <- tmp
+tmp <- r4delta; colnames(tmp)[-1:-2] <- paste0("D", colnames(tmp)[-1:-2])
+r4ecm <- cbind(r4ecm, tmp[,-1:-2])
+colnames(r4ecm)
 
 ## Save data
 save.image(file = "ay-mu-vote-analysis.RData")
@@ -2222,6 +2223,11 @@ tmp <- mylm(dv="log(turn.ln)", data=r4, subset="yr>1999", predictors = c("dconcg
 tmp <- mylm(dv="turn.ln", data=r4delta, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)")); summary(tmp)
 ##
 tmp <- mylm(dv="turn.ln", data=r4delta, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)")); summary(tmp)
+
+## error correction model
+colnames(r4ecm)
+tmp <- mylm(dv="turn.ln", data=r4ecm, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)")); summary(tmp)
+lm("")
 
 ## replicate lucardi rosas
 ##

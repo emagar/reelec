@@ -1754,10 +1754,14 @@ vo4$dcoalleft[ids$yr>=2018]               <- vo4$dcoalmor[ids$yr>=2018]
 vo4 <- within(vo4, dcoalprd <- dcoalmor <- dcoalpve <- dcoalpt <- dcoalmc <- NULL)
 vo4 <- vo4[, moveme(colnames(vo4), "dcoalleft after dcoalpri")]
 
-
 ## zeroes problematic for ratio-to-pri-vote DV...
 table(pri.null=vo4$pri==0)
-sel <- which(vo4$pri==0); data.frame(emm=vo4$emm[sel], yr=ids$yr[sel], efec=vo4$efec)
+sel <- which(vo4$pri==0)
+data.frame(emm=vo4$emm[sel], yr=ids$yr[sel], efec=vo4$efec[sel])
+## cases before 2017 pri cand prob out and pri=0 artificial --- make these and other cases pri=.03
+vo4$pri[sel] <- .03092784
+## make sums = 1
+vo4[sel, c("pan","pri","left","oth")] <- vo4[sel, c("pan","pri","left","oth")] / apply(X=vo4[sel, c("pan","pri","left","oth")], 1, sum ) 
 ## ## Make these cases NAs to drop them from regressions
 ## vo4[sel, c("pan","pri","left","oth")] <- NA
 
@@ -1773,6 +1777,7 @@ sel <- which(vo4$pri==0); data.frame(emm=vo4$emm[sel], yr=ids$yr[sel], efec=vo4$
 table(vo4$turn.ln > 0 & vo4$turn.ln < 1)
 ##
 v4 <- vo4[, c("pan","pri","left","oth")] # take vote columns for manipulation
+v4[v4 < 0.00005] <- 0 ## make votes below .005% zero
 tmp <- function(x){
     C <- length(x[x==0])             ## how many zeroes in row
     if (is.na(sum(x))==TRUE) C <- 0  ## excluding NAs
@@ -1781,10 +1786,10 @@ tmp <- function(x){
 C <- apply(v4, 1, tmp)
 table(C)
 ## C = 3 zeroes
-plus  <- .0001
-minus <- .0001 * 3
-## plus  <- .00005 * 4 * 1 / 16
-## minus <- .00005 * 4 * 3 / 16
+## plus  <- .0001
+## minus <- .0001 * 3
+plus  <- .00005 * 4 * 1 / 16
+minus <- .00005 * 4 * 3 / 16
 sel.r <- which(C==3)
 for (i in 1:nrow(v4[sel.r,])){
     sel.plus  <- which(v4[sel.r,][i,]==0)
@@ -1793,10 +1798,10 @@ for (i in 1:nrow(v4[sel.r,])){
     v4[sel.r,][i, sel.minus] <- v4[sel.r,][i, sel.minus] - minus
 }
 ## C = 2
-plus  <- .0001
-minus <- .0001
-## plus  <- .00005 * 3 * 2 / 16
-## minus <- .00005 * 3 * 2 / 16
+## plus  <- .0001
+## minus <- .0001
+plus  <- .00005 * 3 * 2 / 16
+minus <- .00005 * 3 * 2 / 16
 sel.r <- which(C==2)
 for (i in 1:nrow(v4[sel.r,])){
     sel.plus  <- which(v4[sel.r,][i,]==0)
@@ -1805,10 +1810,10 @@ for (i in 1:nrow(v4[sel.r,])){
     v4[sel.r,][i, sel.minus] <- v4[sel.r,][i, sel.minus] - minus
 }
 ## C = 1
-plus  <- .0001 * 3
-minus <- .0001
-## plus  <- .00005 * 2 * 3 / 16
-## minus <- .00005 * 2 * 1 / 16
+## plus  <- .0001 * 3
+## minus <- .0001
+plus  <- .00005 * 2 * 3 / 16
+minus <- .00005 * 2 * 1 / 16
 sel.r <- which(C==1)
 for (i in 1:nrow(v4[sel.r,])){
     sel.plus  <- which(v4[sel.r,][i,]==0)
@@ -1816,13 +1821,15 @@ for (i in 1:nrow(v4[sel.r,])){
     v4[sel.r,][i, sel.plus]  <- v4[sel.r,][i, sel.plus]  + plus
     v4[sel.r,][i, sel.minus] <- v4[sel.r,][i, sel.minus] - minus
 }
+## check
+v4[v4 <=0] ## must be empty
 rm(i,plus,minus,sel.r,sel.minus, sel.plus)
 ##
-## generate ratios (pri is denom)
+## generate log ratios (pri is denom)
 r4 <- vo4
-r4[,c("pan","left","oth")] <- v4[,-2] / v4$pri
+r4[,c("pan","left","oth")] <- log(v4[,-2] / v4$pri)
 r4$pri <- NULL
-r4$turn.ln <- r4$turn.ln / (1 - r4$turn.ln)
+r4$turn.ln <- log(r4$turn.ln / (1 - r4$turn.ln))
 ## ## check
 ## plot(r4$turn.ln[ids$yr > 1996])
 ## plot(r4$pan [ids$yr > 1996])
@@ -1894,6 +1901,7 @@ table(ids$emm == r4 $emm)
 ## xsts lag all cols except emm (emm must be column 1) ##
 #########################################################
 lagall <- function(dat=NA, slideBy=-1){
+    ##dat <- vot; slideBy=-1 # debug
     cols  <- colnames(dat)[-1:-2] ## get colnames except emm ord
     cols2 <- paste0(cols, "2") ## rename cols except emm
     colnames(dat)[-1:-2] <- cols2
@@ -1960,11 +1968,18 @@ sel.c <- which(colnames(vot) %in% c("ord", "emm", "win", "part2nd", "mg", "win.p
 luro <- vot[, sel.c]
 luro <- luro[order(luro$ord),]; ids <- ids[order(ids$ord),]; votlag <- votlag[order(votlag$ord),]
 luro$labs.prior <- votlag$labs ## add prior cycle's party labels for l+r incumbent model
-vot$dpostref <- as.numeric(ids$yr >= ids$yr1st)
+dpostref <- as.numeric(ids$yr >= ids$yr1st)
 luro$yr <- ids$yr
-luro$dpostref <- vot$dpostref
-vot$win.prior <- vot$run.prior <- vot$mg.prior <- NULL
-rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,yr) ## clean
+luro$dpostref <- dpostref
+vot    <- within(vot   , win.prior <- run.prior <- mg.prior <- NULL)
+votlag <- within(votlag, win.prior <- run.prior <- mg.prior <- NULL)
+vo4    <- within(vo4   , win.prior <- run.prior <- mg.prior <- NULL)
+vo4lag <- within(vo4lag, win.prior <- run.prior <- mg.prior <- NULL)
+r4     <- within(r4   , win.prior <- run.prior <- mg.prior <- NULL)
+r4lag  <- within(r4lag, win.prior <- run.prior <- mg.prior <- NULL)
+res    <- within(res   , win.prior <- run.prior <- mg.prior <- NULL)
+reslag <- within(reslag, win.prior <- run.prior <- mg.prior <- NULL)
+rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,yr,dpostref) ## clean
 
 ## get 2020 census indicators
 ## generate pob in localidades < 10k hab
@@ -2130,8 +2145,7 @@ vo4delta <- deltas(dat=vo4, datlag=vo4lag)
 r4delta  <- deltas(dat= r4, datlag= r4lag)
 resdelta <- deltas(dat=res, datlag=reslag)
 ##
-table(votdelta$dincpan, useNA = "always") ### OJO CHECK alrededor de line 534... too few -1s !!!!!
-
+table(votdelta$dincpan, useNA = "always")
 table(votdelta$dincpri, useNA = "always")
 table(votdelta$dincprd, useNA = "always")
 table(r4delta$dincleft, useNA = "always")
@@ -2143,14 +2157,6 @@ table(res$emm == reslag$emm)
 table(vot$emm ==    ids$emm)
 ##
 rm(deltas)
-
-## Data for error correction model: L stands for lags, D stands for deltas
-table(r4lag $emm == r4delta $emm) ## check order
-tmp <- r4lag; colnames(tmp)[-1:-2] <- paste0("L", colnames(tmp)[-1:-2])
-r4ecm <- tmp
-tmp <- r4delta; colnames(tmp)[-1:-2] <- paste0("D", colnames(tmp)[-1:-2])
-r4ecm <- cbind(r4ecm, tmp[,-1:-2])
-colnames(r4ecm)
 
 ## Save data
 save.image(file = "ay-mu-vote-analysis.RData")
@@ -2167,6 +2173,17 @@ dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
 setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
+
+## Data for error correction model: L stands for lags, D stands for deltas
+table(r4lag $emm == r4delta $emm) ## check order
+tmp <- r4lag; colnames(tmp)[-1:-2] <- paste0("L", colnames(tmp)[-1:-2])
+r4ecm <- tmp
+tmp <- r4delta; colnames(tmp)[-1:-2] <- paste0("D", colnames(tmp)[-1:-2])
+r4ecm <- cbind(r4ecm, tmp[,-1:-2])
+colnames(r4ecm)
+r4ecm <- cbind(r4ecm[,-1:-2], ids) ## add ids
+
+
 ##
 ## wrap lm commands in function
 mylm <- function(dv, predictors, data, subset = NULL){
@@ -2206,15 +2223,24 @@ mylm <- function(dv, predictors, data, subset = NULL){
 }
 
 ## models
-tmp <- mylm(dv="log(pan)", data=r4, subset="yr>1999", predictors = c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="pan", data=r4, subset="yr>1999", predictors = c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
 ##
-tmp <- mylm(dv="log(pan)", data=r4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
+tmp <- mylm(dv="pan", data=r4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
 ##
 tmp <- mylm(dv="pan", data=vo4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "ncand", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
 ##
 tmp <- mylm(dv="pan", data=res, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "ncand", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
 ##
 tmp <- mylm(dv="pan", data=r4delta, subset="yr>1999", predictors = c("di", "diballno", "diball", "ncand", "dgov", "dpres")); summary(tmp)
+
+##
+tmp <- lm("Dpan ~ Lpan + Ddipan + Ddiballnopan + Ddiballpan + Ddgovpan + Ddprespan + wsdalt - lats + lumwpop20 + as.factor(trienio)", data = r4ecm, subset = yr > 2017)
+summary(tmp)
+
+"di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"
+"dconcgo", "dconcdf", "dincballot", "mg", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"
+
+
 ##
 tmp <- mylm(dv="pan", data=r4delta, subset="yr>1999", predictors = c("dincballot * dinc", "ncand", "dgov", "dpres")); summary(tmp)
 ##

@@ -25,14 +25,19 @@
                               % must be loaded AFTER dcolumn, 
                               %see http://tex.stackexchange.com/questions/12672/which-tabular-packages-do-which-tasks-and-which-packages-conflict
 
+\usepackage{interval}                        % formats math intervals
+\intervalconfig{soft open fences}            % uses parentheses for open interval fences
+\newcommand{\interv}{\interval[scaled=\big]} % short for interval w slightly bigger fences
 
 \newcommand{\mc}{\multicolumn}
 \newcommand{\vn}[1]{\vnform{#1}}      % short for variable name formating
-\newcommand{\vnform}[1]{\mathtt{#1}}  % "look": monospaced/upright
+% see https://tex.stackexchange.com/questions/482743/typesetting-multi-letter-variable-names-in-math-mode
+\newcommand{\vnform}[1]{\mathsf{#1}}  % "look": sans serif/upright
+
 
 %% TO ADD NOTES IN TEXT, PUT % BEFORE THE ONE YOU WANT DISABLED
-\usepackage[disable]{todonotes}                            % no show
-%\usepackage[colorinlistoftodos, textsize=small]{todonotes} % show notes
+%\usepackage[disable]{todonotes}                            % no show
+\usepackage[colorinlistoftodos, textsize=small]{todonotes} % show notes
 \newcommand{\emm}[1]{\todo[color=red!15, inline]{\textbf{Eric:} #1}}
 
 %% \usepackage{xr} % allows cross-ref to other file
@@ -61,9 +66,9 @@
 
 \begin{document}
 
-\title{Incumbency advantage upon removal of single-term limits: Mexican municipal elections}
-\author{Eric Magar \\ ITAM, Mexico City
-}
+\title{Does Static Ambition Removes the Incumbency Curse?}
+%\title{Incumbency advantage upon removal of single-term limits: Mexican municipal elections}
+\author{Eric Magar \\ ITAM, Mexico City}
 \date{\today}
 \maketitle
 
@@ -100,7 +105,7 @@ Bring from ITAM Schlesinger, Cain Ferejohn Fiorina, Mayhew, Jacobson, Samuels.
 
 \begin{figure}
   \centering
-  \includegraphics[width=.85\columnwidth]{../graph/horizon-yrs.pdf} \\
+  \includegraphics[width=.85\columnwidth]{../plots/horizon-yrs.pdf} \\
   \caption{Extending the electoral horizons of municipal incumbents. Columns classify $N \approx 2,030$ municipalities according to the yearly reelection status of elected officeholders (430 municipalities with unelected indigenous governments are excluded).}\label{F:horizons}
 \end{figure}
 
@@ -149,26 +154,26 @@ The dependent variable is vote change since last electoral cycle. The strategy o
 Likewise, coefficient $\pi$ is the vote change effect of campaining with your party in the municipal presidency versus out ($\Delta \vn{party}_{i2}=1$). It also captures the effect of campaigning in the opposition versus in government ($\Delta \vn{party}_{i2}=-1$). The incumbency curse literature \citep{lucardi.rosas.Incumbency.2016,folkle.snyderGubMidtermSlump.2012} expects $\pi < 0$. More interesting is coefficient $\xi$ gauging interactive effects.  
 
 
-Two-term limits impose the constraint that $\vn{incumbent}_{i1} \rightarrow \vn{incumbent}_{i2}=0$. The implication is that 
+% Two-term limits impose the constraint that $\vn{incumbent}_{i1} \rightarrow \vn{incumbent}_{i2}=0$. The implication is that 
 
-0 0 ->  0
-0 1 -> +1
-1 0 -> -1
-1 1 XXXX
+% 0 0 ->  0
+% 0 1 -> +1
+% 1 0 -> -1
+% 1 1 XXXX
 
-Municipal measurements are not always , and interest is in the period change $\Delta \vn{v}_{i2} = \vn{v}_{i2} - \vn{v}_{i1}$ -- ie. the subtraction of the 
+% Municipal measurements are not always , and interest is in the period change $\Delta \vn{v}_{i2} = \vn{v}_{i2} - \vn{v}_{i1}$ -- ie. the subtraction of the 
 
 
-                                   This first differences model reflects change in mean levels. Here are some dummy value combinations:
+%                                    This first differences model reflects change in mean levels. Here are some dummy value combinations:
 
-| $x_1$ |  $x_2$ |  $z_1$ |  $z_2$ | $\Delta y$                         |
-|:----: |:-----: |:-----: |:-----: | :--------------------------------- |
-|     0 |      0 |      0 |      0 | $\Delta \alpha$                    |
-|     1 |      0 |      0 |      0 | $\Delta \alpha  - \beta$           |
-|     0 |      1 |      0 |      0 | $\Delta \alpha  + \beta$           |
-|     1 |      1 |      0 |      0 | $\Delta \alpha$                    |
-|     1 |      1 |      0 |      1 | $\Delta \alpha + \gamma + \lambda$ |
-|     1 |      1 |      1 |      1 | $\Delta \alpha$                    |
+% | $x_1$ |  $x_2$ |  $z_1$ |  $z_2$ | $\Delta y$                         |
+% |:----: |:-----: |:-----: |:-----: | :--------------------------------- |
+% |     0 |      0 |      0 |      0 | $\Delta \alpha$                    |
+% |     1 |      0 |      0 |      0 | $\Delta \alpha  - \beta$           |
+% |     0 |      1 |      0 |      0 | $\Delta \alpha  + \beta$           |
+% |     1 |      1 |      0 |      0 | $\Delta \alpha$                    |
+% |     1 |      1 |      0 |      1 | $\Delta \alpha + \gamma + \lambda$ |
+% |     1 |      1 |      1 |      1 | $\Delta \alpha$                    |
 
 
 \section{A hypothesis perhaps}
@@ -178,7 +183,6 @@ Municipal measurements are not always , and interest is in the period change $\D
 \end{description}
 
 \section{Incumbents running v.\ open seats}
-
 
 \begin{table}
 \centering
@@ -451,6 +455,109 @@ F Statistic & \multicolumn{1}{c}{293.5$^{***}$} & \multicolumn{1}{c}{261.9$^{***
 %% \end{sidewaystable}
 
 
+\section{Lucardi-Rosas replication}
+
+\begin{equation}
+  \begin{split}
+  logit(\text{win})_{t+1} ~=~ & \text{neg}_t (\alpha_0 + \alpha_1 \text{inc}_{t+1} + \alpha_2 \text{margin}_t + \alpha_3 \text{inc}_{t+1} \times \text{margin}_t) + \\
+                             & (1 - \text{neg}_t) (\beta_0 + \beta_1 \text{inc}_{t+1} + \beta_2 \text{margin}_t + \beta_3 \text{inc}_{t+1} \times \text{margin}_t) + \text{error}_{t+1}
+  \end{split}
+\end{equation}
+
+\begin{figure}
+  \centering
+    \caption{Incumbent party's reelection probability with and without an incumbent mayor on the ballot, marginal races. MCMC estimations of model xx. Points are the posterior sample of $\text{Pr(win)}_{t+1}$, circles for open-seat simulations, triangles otherwise. Lines report the mean posterior simulation.}\label{F:luro}
+    \begin{tabular}{cc}
+    \includegraphics[width=.45\columnwidth]{../plots/pan-97-23-mcmc.pdf} &
+    \includegraphics[width=.45\columnwidth]{../plots/pri-97-23-mcmc.pdf} \\
+    \includegraphics[width=.45\columnwidth]{../plots/left-97-23-mcmc.pdf} &
+    \includegraphics[width=.45\columnwidth]{../plots/left-18-23-mcmc.pdf} \\
+    \end{tabular}
+  \end{figure}
+
+The model relies on non-informative priors and estimates the joint posterior distribution with the Gibbs sampling algorithm in R2Bugs. For each three chains, we ran 100,000 iterations of the Gibbs sampler, discarding the first half as burn-in and thinning the remainer so as to keep 500 draws from the posterior distribution for inference purposes. We monitored convergence through Geweke's statistics. Samples and convergence results are reported in the appendix. 
+
+Adrián:
+- paper magalhaes 2015 pa (perdedores que se repostulan)
+- comparar con perdedores que se repostulan (outcome = repostularse)
+- ver t+2: comparar panistas que perdieron por poco y panistas que ganaron por poco
+- titiunik tiene otro paper sobre bounds para revertir el curse
+- separar pre y post reforma para cada estado
+- caso portugal
+- paper lucardi peyeferd en su pág web sobre municipios de BsAs --- resumen de lit
+- participacion: compararla en t (y en historia) vs t+1 con/sin incumbent
+- idem en secciones (dónde moviliza)
+- retomar nayarit
+
+
+
+\begin{table}
+\centering
+  \caption{The vanishing discontinuity with incumbent mayors on the ballot. Cells report the share of the posterior sample fulfilling the hypothesis stated in greek letters in party-by-party estimations of model xx. }
+  \begin{tabular}{@{\extracolsep{5pt}}lccr}
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+      & \mc{2}{c}{Incumbency curse}         & \\
+\cline{2-3} 
+      & open seat & incumbent mayor running &  \\
+Party \footnotesize{(period)}    & $\alpha_0 > \beta_0$ & $(\alpha_0 + \alpha_1) > (\beta_0 + \beta_1)$ & $N$ \\ \hline \\[-1.8ex]  
+PAN \footnotesize{(1997--2023)}  & 1.000 & 0.197 & 4,758 \\
+PRI \footnotesize{(1997--2023)}  & 1.000 & 0.146 & 7,293 \\
+Left \footnotesize{(1997--2023)} & 1.000 & 0.199 & 2,889 \\
+Left \footnotesize{(2018--2023)} & 1.000 & 0.203 &   394 \\[.8ex]   \hline 
+\hline \\[-1.8ex] 
+
+\end{tabular}
+\end{table}
+
+
+\subsection{For the appendix}
+% \begin{table}
+%   \caption{Regression discontinuity analysis. Method of estimation: MCMC.}
+\resizebox{.5\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}clD{.}{.}{2}D{,}{,}{-3}}
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+$\vn{neg}$ & Coefficient         & \mc{1}{r}{\text{Estimate}} & \mc{1}{c}{95\%~interval} \\ \hline \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{PAN 1997--2023} ($N=4,758$)}  \\ \\[-2.5ex]  
+1          & intercept                     &   -0.15 & [-0.31,~0.02]   \\
+0          & intercept                     &   -1.02 & [-1.20,~-0.85]  \\
+1          & $\vn{inc}$                    &   -0.38 & [-0.98,~0.18]   \\
+0          & $\vn{inc}$                    &    0.86 & [0.27,~1.48]    \\
+1          & $\vn{margin}$                 &    4.49 & [1.44,~7.47]    \\
+0          & $\vn{margin}$                 &    3.23 & [0.12,~6.49]    \\
+1          & $\vn{inc} \times \vn{margin}$ &    0.01 & [-12.02,~11.19] \\
+0          & $\vn{inc} \times \vn{margin}$ &   -0.93 & [-12.56,~10.15] \\ \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{PRI 1997--2023} ($N=7,293$)} \\ \\[-2.5ex]  
+1          & intercept                     &   0.26  &  [0.13,~0.39]   \\
+0          & intercept                     &  -0.64  &  [-0.78,~-0.51] \\
+1          & $\vn{inc}$                    &  -1.12  &  [-1.68,~-0.58] \\
+0          & $\vn{inc}$                    &   0.16  &  [-0.39,~0.70]  \\
+1          & $\vn{margin}$                 &   3.00  &  [0.69,~5.56]   \\
+0          & $\vn{margin}$                 &   6.74  &  [4.39,~9.19]   \\
+1          & $\vn{inc} \times \vn{margin}$ &   4.03  &  [-6.07,~14.59] \\
+0          & $\vn{inc} \times \vn{margin}$ &  -3.93  &  [-13.58,~5.88] \\ \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{Left 1997--2023} ($N=2,889$)} \\ \\[-2.5ex]  
+1          & intercept                     &   -0.13 & [-0.35,~0.09]   \\
+0          & intercept                     &   -1.15 & [-1.37,~-0.92]  \\
+1          & $\vn{inc}$                    &   -1.17 & [-2.47,~-0.01]  \\
+0          & $\vn{inc}$                    &    0.48 & [-0.37,~1.30]   \\
+1          & $\vn{margin}$                 &    6.94 & [3.12,~10.96]   \\
+0          & $\vn{margin}$                 &    6.33 & [2.27,~10.32]   \\
+1          & $\vn{inc} \times \vn{margin}$ &   -2.84 & [-24.72,~19.27] \\
+0          & $\vn{inc} \times \vn{margin}$ &   -0.72 & [-16.08,~14.30] \\ \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{Left 2018--2023} ($N=394$)} \\ \\[-2.5ex]  
+1          & intercept                     &    0.33 & [-0.26,~0.99]   \\
+0          & intercept                     &   -1.63 & [-2.56,~-0.79]  \\
+1          & $\vn{inc}$                    &   -1.61 & [-2.97,~-0.32]  \\
+0          & $\vn{inc}$                    &    0.95 & [-0.25,~2.14]   \\
+1          & $\vn{margin}$                 &   11.81 & [-0.23,~24.16]  \\
+0          & $\vn{margin}$                 &   19.22 & [3.62,~35.37]   \\
+1          & $\vn{inc} \times \vn{margin}$ &   -7.71 & [-33.00,~17.63] \\
+0          & $\vn{inc} \times \vn{margin}$ &  -13.35 & [-35.51,~9.15]  \\[.8ex]   \hline 
+\hline \\[-1.8ex] 
+\end{tabular}
+}
 
 
 
@@ -459,7 +566,7 @@ F Statistic & \multicolumn{1}{c}{293.5$^{***}$} & \multicolumn{1}{c}{261.9$^{***
 \begin{figure}
   \centering
     \caption{Population-weigthed altitude deviations in municipalities}\label{F:avgMg}
-    \includegraphics[width=.8\columnwidth]{../graph/map.png}
+    \includegraphics[width=.8\columnwidth]{../plots/map.png}
 \end{figure}
 
 

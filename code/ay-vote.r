@@ -20,6 +20,10 @@ source( paste(pth, "moveme.r", sep = "/") )
 source( paste(pth, "notin.r", sep = "/") )
 rm(pth)
 
+## needed
+library(DataCombine) # easy lags
+
+
 #########################
 ## get municipal votes ##
 #########################
@@ -418,7 +422,7 @@ v7 <- tmp
 ## clean
 v7$n <- v7$status <- NULL
 ##
-rm(tmp,i,sel,sel.r,sel.c,tmp1,tmp2)
+rm(tmp,i,sel.r,sel.c,tmp2)
 
 ## compute vote shares
 v7[1,]
@@ -478,7 +482,6 @@ table(inc$yr)
 sel.r <- which(inc$yr < 1994)
 sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","runnerup","dlegacy","who","drepe","drepg"))
 inc <- inc[-sel.r,-sel.c]
-
 
 ## change conve to mc
 inc$part           <- sub("conve|cdppn", "mc", inc$part)
@@ -1492,80 +1495,102 @@ t$lisnom <- NA
 ##
 sel.l <- which(ln$yr ==       1994    )
 sel.t <- which( t$yr %in% 1993  : 1995)
-t2 <- t[sel.t,]; t2$yr <-     1994    ; t2$lisnom <- NULL ## subset and drop lisnom to void duplic names in merge
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     1994    ; t2$lisnom <- NULL ## subset and drop lisnom to void duplic names in merge
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
 ##
 sel.l <- which(ln$yr ==       1997    )
 sel.t <- which( t$yr %in% 1996  : 1998)
-t2 <- t[sel.t,]; t2$yr <-     1997    ; t2$lisnom <- NULL ## subset
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     1997    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
 ##
 sel.l <- which(ln$yr ==       2000    )
 sel.t <- which( t$yr %in% 1999  : 2001)
-t2 <- t[sel.t,]; t2$yr <-     2000    ; t2$lisnom <- NULL ## subset
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     2000    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
 ##
 sel.l <- which(ln$yr ==       2003    )
 sel.t <- which( t$yr %in% 2002  : 2004)
-t2 <- t[sel.t,]; t2$yr <-     2003    ; t2$lisnom <- NULL ## subset
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     2003    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
 ##
 sel.l <- which(ln$yr ==       2006    )
 sel.t <- which( t$yr %in% 2005  : 2007)
-t2 <- t[sel.t,]; t2$yr <-     2006    ; t2$lisnom <- NULL ## subset
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     2006    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
 ##
 sel.l <- which(ln$yr ==       2009    )
 sel.t <- which( t$yr %in% 2008  : 2010)
-t2 <- t[sel.t,]; t2$yr <-     2009    ; t2$lisnom <- NULL ## subset
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     2009    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
 ##
 sel.l <- which(ln$yr ==       2012    )
 sel.t <- which( t$yr %in% 2011  : 2013)
-t2 <- t[sel.t,]; t2$yr <-     2012    ; t2$lisnom <- NULL ## subset
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     2012    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
 ##
 sel.l <- which(ln$yr ==       2015    )
 sel.t <- which( t$yr %in% 2014  : 2016)
-t2 <- t[sel.t,]; t2$yr <-     2015    ; t2$lisnom <- NULL ## subset
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     2015    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
 ##
 sel.l <- which(ln$yr ==       2018    )
 sel.t <- which( t$yr %in% 2017  : 2019)
-t2 <- t[sel.t,]; t2$yr <-     2018    ; t2$lisnom <- NULL ## subset
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     2018    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
 ##
 sel.l <- which(ln$yr ==       2021    )
 sel.t <- which( t$yr %in% 2020  : 2022)
-t2 <- t[sel.t,]; t2$yr <-     2021    ; t2$lisnom <- NULL ## subset
-t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-t2 <- t2[order(t2$ord),]
-t2$lisnom -> t$lisnom[sel.t] ## return
-## ##
-## sel.l <- which(ln$yr ==       2024    )
-## sel.t <- which( t$yr %in% 2023  : 2025)
-## t2 <- t[sel.t,]; t2$yr <-     2024    ; t2$lisnom <- NULL ## subset
-## t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
-## t2$lisnom -> t$lisnom[sel.t] ## return
-t$lisnom
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     2021    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2 <- t2[order(t2$ord),]
+    t2$lisnom -> t$lisnom[sel.t] ## return
+}
+##
+sel.l <- which(ln$yr ==       2024    )
+sel.t <- which( t$yr %in% 2023  : 2025)
+if (length(sel.l) > 0 & length(sel.t) > 0){
+    t2 <- t[sel.t,]; t2$yr <-     2024    ; t2$lisnom <- NULL ## subset
+    t2 <- merge(x=t2, y=ln[sel.l,], by = c("ife","yr"), all.x=TRUE, all.y=FALSE)
+    t2$lisnom -> t$lisnom[sel.t] ## return
+    t$lisnom
+}
 ## sort
 t <- t[order(t$ord),]
 ## empty fed lisnom in vot
@@ -1679,7 +1704,7 @@ ids[1,]
 ##         ## vot has raw vote shares
 res <- vot ## residual v - vhat
 vo4 <- vot ## pan pri left oth shares
-r4  <- vo4 ## pan/pri left/pri oth/pri ratios
+lnr  <- vo4 ## pan/pri left/pri oth/pri ratios
 ##
 
 ## duplicate vot for pan pri left oth breakdown
@@ -1826,29 +1851,29 @@ v4[v4 <=0] ## must be empty
 rm(i,plus,minus,sel.r,sel.minus, sel.plus)
 ##
 ## generate log ratios (pri is denom)
-r4 <- vo4
-r4[,c("pan","left","oth")] <- log(v4[,-2] / v4$pri)
-r4$pri <- NULL
-r4$turn.ln <- log(r4$turn.ln / (1 - r4$turn.ln))
+lnr <- vo4
+lnr[,c("pan","left","oth")] <- log(v4[,-2] / v4$pri)
+lnr$pri <- NULL
+lnr$turn.ln <- log(lnr$turn.ln / (1 - lnr$turn.ln))
 ## ## check
-## plot(r4$turn.ln[ids$yr > 1996])
-## plot(r4$pan [ids$yr > 1996])
-## plot(r4$left[ids$yr > 1996])
-## plot(r4$oth [ids$yr > 1996])
+## plot(lnr$turn.ln[ids$yr > 1996])
+## plot(lnr$pan [ids$yr > 1996])
+## plot(lnr$left[ids$yr > 1996])
+## plot(lnr$oth [ids$yr > 1996])
 ## ## debug
-## sel.r <- which(r4$left > 2000)
+## sel.r <- which(lnr$left > 2000)
 ## ids$emm[sel.r]
 ## vot[sel.r,]
 ##
 ## ## re-specify vhats as ratio while keeping names
-## r4 <- within(r4, {
+## lnr <- within(lnr, {
 ##     vhat.oth  <- (1 - vhat.pan - vhat.pri - vhat.left) / vhat.pri
 ## })
-## r4 <- within(r4, {
+## lnr <- within(lnr, {
 ##     vhat.left <- vhat.left / vhat.pri
 ##     vhat.pan  <- vhat.pan  / vhat.pri
 ## })
-## r4 <- within(r4, vhat.pri <- NULL)
+## lnr <- within(lnr, vhat.pri <- NULL)
 rm(C, tmp, v4)
 
 ## residual DVs
@@ -1889,11 +1914,11 @@ res <- within(res, {
 ids <- ids[order(ids$emm),] # sort mun-chrono
 vot <- vot[order(vot$emm),]
 vo4 <- vo4[order(vo4$emm),]
-r4  <- r4 [order(r4 $emm),]
+lnr <- lnr[order(lnr$emm),]
 ## check
 table(ids$emm == vot$emm)
 table(ids$emm == vo4$emm)
-table(ids$emm == r4 $emm)
+table(ids$emm == lnr $emm)
 
 
 
@@ -1921,7 +1946,7 @@ lagall <- function(dat=NA, slideBy=-1){
 ##
 votlag <- lagall(vot)
 vo4lag <- lagall(vo4)
-r4lag  <- lagall(r4)
+lnrlag  <- lagall(lnr)
 reslag <- lagall(res)
 ##
 sel <- which(is.na(votlag$pan)==TRUE)
@@ -1955,12 +1980,12 @@ table(ids$status[sel], ids$yr[sel], useNA = "ifany")
 ## ## second difs
 ## tmp1 <- lagall(vot, slideBy=-2)
 ## tmp2 <- lagall(vo4, slideBy=-2)
-## tmp3 <- lagall(r4 , slideBy=-2)
+## tmp3 <- lagall(lnr , slideBy=-2)
 ## tmp4 <- lagall(res, slideBy=-2)
 ## ##
 ## votlag[sel.r,] <- tmp1[sel.r,]
 ## vo4lag[sel.r,] <- tmp2[sel.r,]
-## r4lag [sel.r,] <- tmp3[sel.r,]
+## lnrlag [sel.r,] <- tmp3[sel.r,]
 ## reslag[sel.r,] <- tmp4[sel.r,]
 
 ## duplicate vot for lucardi-rosas selection criteria
@@ -1975,8 +2000,8 @@ vot    <- within(vot   , win.prior <- run.prior <- mg.prior <- NULL)
 votlag <- within(votlag, win.prior <- run.prior <- mg.prior <- NULL)
 vo4    <- within(vo4   , win.prior <- run.prior <- mg.prior <- NULL)
 vo4lag <- within(vo4lag, win.prior <- run.prior <- mg.prior <- NULL)
-r4     <- within(r4   , win.prior <- run.prior <- mg.prior <- NULL)
-r4lag  <- within(r4lag, win.prior <- run.prior <- mg.prior <- NULL)
+lnr     <- within(lnr   , win.prior <- run.prior <- mg.prior <- NULL)
+lnrlag  <- within(lnrlag, win.prior <- run.prior <- mg.prior <- NULL)
 res    <- within(res   , win.prior <- run.prior <- mg.prior <- NULL)
 reslag <- within(reslag, win.prior <- run.prior <- mg.prior <- NULL)
 rm(alt,elhis,ife2inegi,ife2mun,inegi2ife,inegi2mun,sel,sel.c,yr,dpostref) ## clean
@@ -2036,11 +2061,11 @@ rm(i,ln,my_fun,p18,path,sel,sel.l,sel.t,t,t2,tmp2)
 ids    <-    ids[order(   ids$ord),]
 votlag <- votlag[order(votlag$ord),]
 vo4lag <- vo4lag[order(vo4lag$ord),]
-r4lag  <-  r4lag[order (r4lag$ord),]
+lnrlag  <-  lnrlag[order (lnrlag$ord),]
 reslag <- reslag[order(reslag$ord),]
 vot    <-    vot[order   (vot$ord),]
 vo4    <-    vo4[order   (vo4$ord),]
-r4     <-     r4[order    (r4$ord),]
+lnr     <-     lnr[order    (lnr$ord),]
 res    <-    res[order   (res$ord),]
 ##
 ## Drop pre-2000
@@ -2048,11 +2073,11 @@ sel.r <- which(ids$yr < 2000)
 ids <- ids[-sel.r,]
 vot <- vot[-sel.r,]
 vo4 <- vo4[-sel.r,]
-r4  <- r4 [-sel.r,]
+lnr  <- lnr [-sel.r,]
 res <- res[-sel.r,]
 votlag <- votlag[-sel.r,]
 vo4lag <- vo4lag[-sel.r,]
-r4lag  <- r4lag [-sel.r,]
+lnrlag  <- lnrlag [-sel.r,]
 reslag <- reslag[-sel.r,]
 
 ## ###########################################################################
@@ -2065,11 +2090,11 @@ reslag <- reslag[-sel.r,]
 ## ids    <- ids   [-sel.r,]
 ## vot    <- vot   [-sel.r,]
 ## vo4    <- vo4   [-sel.r,]
-## r4     <- r4    [-sel.r,]
+## lnr     <- lnr    [-sel.r,]
 ## res    <- res   [-sel.r,]
 ## votlag <- votlag[-sel.r,]
 ## vo4lag <- vo4lag[-sel.r,]
-## r4lag  <- r4lag [-sel.r,]
+## lnrlag  <- lnrlag [-sel.r,]
 ## reslag <- reslag[-sel.r,]
 ## rm(sel.r)
 ## #####################################################
@@ -2079,30 +2104,30 @@ reslag <- reslag[-sel.r,]
 ## ids    <- ids   [-sel.r,]
 ## vot    <- vot   [-sel.r,]
 ## vo4    <- vo4   [-sel.r,]
-## r4     <- r4    [-sel.r,]
+## lnr     <- lnr    [-sel.r,]
 ## res    <- res   [-sel.r,]
 ## votlag <- votlag[-sel.r,]
 ## vo4lag <- vo4lag[-sel.r,]
-## r4lag  <- r4lag [-sel.r,]
+## lnrlag  <- lnrlag [-sel.r,]
 ## reslag <- reslag[-sel.r,]
 
 
 
 ## missing periods generan NAs en la serie del municipio donde ocurren
-summary(r4   $pan)
-summary(r4lag$pan)
+summary(lnr   $pan)
+summary(lnrlag$pan)
 ## check that NAs in lags are all new municipios
-sel.r <- which(is.na(r4lag$pan)==TRUE)
+sel.r <- which(is.na(lnrlag$pan)==TRUE)
 table(ids$status[sel.r], useNA = "ifany")
 ## drop them
 ids    <- ids   [-sel.r,]
 vot    <- vot   [-sel.r,]
 vo4    <- vo4   [-sel.r,]
-r4     <- r4    [-sel.r,]
+lnr     <- lnr    [-sel.r,]
 res    <- res   [-sel.r,]
 votlag <- votlag[-sel.r,]
 vo4lag <- vo4lag[-sel.r,]
-r4lag  <- r4lag [-sel.r,]
+lnrlag  <- lnrlag [-sel.r,]
 reslag <- reslag[-sel.r,]
 
 ################################
@@ -2110,12 +2135,12 @@ reslag <- reslag[-sel.r,]
 ################################
 table(colnames(vot)==colnames(votlag))
 table(colnames(vo4)==colnames(vo4lag))
-table(colnames (r4)==colnames (r4lag))
+table(colnames (lnr)==colnames (lnrlag))
 table(colnames(res)==colnames(reslag))
 ## check order
 table(votlag$emm == vot$emm)
 table(vo4lag$emm == vo4$emm)
-table(r4lag $emm == r4 $emm)
+table(lnrlag $emm == lnr $emm)
 table(reslag$emm == res$emm)
 ##
 ##data.frame(vot=colnames(vot), lag=colnames(votlag))
@@ -2142,17 +2167,17 @@ deltas <- function(dat=NA, datlag=NA){
 ##
 votdelta <- deltas(dat=vot, datlag=votlag)
 vo4delta <- deltas(dat=vo4, datlag=vo4lag)
-r4delta  <- deltas(dat= r4, datlag= r4lag)
+lnrdelta  <- deltas(dat= lnr, datlag= lnrlag)
 resdelta <- deltas(dat=res, datlag=reslag)
 ##
 table(votdelta$dincpan, useNA = "always")
 table(votdelta$dincpri, useNA = "always")
 table(votdelta$dincprd, useNA = "always")
-table(r4delta$dincleft, useNA = "always")
+table(lnrdelta$dincleft, useNA = "always")
 ##
 table(vot$emm == votlag$emm)
 table(vo4$emm == vo4lag$emm)
-table( r4$emm ==  r4lag$emm)
+table( lnr$emm ==  lnrlag$emm)
 table(res$emm == reslag$emm)
 table(vot$emm ==    ids$emm)
 ##
@@ -2166,6 +2191,7 @@ save.image(file = "ay-mu-vote-analysis.RData")
 ######################
 #source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/ay.r") ## slow!!
 
+
 library(DataCombine) # easy lags
 rm(list = ls())
 ##
@@ -2175,25 +2201,25 @@ setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
 
 ## Data for error correction model: L stands for lags, D stands for deltas
-table(r4lag $emm == r4delta $emm) ## check order
-tmp <- r4lag; colnames(tmp)[-1:-2] <- paste0("L", colnames(tmp)[-1:-2])
-r4ecm <- tmp
-tmp <- r4delta; colnames(tmp)[-1:-2] <- paste0("D", colnames(tmp)[-1:-2])
-r4ecm <- cbind(r4ecm, tmp[,-1:-2])
-colnames(r4ecm)
-r4ecm <- cbind(r4ecm[,-1:-2], ids) ## add ids
+table(lnrlag $emm == lnrdelta $emm) ## check order
+tmp <- lnrlag; colnames(tmp)[-1:-2] <- paste0("L", colnames(tmp)[-1:-2])
+lnrecm <- tmp
+tmp <- lnrdelta; colnames(tmp)[-1:-2] <- paste0("D", colnames(tmp)[-1:-2])
+lnrecm <- cbind(lnrecm, tmp[,-1:-2])
+colnames(lnrecm)
+lnrecm <- cbind(lnrecm[,-1:-2], ids) ## add ids
 
 
 ##
 ## wrap lm commands in function
 mylm <- function(dv, predictors, data, subset = NULL){
-    ## data <- r4
-    ## dv <- "log(pan)"
+    ## data <- lnr
+    ## dv <- "Dpan"
     ## predictors <- c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab")
     ## subset <- "ord>2005"
     ## predictors <- c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab")
     ##
-    dv2 <- sub("^log[(]([a-z.]+)[)]", "\\1", dv) ## drop log if any
+    dv2 <- sub("^[Dl]o?g?[(]?([a-z.]+)[)]?", "\\1", dv) ## drop log if any
     if (dv2 %notin% c("pan","pri","morena","left","oth","turn.ln")) stop("Wrong party")
     data <- data[order(data$ord),] # sort
     ids  <- ids [order(ids $ord),] # sort
@@ -2212,7 +2238,7 @@ mylm <- function(dv, predictors, data, subset = NULL){
     ## data <- data[sel,]
     ##
     ## add dv to party-specific predictors
-    sel <- grep("^di|^dgov|^dpres|^vhat.", predictors)
+    sel <- grep("^D?di|^D?dgov|^D?dpres|^D?vhat.|^L$", predictors)
     #sel <- which(predictors %in% c("dinc", "dincballot", "dgov", "dpres", "vhat.", "di", "diballno", "diballpan"))
     if (length(sel)>0 & dv2!="turn.ln") predictors[sel] <- paste0(predictors[sel], dv2)
     ## collapse predictors
@@ -2223,37 +2249,29 @@ mylm <- function(dv, predictors, data, subset = NULL){
 }
 
 ## models
-tmp <- mylm(dv="pan", data=r4, subset="yr>1999", predictors = c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
+tmpp <- c("dincballot * dinc", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="pan", data=lnr, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=r4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
+tmpp <- c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="pan", data=lnr, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=vo4, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "ncand", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
+tmpp <- c("di", "diballno", "diball", "dgov", "dpres", "vhat.", "ncand", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="pan", data=vo4, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=res, subset="yr>1999", predictors = c("di", "diballno", "diball", "dgov", "dpres", "ncand", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
+tmpp <- c("di", "diballno", "diball", "dgov", "dpres", "ncand", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="pan", data=res, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=r4delta, subset="yr>1999", predictors = c("di", "diballno", "diball", "ncand", "dgov", "dpres")); summary(tmp)
-
+tmpp <- c("di", "diballno", "diball", "ncand", "dgov", "dpres"); tmp <- mylm(dv="pan", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmp <- lm("Dpan ~ Lpan + Ddipan + Ddiballnopan + Ddiballpan + Ddgovpan + Ddprespan + wsdalt - lats + lumwpop20 + as.factor(trienio)", data = r4ecm, subset = yr > 2017)
-summary(tmp)
-
-"di", "diballno", "diball", "dgov", "dpres", "vhat.", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"
-"dconcgo", "dconcdf", "dincballot", "mg", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"
-
-
+tmpp <- c("L", "Ddi", "Ddiballno", "Ddiball", "Ddgov", "Ddpres", "wsdalt", "lats", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="Dpan", data = lnrecm, subset = "yr>2017", predictors = tmpp); summary(tmp)
 ##
-tmp <- mylm(dv="pan", data=r4delta, subset="yr>1999", predictors = c("dincballot * dinc", "ncand", "dgov", "dpres")); summary(tmp)
+tmpp <- c("dincballot * dinc", "ncand", "dgov", "dpres"); tmp <- mylm(dv="pan", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmp <- mylm(dv="log(turn.ln)", data=r4, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)")); summary(tmp)
+tmpp <- c("dconcgo", "dconcdf", "dincballot", "mg", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="log(turn.ln)", data=lnr, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmp <- mylm(dv="turn.ln", data=r4delta, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)")); summary(tmp)
+tmpp <- c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)"); tmp <- mylm(dv="turn.ln", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmp <- mylm(dv="turn.ln", data=r4delta, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)")); summary(tmp)
+tmpp <- c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)"); tmp <- mylm(dv="turn.ln", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
 
 ## error correction model
-colnames(r4ecm)
-tmp <- mylm(dv="turn.ln", data=r4ecm, subset="yr>1999", predictors = c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)")); summary(tmp)
-lm("")
+colnames(lnrecm)
+tmpp <- c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)"); tmp <- mylm(dv="Dturn.ln", data=lnrecm, subset="yr>1999", predictors = tmpp); summary(tmp)
 
 ## replicate lucardi rosas
 ##
@@ -2340,7 +2358,7 @@ intersect(grep("left", luro$win), grep("left", luro$part2nd))
 ##
 #################################################
 ## ########################################### ##
-## ## restrict to cases with abs(mg) <= .15 ## ##
+## ## restrict to cases with abs(mg) <= .10 ## ##
 ## ########################################### ##
 #################################################
 summary(luro$mg.prior)
@@ -2394,6 +2412,7 @@ summary.lm(rdleft)
 ##
 ## plot
 ##png("../plots/left-luro97-23-lpm.png")
+##pdf("../plots/left-luro97-23-lpm.pdf")
 plot(x = c(-.1,.1), y = c(0,1), type = "n", main = "LEFT \n LPM 1997-2023", xlab = expression("Margin"[t]), ylab = expression("Pr(win)"[t+1]))
 abline(v=0)
 ##
@@ -2407,6 +2426,7 @@ segments(x0 =  .1, y0 = (  rdleft$coefficients ["dpos"] +
 ##
 ## plot
 ##png("../plots/left-luro97-23-lpm.png")
+##pdf("../plots/left-luro97-23-lpm.pdf")
 plot(x = c(-.1,.1), y = c(0,1), type = "n", main = "LEFT \n LPM 1997-2023", xlab = expression("Margin"[t]), ylab = expression("Pr(win)"[t+1]))
 abline(v=0)
 ## incumbent not running
@@ -2494,7 +2514,18 @@ traceplot(fit1jags) # visually check posterior parameter convergence
 fit1jags$var.labels <- var.labels # add object to interpret coefficients
 summary(fit1jags$BUGSoutput$summary)
 ##
-# sims bayesian
+
+
+## load saved posterior samples
+load(file = "pan-1997-2023-jags.RData")   ## pan1jags
+load(file = "pri-1997-2023-jags.RData")   ## pri1jags
+load(file = "left-1997-2023-jags.RData")  ## left1jags
+load(file = "left-2018-2023-jags.RData")  ## left2jags
+## use one for plots/analysis with posterior sample
+left2jags -> fit1jags
+
+
+## sims bayesian
 ## pr(win)
 coefs <- fit1jags$BUGSoutput$sims.matrix; coefs <- coefs[,-grep("deviance", colnames(fit1jags$BUGSoutput$sims.matrix))]
 scenario <- c(
@@ -2531,9 +2562,18 @@ sc$dincball <- sc$mg <- NULL
 head(sc)
 sc <- as.matrix(sc)
 #
-tmp.mean <- fit1jags$BUGSoutput$summary[grep("beta", rownames(fit1jags$BUGSoutput$summary)),1] # coef point pred (mean posterior)
+tmp.mean    <- fit1jags$BUGSoutput$summary[grep("beta", rownames(fit1jags$BUGSoutput$summary)),1] # coef point pred (mean posterior)
 pointPred <- sc %*% diag(tmp.mean) # right side achieves multiplication of matrix columns by vector
 pointPred <- antilogit(rowSums(pointPred)) # will plug this in sc later
+tmp.10   <- apply(X=fit1jags$BUGSoutput$sims.matrix[,grep("beta", colnames(fit1jags$BUGSoutput$sims.matrix))]
+                , 2, FUN=function(X) quantile(X,.1)) # coef 10%
+LL        <- sc %*% diag(tmp.10) # right side achieves multiplication of matrix columns by vector
+LL        <- antilogit(rowSums(LL)) # will plug this in sc later
+tmp.90   <- apply(X=fit1jags$BUGSoutput$sims.matrix[,grep("beta", colnames(fit1jags$BUGSoutput$sims.matrix))]
+                , 2, FUN=function(X) quantile(X,.9)) # coef 90%
+UL        <- sc %*% diag(tmp.90) # right side achieves multiplication of matrix columns by vector
+UL        <- antilogit(rowSums(UL)) # will plug this in sc later
+rm(tmp.mean, tmp.10, tmp.90)
 ##
 pred <- sc * coefs
 pred <- antilogit(rowSums(pred)) # will plug this in sc later
@@ -2541,6 +2581,8 @@ pred <- antilogit(rowSums(pred)) # will plug this in sc later
 sc <- as.data.frame(sc); colnames(sc) <- var.labels
 sc$pred <- pred; rm(pred)
 sc$pointPred <- pointPred; rm(pointPred)
+sc$LL <- LL; rm(LL)
+sc$UL <- UL; rm(UL)
 head(sc)
 ##
 ## Add sims to output object
@@ -2549,16 +2591,32 @@ fit1jags$post.estim.sims <- sc
 ## rename/save party estimation
 left1jags <- fit1jags
 
+
 ##########
 ## plot ##
 ##########
 ##png("../plots/left-97-23-mcmc.png")
-plot(x = c(-.1,.1), y = c(0,1), type = "n", main = "LEFT \nMCMC logit link 1997-2023", xlab = expression("Margin"[t]), ylab = expression("Pr(win)"[t+1]))
-points(sc$dnegxmg[sc$dneg==1 & sc$dnegxincball==1], sc$pred[sc$dneg==1 & sc$dnegxincball==1], pch = 19, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
+##pdf("../plots/left-97-23-mcmc.pdf")
+plot(x = c(-.1,.1), y = c(0,1), type = "n", main = "Left 1997-2023", xlab = expression("Margin"[t]), ylab = expression("Probability of winning"[t+1]))
+points(sc$dnegxmg[sc$dneg==1 & sc$dnegxincball==1], sc$pred[sc$dneg==1 & sc$dnegxincball==1], pch = 17, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
 points(sc$dnegxmg[sc$dneg==1 & sc$dnegxincball==0], sc$pred[sc$dneg==1 & sc$dnegxincball==0], pch = 19, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
 ##
-points(sc$dposxmg[sc$dpos==1 & sc$dposxincball==1], sc$pred[sc$dpos==1 & sc$dposxincball==1], pch = 19, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
+## polygon(x = c(sc$dnegxmg[sc$dneg==1 & sc$dnegxincball==1], rev(sc$dnegxmg[sc$dneg==1 & sc$dnegxincball==1])),
+##         y = c(sc$LL     [sc$dneg==1 & sc$dnegxincball==1], rev(sc$UL     [sc$dneg==1 & sc$dnegxincball==1])),
+##         col = rgb(.5,.5,.5, alpha=.25))
+## polygon(x = c(sc$dnegxmg[sc$dneg==1 & sc$dnegxincball==0], rev(sc$dnegxmg[sc$dneg==1 & sc$dnegxincball==0])),
+##         y = c(sc$LL     [sc$dneg==1 & sc$dnegxincball==0], rev(sc$UL     [sc$dneg==1 & sc$dnegxincball==0])),
+##         col = rgb(.5,.5,.5, alpha=.25))
+##
+points(sc$dposxmg[sc$dpos==1 & sc$dposxincball==1], sc$pred[sc$dpos==1 & sc$dposxincball==1], pch = 17, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
 points(sc$dposxmg[sc$dpos==1 & sc$dposxincball==0], sc$pred[sc$dpos==1 & sc$dposxincball==0], pch = 19, col = rgb(.5,.5,.5, alpha=.25), cex = .65)
+##
+## polygon(x = c(sc$dposxmg[sc$dpos==1 & sc$dposxincball==1], rev(sc$dposxmg[sc$dpos==1 & sc$dposxincball==1])),
+##         y = c(sc$LL     [sc$dpos==1 & sc$dposxincball==1], rev(sc$UL     [sc$dpos==1 & sc$dposxincball==1])),
+##         col = rgb(.5,.5,.5, alpha=.25))
+## polygon(x = c(sc$dposxmg[sc$dpos==1 & sc$dposxincball==0], rev(sc$dposxmg[sc$dpos==1 & sc$dposxincball==0])),
+##         y = c(sc$LL     [sc$dpos==1 & sc$dposxincball==0], rev(sc$UL     [sc$dpos==1 & sc$dposxincball==0])),
+##         col = rgb(.5,.5,.5, alpha=.25))
 ##
 abline(v=0)
 ## incumbent on the ballot
@@ -2601,12 +2659,22 @@ table(( ( fit1jags$BUGSoutput$sims.list$beta[,5] + fit1jags$BUGSoutput$sims.list
 ## left .199
 ## left 18-23 .203
 
+var.labels
+pan1jags$BUGSoutput$summary
+pri1jags$BUGSoutput$summary
+left1jags$BUGSoutput$summary
+left2jags$BUGSoutput$summary
+
 ## save bugs objects
 save(pan1jags, file = "pan-1997-2023-jags.RData")
 save(pri1jags, file = "pri-1997-2023-jags.RData")
 save(left1jags, file = "left-1997-2023-jags.RData")
 save(left2jags, file = "left-2018-2023-jags.RData")
 
+load(file = "pan-1997-2023-jags.RData")
+load(file = "pri-1997-2023-jags.RData")
+load(file = "left-1997-2023-jags.RData")
+load(file = "left-2018-2023-jags.RData")
 
 summary(lm(pan ~ dcoalpan + dcoalpan, data = vot)) ## Para ilustrar endogeneidad
 ls()

@@ -1,10 +1,130 @@
-\noindent Here, $\vn{incumbent}_{it}$ is 1 if the sitting municipal president was on cycle $t$'s ballot, running for consecutive reelection, 0 otherwise; $\vn{party}_{it}$ is 1 if the candidate shares a party label with the outgoing municipal administration, 0 otherwise; $\vn{T}_{it}$ is a vector of observed time-varying covariates (such as the state of the economy as perceived by voters or the governor's party); and $\vn{X}_i$ is a vector of municipal time-invariant covariates (such as the mix of interest groups in the municipality or its level of education). Note that, with the exception of the constant $\alpha_{it}$ and the error term $\epsilon_{it}$, all regression coefficients are constant across three-year election cycles (the $t$ subindex is absent). Subtracting the first equation from the second yields
-
-eq
-
-\noindent Because time invariant covariates ($\vn{X}_i$) drop out, the danger of omited variable bias is much less than in cross-sectional estimation. Other covariates constant, coefficient $\iota$ translates a unit increase in $\Delta \vn{incumbent}_{i2}$ into vote share above or below last electoral cycle's. Expect $\iota$ votes above the baseline when an incumbent ran for reelection and the predecessor three years before did not. But expect the symmetric vote swing of $-\iota$ when the opposite holds: the predecessor ran for reelection while the current incumbent either retired, or was term-limited, or got no party's endorsement ($\Delta \vn{incumbent}_{i2}=-1$). So $\hat{\iota}$ (the estimated coefficient) estimates the personal (?) component of incumbency advantage, separate from the partisan.
-
-Likewise, coefficient $\pi$ is the vote change effect of campaining with your party in the municipal presidency versus out ($\Delta \vn{party}_{i2}=1$). It also captures the effect of campaigning in the opposition versus in government ($\Delta \vn{party}_{i2}=-1$). The incumbency curse literature \citep{lucardi.rosas.Incumbency.2016,folkle.snyderGubMidtermSlump.2012} expects $\pi < 0$. More interesting is coefficient $\xi$ gauging interactive effects.  
 
 
-Two-term limits impose the constraint that $\vn{incumbent}_{i1} \rightarrow \vn{incumbent}_{i2}=0$. The implication is that 
+
+
+
+
+
+
+
+                 mean       2.5%   97.5%
+dneg             &  0.26 &   [0.13,  0.39] & 
+dnegxincball     & -1.12 &  [-1.68, -0.58] & 
+dnegxmg          &  3.00 &   [0.69,  5.56] & 
+dnegxmgxincball  &  4.03 &  [-6.07, 14.59] & 
+dpos             & -0.64 &  [-0.78, -0.51] & 
+dposxincball     &  0.16 &  [-0.39,  0.70] & 
+dposxmg          &  6.74 &   [4.39,  9.19] & 
+dposxmgxincball  & -3.93 & [-13.58,  5.88] & 
+
+
+\begin{tabular}{clD{.}{.}{2}D{,}{,}{-3}}
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+$\vn{neg}$ & Coefficient         & \mc{1}{r}{\text{Estimate}} & \mc{1}{c}{95\%~interval} \\ \hline \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{PAN 1997--2023}}  \\ \\[-2.5ex]  
+1          & intercept                     &   -0.15 & [-0.31,~0.02]   \\
+0          & intercept                     &   -1.02 & [-1.20,~-0.85]  \\
+1          & $\vn{inc}$                    &   -0.38 & [-0.98,~0.18]   \\
+0          & $\vn{inc}$                    &    0.86 & [0.27,~1.48]    \\
+1          & $\vn{margin}$                 &    4.49 & [1.44,~7.47]    \\
+0          & $\vn{margin}$                 &    3.23 & [0.12,~6.49]    \\
+1          & $\vn{inc} \times \vn{margin}$ &    0.01 & [-12.02,~11.19] \\
+0          & $\vn{inc} \times \vn{margin}$ &   -0.93 & [-12.56,~10.15] \\ \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{PRI 1997--2023}} \\ \\[-2.5ex]  
+1          & intercept                     &   0.26  &  [0.13,~0.39]   \\
+0          & intercept                     &  -0.64  &  [-0.78,~-0.51] \\
+1          & $\vn{inc}$                    &  -1.12  &  [-1.68,~-0.58] \\
+0          & $\vn{inc}$                    &   0.16  &  [-0.39,~0.70]  \\
+1          & $\vn{margin}$                 &   3.00  &  [0.69,~5.56]   \\
+0          & $\vn{margin}$                 &   6.74  &  [4.39,~9.19]   \\
+1          & $\vn{inc} \times \vn{margin}$ &   4.03  &  [-6.07,~14.59] \\
+0          & $\vn{inc} \times \vn{margin}$ &  -3.93  &  [-13.58,~5.88] \\ \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{Left 1997--2023}} \\ \\[-2.5ex]  
+1          & intercept                     &   -0.13 & [-0.35,~0.09]   \\
+0          & intercept                     &   -1.15 & [-1.37,~-0.92]  \\
+1          & $\vn{inc}$                    &   -1.17 & [-2.47,~-0.01]  \\
+0          & $\vn{inc}$                    &    0.48 & [-0.37,~1.30]   \\
+1          & $\vn{margin}$                 &    6.94 & [3.12,~10.96]   \\
+0          & $\vn{margin}$                 &    6.33 & [2.27,~10.32]   \\
+1          & $\vn{inc} \times \vn{margin}$ &   -2.84 & [-24.72,~19.27] \\
+0          & $\vn{inc} \times \vn{margin}$ &   -0.72 & [-16.08,~14.30] \\ \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{Left 2018--2023}} \\ \\[-2.5ex]  
+1          & intercept                     &    0.33 & [-0.26,~0.99]   \\
+0          & intercept                     &   -1.63 & [-2.56,~-0.79]  \\
+1          & $\vn{inc}$                    &   -1.61 & [-2.97,~-0.32]  \\
+0          & $\vn{inc}$                    &    0.95 & [-0.25,~2.14]   \\
+1          & $\vn{margin}$                 &   11.81 & [-0.23,~24.16]  \\
+0          & $\vn{margin}$                 &   19.22 & [3.62,~35.37]   \\
+1          & $\vn{inc} \times \vn{margin}$ &   -7.71 & [-33.00,~17.63] \\
+0          & $\vn{inc} \times \vn{margin}$ &  -13.35 & [-35.51,~9.15]  \\ \hline 
+\hline \\[-1.8ex] 
+\end{tabular}
+
+$\interval[scaled=\big]{-2}{\pi}$
+
+  \begin{tabular}{lccr}
+      & \mc{2}{c}{Incumbency curse}         & \\
+\cline{2-3} 
+      & open seat & incumbent mayor running &  \\
+Party & $\alpha_0 > \beta_0$ & $(\alpha_0 + \alpha_1) > (\beta_0 + \beta_1)$ & $N$ \\
+PAN 1997-2023  & 1.000 & 0.197 & 4,758 \\
+PRI 1997-2023  & 1.000 & 0.146 & 7,293 \\
+Left 1997-2023 & 1.000 & 0.199 & 2,889 \\
+Left 2018-2023 & 1.000 & 0.203 &   394 \\
+\end{tabular}
+
+
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{9}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-10} 
+\\[-1.8ex] & \multicolumn{9}{c}{Residual} \\ 
+ & \multicolumn{3}{c}{PAN} & \multicolumn{3}{c}{PRI} & \multicolumn{3}{c}{Left} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)} & \multicolumn{1}{c}{(6)} & \multicolumn{1}{c}{(7)} & \multicolumn{1}{c}{(8)} & \multicolumn{1}{c}{(9)}\\ 
+\hline \\[-1.8ex] 
+ Vote share (lagged) & -0.213^{***} & -0.216^{***} & -0.267^{***} & -0.051^{***} & -0.051^{***} & -0.049^{***} & -0.329^{***} & -0.331^{***} & -0.282^{***} \\ 
+  & (0.011) & (0.011) & (0.013) & (0.013) & (0.013) & (0.014) & (0.012) & (0.012) & (0.013) \\ 
+  & & & & & & & & & \\ 
+ Party incumbent & 0.235^{***} & 0.237^{***} & 0.219^{***} & 0.172^{***} & 0.173^{***} & 0.163^{***} & 0.143^{***} & 0.146^{***} & 0.156^{***} \\ 
+  & (0.013) & (0.013) & (0.013) & (0.014) & (0.014) & (0.013) & (0.016) & (0.016) & (0.015) \\ 
+  & & & & & & & & & \\ 
+ Other-party incumbent & -0.016 & -0.014 & -0.021^{**} & -0.007 & -0.007 & -0.015^{*} & 0.021^{**} & 0.026^{***} & 0.028^{***} \\ 
+  & (0.010) & (0.010) & (0.010) & (0.009) & (0.009) & (0.008) & (0.009) & (0.010) & (0.009) \\ 
+  & & & & & & & & & \\ 
+ Party open seat & 0.177^{***} & 0.176^{***} & 0.184^{***} & 0.123^{***} & 0.123^{***} & 0.121^{***} & 0.160^{***} & 0.157^{***} & 0.169^{***} \\ 
+  & (0.004) & (0.005) & (0.004) & (0.004) & (0.004) & (0.003) & (0.005) & (0.005) & (0.005) \\ 
+  & & & & & & & & & \\ 
+ Concurrent gub. race &  & 0.027^{***} & 0.048^{***} &  & 0.014 & -0.007 &  & 0.055^{***} & 0.065^{***} \\ 
+  &  & (0.010) & (0.012) &  & (0.009) & (0.010) &  & (0.013) & (0.015) \\ 
+  & & & & & & & & & \\ 
+ Governor & -0.015^{***} & -0.017^{***} & 0.031^{***} & 0.027^{***} & 0.027^{***} & 0.025^{***} & -0.022^{***} & -0.025^{***} & -0.028^{***} \\ 
+  & (0.004) & (0.005) & (0.006) & (0.004) & (0.004) & (0.004) & (0.005) & (0.005) & (0.007) \\ 
+  & & & & & & & & & \\ 
+ Population (log, 10k) & -0.006^{***} & -0.005^{***} & -0.001 & -0.005^{***} & -0.004^{***} & -0.001 & 0.006^{***} & 0.006^{***} & 0.001 \\ 
+  & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) \\ 
+  & & & & & & & & & \\ 
+ SD elevation (pop. weighted) & -0.010 & -0.008 & 0.037^{**} & -0.064^{***} & -0.063^{***} & 0.010 & 0.029^{**} & 0.030^{**} & 0.024 \\ 
+  & (0.015) & (0.015) & (0.016) & (0.014) & (0.014) & (0.014) & (0.015) & (0.015) & (0.016) \\ 
+  & & & & & & & & & \\ 
+ Post reform & 0.076^{***} & 0.077^{***} &  & -0.158^{***} & -0.157^{***} &  & 0.044^{***} & 0.038^{***} &  \\ 
+  & (0.005) & (0.005) &  & (0.005) & (0.005) &  & (0.005) & (0.005) &  \\ 
+  & & & & & & & & & \\ 
+ Constant & 0.024^{*} & 0.020 & -0.173^{***} & 0.019 & 0.015 & 0.051^{*} & -0.130^{***} & -0.132^{***} & -0.033 \\ 
+  & (0.013) & (0.013) & (0.031) & (0.014) & (0.014) & (0.029) & (0.012) & (0.012) & (0.031) \\ 
+  & & & & & & & & & \\ 
+\hline \\[-1.8ex] 
+ Fixed state effects & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} \\
+ Fixed time effects  & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} \\
+\hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.220} & \multicolumn{1}{c}{0.221} & \multicolumn{1}{c}{0.312} & \multicolumn{1}{c}{0.294} & \multicolumn{1}{c}{0.294} & \multicolumn{1}{c}{0.408} & \multicolumn{1}{c}{0.176} & \multicolumn{1}{c}{0.178} & \multicolumn{1}{c}{0.265} \\ 
+%Adjusted R$^{2}$ & \multicolumn{1}{c}{0.220} & \multicolumn{1}{c}{0.220} & \multicolumn{1}{c}{0.308} & \multicolumn{1}{c}{0.293} & \multicolumn{1}{c}{0.293} & \multicolumn{1}{c}{0.404} & \multicolumn{1}{c}{0.175} & \multicolumn{1}{c}{0.177} & \multicolumn{1}{c}{0.260} \\ 
+Residual Std. Error & \multicolumn{1}{c}{0.163} & \multicolumn{1}{c}{0.162} & \multicolumn{1}{c}{0.153} & \multicolumn{1}{c}{0.151} & \multicolumn{1}{c}{0.151} & \multicolumn{1}{c}{0.139} & \multicolumn{1}{c}{0.163} & \multicolumn{1}{c}{0.163} & \multicolumn{1}{c}{0.155} \\ 
+F Statistic & \multicolumn{1}{c}{293.5$^{***}$} & \multicolumn{1}{c}{261.9$^{***}$} & \multicolumn{1}{c}{73.5$^{***}$} & \multicolumn{1}{c}{431.7$^{***}$} & \multicolumn{1}{c}{384.1$^{***}$} & \multicolumn{1}{c}{111.5$^{***}$} & \multicolumn{1}{c}{221.9$^{***}$} & \multicolumn{1}{c}{199.6$^{***}$} & \multicolumn{1}{c}{58.3$^{***}$} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{9}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+}

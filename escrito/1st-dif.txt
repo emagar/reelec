@@ -25,14 +25,14 @@ This first differences model reflects change in mean levels. Here are some dummy
 |     1 |      1 |      0 |      1 | $\Delta \alpha + \gamma + \lambda$ |
 |     1 |      1 |      1 |      1 | $\Delta \alpha$                    |
 
-When one factor is present in both periods, the cross-temporal effect cancels out, leaviong the mean outcome as if absent in both periods. 
+When one factor is present in both periods, the cross-temporal effect cancels out, leaving the mean outcome as if absent in both periods. 
 
 An alternative specification adds coefficients to capture heterogeneity between a factor present/absent in both periods. This is a cross-sectional-only approach adds a dummy $T$ equal 1 for $t=2$:
 
 $$y = \alpha_0 + \alpha_1 x + \alpha_2 z + \alpha_3 T + \alpha_4 xz + \alpha_5 xT + \alpha_6 zT + \alpha_7 xzT + \epsilon$$.
 
-| $t$ |  $x$ |  $z$ | $\Delta y$                         |
-|:----: |:-----: |:-----: | :--------------------------------- |
+| $t$ | $x$ | $z$ | $\Delta y$                                                                              |
+|:--: |:--: |:--: | :-------------------------------------------------------------------------------------- |
 |   1 |   0 |   0 | $\alpha_0$                                                                              |
 |   1 |   1 |   0 | $\alpha_0 + \alpha_1$                                                                   |
 |   1 |   1 |   1 | $\alpha_0 + \alpha_1 + \alpha_2 + \alpha_4$                                             |

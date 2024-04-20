@@ -622,8 +622,8 @@ table( inc $cycle)
 ##
 ## get electoral calendar
 cal <- read.csv(file = paste0(dd, "../../calendariosReelec/data/fechasEleccionesMexicoDesde1994.csv"))
-sel.r <- which(cal$elec=="gob" | cal$elec=="dip"); cal <- cal[sel.r,] # subset dip and gob
-cal[6,]
+sel.r <- which(cal$elec=="gob" | cal$elec=="dip"  | cal$elec=="pres"); cal <- cal[sel.r,] # subset dip and gob
+cal[1:4,]
 ## translate months to english
 library(stringr)
 to.eng <- function(x) str_replace_all(x, c("ene"="jan", "abr"="apr", "ago"="aug", "dic"="dec"))
@@ -642,6 +642,7 @@ cal <- as.data.frame(sapply(cal, to.num))
 ##for (i in 1:length(sel.c)) cal[,sel.c[i]] <- ymd(cal[,sel.c[i]]) ## proceed columnwise to retain date format
 ## dummies
 vot$dconcdf <- 0
+vot$dconcpr <- 0
 vot$dconcgo <- 0
 for (i in 1:32){
     #i <- 26
@@ -651,8 +652,12 @@ for (i in 1:32){
     sel <- cal[cal$elec=="dip", sel.c]
     sel.r <- which(vot$date[vot$edon==i] %in% sel)
     if (length(sel.r)>0) vot$dconcdf[vot$edon==i][sel.r] <- 1
+    sel <- cal[cal$elec=="pres", sel.c]
+    sel.r <- which(vot$date[vot$edon==i] %in% sel)
+    if (length(sel.r)>0) vot$dconcpr[vot$edon==i][sel.r] <- 1
 }
 table(go=vot$dconcgo, df=vot$dconcdf)
+table(pr=vot$dconcpr, df=vot$dconcdf)
 rm(cal)
 ## code reform date
 ## get electoral calendar again
@@ -2191,7 +2196,6 @@ save.image(file = "ay-mu-vote-analysis.RData")
 ######################
 #source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/ay.r") ## slow!!
 
-
 library(DataCombine) # easy lags
 rm(list = ls())
 ##
@@ -2208,7 +2212,6 @@ tmp <- lnrdelta; colnames(tmp)[-1:-2] <- paste0("D", colnames(tmp)[-1:-2])
 lnrecm <- cbind(lnrecm, tmp[,-1:-2])
 colnames(lnrecm)
 lnrecm <- cbind(lnrecm[,-1:-2], ids) ## add ids
-
 
 ##
 ## wrap lm commands in function
@@ -2259,17 +2262,22 @@ tmpp <- c("di", "diballno", "diball", "dgov", "dpres", "ncand", "popshincab", "w
 ##
 tmpp <- c("di", "diballno", "diball", "ncand", "dgov", "dpres"); tmp <- mylm(dv="pan", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmpp <- c("L", "Ddi", "Ddiballno", "Ddiball", "Ddgov", "Ddpres", "wsdalt", "lats", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="Dpan", data = lnrecm, subset = "yr>2017", predictors = tmpp); summary(tmp)
-##
+tmpp <- c("L", "Ddi", "Ddiballno", "Ddiball", "Ddgov", "Ddpres", "wsdalt", "lats", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="Dpan", data = lnrecm, subset = "yr>2017", predictors = tmpp); summary(tmp)#
+#
 tmpp <- c("dincballot * dinc", "ncand", "dgov", "dpres"); tmp <- mylm(dv="pan", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmpp <- c("dconcgo", "dconcdf", "dincballot", "mg", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="log(turn.ln)", data=lnr, subset="yr>1999", predictors = tmpp); summary(tmp)
+#############
+## turnout ##
+#############
+tmpp <- c("dconcgo", "dconcdf", "dincballot", "mg", "popshincab", "wsdalt", "lats", "p5lish", "lumwpop20", "as.factor(trienio)"); tmp <- mylm(dv="turn.ln", data=lnr, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmpp <- c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)"); tmp <- mylm(dv="turn.ln", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
+tmpp <- c("dconcgo", "dconcpr", "dincballot", "mg", "as.factor(trienio)"); tmp <- mylm(dv="turn.ln", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
 ##
-tmpp <- c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)"); tmp <- mylm(dv="turn.ln", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
-
-## error correction model
+tmpp <- c("dconcgo", "dconcpr", "dincballot", "mg", "wsdalt", "as.factor(trienio)"); tmp <- mylm(dv="turn.ln", data=lnrdelta, subset="yr>1999", predictors = tmpp); summary(tmp)
+##
+############################
+## error correction model ##
+############################
 colnames(lnrecm)
 tmpp <- c("dconcgo", "dconcdf", "dincballot", "mg", "as.factor(trienio)"); tmp <- mylm(dv="Dturn.ln", data=lnrecm, subset="yr>1999", predictors = tmpp); summary(tmp)
 

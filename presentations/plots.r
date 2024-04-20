@@ -7,7 +7,7 @@ firstElecs <- data.frame(
     df=   c(0,0,0,0, 0,0,0,1,0,0,0),
     sen=  c(0,0,0,0, 0,0,0,0,0,0,1),
     dl=   c(0,0,0,1,24,3,0,4,0,0,0),
-    ay=   c(0,0,0,0,22,3,0,3,0,0,2),
+    ay=   c(0,0,0,0,22,3,0,3,0,0,3),
     dl2 = c(0,0,0,0, 6,2,0,1,0,0,0),
     dl3 = c(0,0,0,0, 1,0,0,0,0,0,0),
     dl4 = c(0,0,0,1,17,1,0,3,0,0,0)
@@ -198,16 +198,18 @@ f$nleg <- n
 
 # adds number ayuntamientos
 # pending --- need to figure out n regidores in each municipio
-m <- read.csv("../../../../elecReturns/mun.yrs.csv", stringsAsFactors = FALSE)
-n <- tapply(m$munn, m$edon, FUN = length)
+m <- read.csv("../../../../elecReturns/ancillary/mun.yrs.csv", stringsAsFactors = FALSE)
+n <- tapply(m$ife, m$edon, FUN = length)
 nsmd$nmun <- c(n,0,0)
-nsmd$yray <- c(19,19,18,18,18,18,18,18,21,19,18,18,NA,18,18,18,18,24,18,18,21,18,18,18,18,21,18,18,24,NA,18,18,NA,NA)+2000
+##              1  2  3  4  5  6  7  8  9 10  1  2  3  4  5  6  7  8  9 20  1  2  3  4  5  6  7  8  9 30  1  2
+nsmd$yray <- c(19,19,18,18,18,18,18,18,21,19,18,18,NA,18,18,18,18,24,18,18,21,18,18,18,18,18,18,18,24,24,18,18,NA,NA)+2000
 # break oax into usos/not, using dipfed slot for usos
 nsmd$nmun[nsmd$edo=="oax"] <- 570-sum(m$dusos)
 nsmd$nmun[nsmd$edo=="dipfed"] <- sum(m$dusos)
 # add to table
-n <- tapply(nsmd$nmun, nsmd$yray, FUN = sum) 
-n <- c(0,0,0,0,n[1:2],0,n[3],0,0,n[4])
+n <- tapply(nsmd$nmun, nsmd$yray, FUN = sum)
+##   2014 15 16 17  18 19  20   21  22 23  24
+n <- c(0, 0, 0, 0, n[1:2], 0, n[3], 0, 0, n[4])
 f$nmun <- n
 #
 f$cumnleg <- cumsum(f$nleg)
@@ -255,12 +257,14 @@ for (i in 2014:2024){
 N <- max(m$ord)
 library(RColorBrewer)
 greens <- brewer.pal(n = 4, name = "Greens")
-#fl <- "../pics/ayuntamientos.pdf"; pdf(file = fl, width = 7, height = 5)
+##fl <- "../pics/ayuntamientos.pdf"; pdf(file = fl, width = 7, height = 5)
 plot(x = 2014:2024, y = seq(0, N, length.out = 11), type = "n",
      axes = FALSE,
      xlab = "",
-     ylab = "Frequency (municipalities)",
-     main = "Municipalities whose officers can reelect")
+     ## ylab = "Frequency (municipalities)",
+     ## main = "Municipalities whose officers can reelect")
+     ylab = "Frecuencia (municipios)",
+     main = "Ayuntamientos que pueden o no reelegirse")
 axis(1, at = f$yr)
 axis(2)
 # i <- 2018 # debug year
@@ -284,12 +288,23 @@ for (i in 2014:2024){
             y = c(0,d[j],d[j],0),
             col = greens[4])
 }
+for (i in 2018:2024){
 polygon(x = c(i-w,i-w,i+w,i+w),
         y = c(N,N-sum(m$dusos),N-sum(m$dusos),N),
         col = "gray")
-text(x = i,
+}
+text(x = 2018,
      y = N-sum(m$dusos)/2,
-     labels = "usos")
-#dev.off()
+     labels = "usos",
+     srt=90)
+text(x = 2018,
+     y = 1740,
+     labels = "no",
+     srt=90)
+text(x = 2018,
+     y = 695,
+     labels = "sí", col="ivory",
+     srt=90)
+##dev.off()
 
 colnames(m)

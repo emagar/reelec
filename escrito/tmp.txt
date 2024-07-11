@@ -1,0 +1,73 @@
+------
+- Could static ambition remove the incumbency curse?
+- Behind the curse lies a credibility problem. Where relations are personalized, same party under new management implies a new factional balance. Recreating the electoral coalition that brought victory last round requires groups to believe they will receive same deal. But new faction has ties to other groups.
+- Formal model based on cox mccubbins.
+- When the incumbent runs, mitigates credibility problem. Personal vote.
+
+McCox
+- electoral politics as a redistributive game in which candidates' strategies are proposed redistributions of welfare among various groups in their constituencies.
+- the question of electoral coalition stability can be addressed more directly (than spatial) by examining which groups (in prospect) are more likely to benefit and which are more likely to suffer from candidate decisions.
+- focus is the distribution of welfare within the constituency
+- notation:
+G groups
+n_g size of group g
+a and b are candidates
+x_a = (x_a1 ... x_aG) and x_b = (x_b1 ... x_bG) their proposed redistributions of welfare (x_ag is group g's net welfare change)
+- The interpretation is that candidates can, by distributing patronage, or manipulating the incidence of taxation, or allocating other distributive benefits of government, essntially achieve any in a large class of redistributions of welfare.
+- promises are subject only to two constraints:
+  (1) each gp has lower bound -b_g (b_g>=0, cannot deprive it an infinitely great amount of welfare)
+  (2) candidates cannot promise in aggregate more than B>=0
+  so feasible strategies W = {x in R^G: x_g>=-b_g for all g and sum x_g <= B}
+- b_g=0 for all g and B>0 -> distribution
+- b_g>0 for all g and B>0 -> both distribution and redistribution
+- candidate a chooses x_a in W to maximize EV_a(x_a,x_b) = sumG n_g P_ag(x_ag,x_bg) where P_ag(x_ag,x_bg) is proportion of gth gp which will support candidate a given a promises x_ag and b promises x_bg
+- d P_ag > 0 and d^2 P_ag < 0
+- Instantaneous rate of return to a (holding x_bg constant):
+  r_g(x_ag) = n_g [dP_g / dx_ag (x_ag,x_bg)]                                          <- size x pendiente de P_g
+- asymmetry, gps respond differently to the parties: P_ag(c,d) neq 1 - P_bg(d,c)
+- no abstention (needs relaxing if turnout were of interest): EV_a(x_a,x_b) + EV_b(x_a,x_b) = sum n_g
+
+ g  <  h
+ +  <- +
+ -  -> -
+-/+    -
+ +    -/+
+
+Dear Gary, in your 1986 distributive electoral game paper with Mat I noticed what seems to be an erratum.
+
+In the appendix, the final line in the proof of Theorem 1 should read
+
+x_g* < 0 and h > g implies x_h* <  0. QED. 
+
+The printed version has
+
+x_g* < 0 and h > g implies x_g* <  0. QED.
+
+JoP's web page seems to not mention it.
+
+I hope all is well, let me know when you plan to reschedule your trip to Mexico City. Take care.
+
+-e
+
+
+Cox 2010
+
+- 3 types of transfer: bribe upon verification, ex-ante prize to boost participation of supporters, an d outcome-contingent rewards. Electoral targeting models usually focus on 3rd. 
+- Dixit-Londregan generalize, Cox-McCubbins and Lindbeck-Weibull emerge as special cases.
+- voters partitioned into n groups
+- L and R parties compete for votes
+- Party k announces T_k = (T_1k, ... T_nk) per capita transfers (credible ex-ante, if wins honored ex-post). 
+- subject to sumj N_j T_jk = B where N_j is group j's size.
+- k chooses T_k to maximize its vote total sumj N_j P_jk(T_jL,T_jR) where P_jk() is the proportion of group j that votes for party k.
+- Focus on distrubution only T_jk >= 0
+- Group benefit t_jk = (1 - theta) T_jk where 1-theta is the proportion of transfer that will actually reach members; small theta makes a group core (well-known, small transaction costs to deliver).
+- Two notions of core "For most of this chapter, I shall refer to voters with a strong preference for a particular party as its “core” voters; in the next few pages, however, a party’s core voters will be those it knows well and to whom it can more effectively and credibly target benefits." p. 345  X_h vs small theta_j
+- Income drives cheaper votes from the poor, all in group j have same income y_j (EMM will omit here)
+- If voter h has innate preference X_h for party R then h in group j votes for L if U_j[(1-theta_jL)T_jL] > U_j[(1-theta_jR)T_jR] + X_h
+- Letting phi_j cdf of X_h in group j, P_jk(T_jL,T_jR) = phi_j(U_j[(1-theta_jL)T_jL] - U_j[(1-theta_jR)T_jR])  ---  EMM assumes X_h cancel out in group
+- Stokes & DCEM make multiperiod with credibility problems. DCEM allow group predispositions to shift, so not targeting core voters risks turning them into swing voters next race.
+EXTENSION TO TURNOUT
+- "Efforts to ensure that voter h actually participates in the election – a necessary but not sufficient condition for h to support L – fall under the heading of mobilization. Efforts to ensure that there is just one left-wing party on the ballot fall under the heading of coordination. Finally, efforts to ensure that voter h prefers L to R fall under the heading of persuasion [...] In the models under consideration here, the method of persuasion is offering transfers." (p. 348)
+- P_jL (t_L,t_R) = Q_j (t_L,t_R) S_jL (t_L,t_R) / M_j(t_L,t_R), where Qj() is the turnout rate in group j, SjL() is the proportion of group j’s participating members who prefer L to R, and Mj() is the number of left-wing parties that campaign   (EMM assuming a non-duvergerian equilibrium)
+- With mobilization "The most valuable voter for a party to offer a transfer to is one with a high probability of voting for that party, conditional on participating; and a probability of participation that is highly responsive to transfers" (349)
+

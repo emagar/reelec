@@ -19,7 +19,6 @@ pth <- ifelse (Sys.info()["user"] %in% c("eric", "magar"),
 source( paste(pth, "moveme.r", sep = "/") )
 source( paste(pth, "notin.r", sep = "/") )
 rm(pth)
-
 ## needed
 library(DataCombine) # easy lags
 
@@ -28,6 +27,8 @@ library(DataCombine) # easy lags
 ## get municipal votes ##
 #########################
 vot  <- read.csv(paste0(dd, "aymu1970-on.coalSplit.csv"), stringsAsFactors = FALSE)
+vot[1,]
+
 ## get coal agg version to take some info
 vcoa <- read.csv(paste0(dd, "aymu1970-on.coalAgg.csv"),   stringsAsFactors = FALSE)
 table(vot$emm==vcoa$emm) # same order?
@@ -54,6 +55,12 @@ tmp.votpre1996 <- vot
 sel <- which(vot$yr<1996)
 vot <- vot[-sel,]
 
+## drop prelim 2024 --- DROP BLOC AFTER FULL DATA
+table(vot$status)
+sel.r <- which(vot$status=="prelim")
+if (length(sel.r)>0) vot <- vot[-sel.r,]
+
+
 ## drop municipios that had any usos y costumbres vote
 ## Other than two cases that were uyc only in 1995, municipios that became uyc at any time since 1995 are included in this vector of ife codes
 sel.r <- c(20001, 20003, 20004, 20009, 20010, 20013, 20014, 20559, 20018, 20019, 20021, 20022, 20023, 20025, 20027, 20187, 20029, 20033, 20034, 20035, 20040, 20042, 20020, 20068, 20073, 20556, 20045, 20046, 20047, 20049, 20050, 20053, 20054, 20058, 20036, 20060, 20061, 20062, 20063, 20064, 20065, 20070, 20074, 20075, 20079, 20080, 20081, 20082, 20083, 20084, 20085, 20088, 20089, 20090, 20091, 20092, 20093, 20094, 20095, 20096, 20097, 20098, 20101, 20102, 20103, 20104, 20105, 20106, 20107, 20108, 20110, 20111, 20112, 20113, 20114, 20116, 20117, 20118, 20119, 20120, 20122, 20123, 20124, 20125, 20126, 20128, 20129, 20130, 20132, 20134, 20135, 20136, 20137, 20139, 20141, 20142, 20143, 20144, 20145, 20146, 20148, 20149, 20150, 20151, 20152, 20153, 20155, 20156, 20158, 20159, 20160, 20161, 20162, 20163, 20165, 20169, 20168, 20171, 20172, 20173, 20174, 20176, 20177, 20180, 20188, 20191, 20192, 20185, 20186, 20193, 20194, 20195, 20196, 20197, 20198, 20201, 20202, 20203, 20204, 20205, 20206, 20207, 20209, 20208, 20210, 20211, 20212, 20213, 20214, 20215, 20216, 20217, 20218, 20219, 20220, 20221, 20222, 20223, 20224, 20226, 20227, 20228, 20229, 20230, 20231, 20233, 20234, 20235, 20236, 20238, 20239, 20240, 20241, 20242, 20243, 20244, 20246, 20247, 20248, 20249, 20250, 20251, 20253, 20254, 20255, 20256, 20257, 20259, 20261, 20264, 20262, 20263, 20265, 20266, 20267, 20268, 20269, 20270, 20271, 20272, 20273, 20274, 20275, 20277, 20279, 20280, 20281, 20282, 20284, 20285, 20286, 20287, 20289, 20290, 20291, 20294, 20295, 20297, 20299, 20301, 20302, 20304, 20308, 20309, 20311, 20312, 20313, 20314, 20315, 20316, 20318, 20319, 20320, 20321, 20323, 20324, 20326, 20327, 20328, 20329, 20330, 20331, 20333, 20335, 20336, 20337, 20338, 20339, 20340, 20341, 20343, 20344, 20345, 20346, 20347, 20348, 20349, 20350, 20351, 20352, 20353, 20354, 20355, 20356, 20357, 20358, 20359, 20361, 20362, 20363, 20365, 20366, 20367, 20368, 20369, 20370, 20371, 20372, 20373, 20374, 20375, 20377, 20379, 20380, 20381, 20383, 20384, 20385, 20387, 20391, 20389, 20390, 20393, 20394, 20395, 20396, 20397, 20398, 20400, 20401, 20406, 20408, 20402, 20404, 20405, 20409, 20410, 20411, 20412, 20413, 20417, 20420, 20399, 20421, 20423, 20424, 20425, 20426, 20428, 20429, 20430, 20431, 20433, 20434, 20436, 20438, 20439, 20441, 20443, 20444, 20445, 20446, 20447, 20449, 20450, 20451, 20452, 20453, 20454, 20455, 20458, 20461, 20460, 20462, 20464, 20465, 20466, 20467, 20469, 20471, 20472, 20474, 20476, 20477, 20478, 20479, 20480, 20482, 20483, 20488, 20489, 20491, 20492, 20493, 20494, 20495, 20496, 20497, 20498, 20499, 20500, 20501, 20502, 20503, 20504, 20505, 20508, 20510, 20511, 20512, 20514, 20516, 20517, 20518, 20519, 20521, 20522, 20523, 20524, 20526, 20527, 20528, 20529, 20530, 20531, 20532, 20533, 20535, 20540, 20541, 20538, 20542, 20544, 20546, 20547, 20548, 20551, 20552, 20554, 20403, 20561, 20562, 20278, 20563, 20564, 20565, 20567, 20569, 7064, 16024, 17034, 17035, 17036)
@@ -73,11 +80,6 @@ table(vot$status)
 drop.r <- grep("cancelled|litigio|missing|pending|appoint", vot$status)
 vot <- vot[-drop.r,]
 rm(drop.r)
-## ## Fill NAs missing cases
-## sel.r <- grep("missing|pending|appoint", vot$status)
-## sel.c <- grep("^v[0-9]{2}", colnames(vot))
-## vot[sel.r, sel.c] <- NA
-## rm(sel.r,sel.c)
 ##
 ## drop runoffs held in san luis potosí (win/mg retain eventual winner/margin)
 sel <- grep("san-[0-9]+b", vot$emm) # these are first round races that led to runoff
@@ -547,6 +549,8 @@ rm(prior.inc.part,vot2,sel,sel.c,sel.r)
 vot$prior.inc.part <- NULL
 ## inspect
 tail(vot)
+table(vot$status)
+
 
 ## 15mar24: Lack of squareness dealt differently --- drops missing yrs so that lag uses last available obs
 ## For lags: vot xsts not square, use inc (which is) to add missing obs
@@ -734,9 +738,16 @@ sel.r <- grep("morena", vot$winlast); vot$daymorena[sel.r] <- 1
 rm(sel.r)
 
 ## triennium cat var (cycle sequence breaks when state calendars change)
-vot$trienio <- cut(vot$yr, 
-                   breaks=c(-Inf, seq(1992,2028,3), Inf),
-                   labels=seq(from=1991, to=2030, by=3))
+## ## cuts centered on fed election, ie [1996,1998] [1999,2001] etc.
+## vot$trienio <- cut(vot$yr, 
+##                    breaks=c(-Inf, seq(1992,2028,3), Inf),
+##                    labels=seq(from=1991, to=2030, by=3))
+## cuts starting with fed election, ie [1997,1999] [2000,2002] etc.
+vot$trienio <- cut(vot$yr,
+                   breaks=seq(1991,(max(vot$yr)+3),3),
+                   right=FALSE,
+                   labels=seq(1991, max(vot$yr)   ,3))
+table(vot$yr,vot$trienio) ## check
 vot <- vot[,moveme(names(vot), "trienio before status")]
 
 ## state capital municipalities
@@ -2058,8 +2069,8 @@ p5li$p5lish <- round(p5li$P5_HLI / p5li$P_5YMAS, 3)
 ids2 <- merge(x = ids, y = p5li[,c("inegi","p5lish")], by = "inegi", all.x = TRUE, all.y = FALSE)
 ids2 <- ids2[-which(duplicated(ids2$ord)),] ## quick fix to a bug: some obs are duplicated by merge ???
 ids <- ids2
-rm(p5li,rur2020)
-rm(i,ln,my_fun,p18,path,sel,sel.l,sel.t,t,t2,tmp2)
+rm(p5li,rur2020,ids2)
+rm(i,ln,my_fun,p18,path,sel.l,sel.t,t,t2,tmp2)
 
 ##
 ## sort
@@ -2073,8 +2084,8 @@ vo4    <-    vo4[order   (vo4$ord),]
 lnr     <-     lnr[order    (lnr$ord),]
 res    <-    res[order   (res$ord),]
 ##
-## Drop pre-2000
-sel.r <- which(ids$yr < 2000)
+## Drop pre-1997
+sel.r <- which(ids$yr < 1997)
 ids <- ids[-sel.r,]
 vot <- vot[-sel.r,]
 vo4 <- vo4[-sel.r,]
@@ -2203,6 +2214,18 @@ dd <- "/home/eric/Desktop/MXelsCalendGovt/elecReturns/data/"
 wd <- "/home/eric/Desktop/MXelsCalendGovt/reelec/data"
 setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
+
+## Describe turnout
+tapply(X=vot$turn.ln, INDEX=ids$trienio, summary) ## by trienio
+with(vot, aggregate(turn.ln, by = list(ids$trienio), FUN=summary))
+library(vioplot)
+for (i in 1:32){
+    pdf(file=paste0("../plots/turn-descrip/",i,".pdf"))
+    vioplot(vot$turn.ln[ids$edon==i] ~ as.numeric(as.character(ids$trienio[ids$edon==i])), xlim=c(0.5,9.5), ylim = c(0,1), xlab="", ylab="", main="")
+    abline(h=mean(vot$turn.ln, na.rm=TRUE), lty=1)
+    title(main=edon2estado(i), cex.main = 2)
+    dev.off()
+}
 
 ## Data for error correction model: L stands for lags, D stands for deltas
 table(lnrlag $emm == lnrdelta $emm) ## check order
@@ -2342,7 +2365,7 @@ luro$mgleft[tmp] <- -luro$mg.prior[tmp]
 luro$mgleft[luro$dselleft==0] <- NA
 ##
 ## left=prd|morena in 2015:17 generates no 1st/2nd left overlap
-intersect(grep("left", luro$win), grep("left", luro$part2nd))
+intersect(grep("left", luro$win), grep("left", luro$part2nd)) # check it is empty
 ## ##
 ## ## all prior incumbents version pending --- ojo: coalitions inflate party reelection rates
 ## ## Pending. No sé si lo entiendo cabalmente: selecciono solamente partidos que participaron en t-2, para de ellos tomar los que quedaron en 1o o 2do lugares en t-1, y estimar prob elección en t ---> needs t-2 lags
@@ -2375,6 +2398,9 @@ luro <- luro[sel.r,]
 luro[1,]
 dim(luro)
 table(luro$dincballot) / nrow(luro)
+##
+## aqui puedo codificar la recomendación de garfias: regresión con dincballot==0 solamente, pre y post reforma. También podría añadir una dummy=1 si dincballot(t+1)==1
+
 ##
 tmp <- luro[luro$yr>=2021,]
 nrow(tmp)
@@ -2692,7 +2718,7 @@ pri1jags$BUGSoutput$summary
 left1jags$BUGSoutput$summary
 left2jags$BUGSoutput$summary
 
-pri2jags <- fit1jags
+pan1jags <- fit1jags
 
 ## save bugs objects
 save(pan1jags,  file =  "pan-1997-2023-jags.RData")

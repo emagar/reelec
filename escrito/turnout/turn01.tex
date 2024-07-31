@@ -1,0 +1,591 @@
+\documentclass[letter,12pt]{article}
+\usepackage[letterpaper,right=1in,left=1in,top=1in,bottom=1in]{geometry}
+\usepackage{setspace}
+
+\usepackage[utf8]{inputenc}   % allows input of special characters from keyboard (input encoding)
+\usepackage[T1]{fontenc}      % what fonts to use when printing characters       (output encoding)
+\usepackage{amsmath}          % facilitates writing math formulas and improves the typographical quality of their output
+\usepackage[hyphens]{url}     % adds line breaks to long urls
+\usepackage[pdftex]{graphicx} % enhanced support for graphics
+\usepackage{tikz}             % Easier syntax to draw pgf files (invokes pgf automatically)
+\usetikzlibrary{arrows}
+
+\usepackage{mathptmx}           % set font type to Times
+\usepackage[scaled=.90]{helvet} % set font type to Times (Helvetica for some special characters)
+\usepackage{courier}            % set font type to Times (Courier for other special characters)
+
+\usepackage[longnamesfirst, sort]{natbib}\bibpunct[]{(}{)}{,}{a}{}{;} % handles biblio and references 
+
+\usepackage{rotating}         % sideway tables and figures that take a full page
+\usepackage{caption}          % allows multipage figures and tables with same caption (\ContinuedFloat)
+
+\usepackage{dcolumn}          % needed for apsrtable and stargazer tables from R to compile
+\usepackage{arydshln}         % dashed lines in tables (hdashline, cdashline{3-4}, 
+                              %see http://tex.stackexchange.com/questions/20140/can-a-table-include-a-horizontal-dashed-line)
+                              % must be loaded AFTER dcolumn, 
+                              %see http://tex.stackexchange.com/questions/12672/which-tabular-packages-do-which-tasks-and-which-packages-conflict
+
+\usepackage{interval}                        % formats math intervals
+\intervalconfig{soft open fences}            % uses parentheses for open interval fences
+\newcommand{\interv}{\interval[scaled=\big]} % short for interval w slightly bigger fences
+
+\newcommand{\mc}{\multicolumn}
+\newcommand{\vn}[1]{\vnform{#1}}      % short for variable name formating
+% see https://tex.stackexchange.com/questions/482743/typesetting-multi-letter-variable-names-in-math-mode
+\newcommand{\vnform}[1]{\mathsf{#1}}  % "look": sans serif/upright
+
+
+%% TO ADD NOTES IN TEXT, PUT % BEFORE THE ONE YOU WANT DISABLED
+%\usepackage[disable]{todonotes}                            % no show
+\usepackage[colorinlistoftodos, textsize=small]{todonotes} % show notes
+\newcommand{\emm}[1]{\todo[color=red!15, inline]{\textbf{Eric:} #1}}
+
+%% \usepackage{xr} % allows cross-ref to other file
+%% \externaldocument{urge15appendix}
+
+%% %for submission: sends figs, tables, and footnotes to last pages
+%% \RequirePackage[nomarkers,nolists]{endfloat}     % sends tables and figures to the end
+%% \RequirePackage{endnotes}                        % turns fn into endnotes; place \listofendnotes where you want 
+%%                                                  %the endnotes to appear (it must be after the last endnote).
+%% \let\footnote=\endnote
+%% \newcommand{\listofendnotes}{
+%%    \begingroup
+%%    \parindent 0pt
+%%    \parskip 2ex
+%%    \def\enotesize{\normalsize}
+%%    \theendnotes
+%%    \endgroup
+%% }
+
+%% % for submission: drop page numbers when producing title page
+%% \pagenumbering{gobble} % Remove page numbers (and reset to 1)
+%% \pagenumbering{arabic}% Arabic page numbers (and reset to 1)
+
+
+\setcitestyle{citesep={;}}
+
+\begin{document}
+
+\title{Does Static Ambition Removes the Incumbency Curse?}
+%\title{Incumbency advantage upon removal of single-term limits: Mexican municipal elections}
+\author{Eric Magar \\ ITAM, Mexico City}
+\date{\today}
+\maketitle
+
+% \newpage
+
+\begin{abstract}
+\noindent En route
+\newline
+\newline
+\textbf{Keywords}: Incumbency advantage, term limits, electoral reform, municipal elections, Mexico
+\end{abstract}
+
+% \newpage
+
+%\doublespacing
+
+\section{Introduction}
+
+\noindent En route
+
+\section{Reform, consequences}
+
+2014 reform surprising removal of term limits. Adopted in 1934, cornerstone of partisan centralization of power under the PRI. Removed immediate reelection at all levels.
+
+PAN placed removal among its requests, as was standard. Unlike the past, when left and PRI would veto, it was adopted along other changes.
+
+Federal deputies can reelect for up to four consecutive three-year terms, senators for two consecutive six-year terms. Fearing that members of Congress might gain too much independence from party leaders, reformers retained some control: incumbents must be renominated by the same party in whose ticket they originally ran. Elaborate. 
+
+Kick-off in the 2021 mid-term election.
+
+At subnational level, reformers left some discretion to state legislatures. State law-makers: either 2-, 3-, or 4-term limits. For municipal officers single- or 2-term limits. Two states only retained single-term limits for municipal presidents, Hidalgo and Veracruz. Unelected municipal officers in Oaxaca's \emph{usos y costumbres} Party clause mandatory. Variable election calendars: incumbents on the ballot progressively. 
+
+Bring from ITAM Schlesinger, Cain Ferejohn Fiorina, Mayhew, Jacobson, Samuels. 
+
+\begin{figure}
+  \centering
+  \includegraphics[width=.85\columnwidth]{../plots/horizon-yrs.pdf} \\
+  \caption{Extending the electoral horizons of municipal incumbents. Columns classify $N \approx 2,030$ municipalities according to the yearly reelection status of elected officeholders (430 municipalities with unelected indigenous governments are excluded).}\label{F:horizons}
+\end{figure}
+
+Figure \ref{F:horizons} reports relative frequencies of municipalities with different institutions since the reform. Each vertical bar accounts for 2,016 to 2,039 municipalities with elected officeholders (the variation is due to new units that were carved out in the period). Gray segments correspond to non-reformer states that kept the limits all municipalities nationwide had before 2014 in place. Veracruz, which has a large number of units, eventually joined reform states in 2020, dropping term limits for municipal officers that will be elected next year. Hidalgo now remains as the sole state banning consecutive municipal reelection. 
+
+The light-green segments include the gradually but steadily vanishing term-limited municipal officers. This category had about 35 percent of observations in 2015, and less than 5 percent in 2018. Unlike gray segments, however, officeholders in this group remained ineligible for consecutive reelection due to reforms coming into force further down in time. None will remain by 2021. In mid-green are freshmen eligible for another term in office. This is the modal group, including nearly 50 percent of observations in 2015, and over two-thirds afterwards. They enjoyed extended horizons for the first time in decades: at the end of the three-year term, ambitious incumbents in this group could opt, unlike all predecessors, to fight and secure renomination to run for the same office. The reform inaugurated the possibility of holding what \citet{schlesinger.1966} calls \emph{static ambition}. The theoretical expectation is that such incumbents will behave systematically different from the rest. 
+
+The first batch of returning incumbents, in darker-green segments, arrived in 2018. A total of 273 municipal presidents from 17 states secured reelection that year, and 12 more in 2019. Together, these account for 14 percent of observed municipalities, or just shy of 20 percent when population-weighted. The inaugural proportion is remarkable because the 2018 races concurred with a presidential election won by a landslide that, we will see, probably depressed reelection rates. (The large white indetermined category in 2021 will fill up when those races take place next year; it will break up in mid- and darker-green segments.)
+
+Freshmen elected in 2015, representing nearly 50 percent of municipal officers, had a very different perspective from their predecessors, as they were not barred from running again at the end of the term.  
+
+Members of Congress can be reelected for up to 12 consecutive years. With 3-year terms, 
+
+Term limits sever the personalized electoral connection, collective reputation only without the personal element.
+
+See \citet{cain.etal.1987} for argumentation.
+
+\section{Incumbency advantage in municipalities}
+
+The dependent variable is vote change since last electoral cycle. The strategy of analysis is similar to \citet{levitt1994pacs} and \citet{cox.magar.1999}. To explain it, let $\vn{v}_{it}$ be one party's vote share (inspecting parties separately) in municipality $i$ at times $t=1$ and $t=2$. Start with two cross-sectional equations, one for $t=1$, one for $t=2$:
+
+\begin{equation}
+\vn{v}_{i1} = \alpha_1 + \iota \vn{incumbent}_{i1} + \pi \vn{party}_{i1} + \xi \vn{incumbent}_{i1} \times \vn{party}_{i1} + \sigma_1 + \tau \vn{T}_{i1} + \rho \vn{X}_i + \epsilon_{i1}
+\end{equation}
+
+\begin{equation}
+\vn{v}_{i2} = \alpha_2 + \iota \vn{incumbent}_{i2} + \pi \vn{party}_{i2} + \xi \vn{incumbent}_{i2} \times \vn{party}_{i2} + \sigma_2 + \tau \vn{T}_{i2} + \rho \vn{X}_i + \epsilon_{i2}.
+\end{equation}
+
+\noindent Here, $\vn{incumbent}_{it}$ is 1 if the sitting municipal president was on cycle $t$'s ballot, running for consecutive reelection, 0 otherwise; $\vn{party}_{it}$ is 1 if the party labels of the candidate and the outgoing municipal administration are the same, 0 otherwise; $\sigma_t$ is a national partisan swing across all municipalities in cycle $t$; $\vn{T}_{it}$ is a vector of observed time-varying covariates (such as the state of the economy as perceived by voters or the governor's party); $\vn{X}_i$ is a vector of municipal time-invariant covariates (such as the mix of interest groups in the municipality or its level of education); and $\epsilon_{it}$ is a municipio-specific shock, assumed to be normal-distributed with zero mean. Note that, with the exception of the constant $\alpha_{it}$, the swing $\sigma_t$, and the error term $\epsilon_{it}$, all regression coefficients are constant across three-year election cycles (the $t$ subindex is absent). Subtracting the first equation from the second yields
+
+\begin{equation}
+\begin{split}
+  \vn{v}_{i2} - \vn{v}_{i1} =  & ~~(\alpha_2 - \alpha_1) \\
+                               & ~~+~\iota~(\vn{incumbent}_{i2} - \vn{incumbent}_{i1}) \\
+                               & ~~+~\pi~(\vn{party}_{i2} - \vn{party}_{i1}) \\
+                               & ~~+~\xi~(\vn{incumbent}_{i2} \times \vn{party}_{i2} - \vn{incumbent}_{i1} \times \vn{party}_{i1}) \\
+                               & ~~+~(\sigma_2 - \sigma_1) \\
+                               & ~~+~\tau~(\vn{T}_{i2} - \vn{T}_{i1}) \\
+                               & ~~+~\epsilon_{i2} - \epsilon_{i1}
+\end{split}
+\end{equation}
+
+\noindent Because time invariant covariates ($\vn{X}_i$) drop out, the danger of omited variable bias is much less than in cross-sectional estimation. Other covariates constant, coefficient $\iota$ translates a unit increase in $\Delta \vn{incumbent}_{i2}$ into vote share above or below last electoral cycle's. Expect $\iota$ votes above the baseline when an incumbent ran for reelection and the predecessor three years before did not. But expect the symmetric vote swing of $-\iota$ when the opposite holds: the predecessor ran for reelection while the current incumbent either retired, or was term-limited, or got no party's endorsement ($\Delta \vn{incumbent}_{i2}=-1$). So $\hat{\iota}$ (the estimated coefficient) estimates the personal (?) component of incumbency advantage, separate from the partisan.
+
+Likewise, coefficient $\pi$ is the vote change effect of campaining with your party in the municipal presidency versus out ($\Delta \vn{party}_{i2}=1$). It also captures the effect of campaigning in the opposition versus in government ($\Delta \vn{party}_{i2}=-1$). The incumbency curse literature \citep{lucardi.rosas.Incumbency.2016,folkle.snyderGubMidtermSlump.2012} expects $\pi < 0$. More interesting is coefficient $\xi$ gauging interactive effects.  
+
+
+% Two-term limits impose the constraint that $\vn{incumbent}_{i1} \rightarrow \vn{incumbent}_{i2}=0$. The implication is that 
+
+% 0 0 ->  0
+% 0 1 -> +1
+% 1 0 -> -1
+% 1 1 XXXX
+
+% Municipal measurements are not always , and interest is in the period change $\Delta \vn{v}_{i2} = \vn{v}_{i2} - \vn{v}_{i1}$ -- ie. the subtraction of the 
+
+
+%                                    This first differences model reflects change in mean levels. Here are some dummy value combinations:
+
+% | $x_1$ |  $x_2$ |  $z_1$ |  $z_2$ | $\Delta y$                         |
+% |:----: |:-----: |:-----: |:-----: | :--------------------------------- |
+% |     0 |      0 |      0 |      0 | $\Delta \alpha$                    |
+% |     1 |      0 |      0 |      0 | $\Delta \alpha  - \beta$           |
+% |     0 |      1 |      0 |      0 | $\Delta \alpha  + \beta$           |
+% |     1 |      1 |      0 |      0 | $\Delta \alpha$                    |
+% |     1 |      1 |      0 |      1 | $\Delta \alpha + \gamma + \lambda$ |
+% |     1 |      1 |      1 |      1 | $\Delta \alpha$                    |
+
+
+\section{A hypothesis perhaps}
+
+\begin{description}
+  \item [Hypothesis 1:] Presidents are more likely to fast-track bills when the committee chair with jurisdiction over the bill  belongs to the president's party than otherwise.
+\end{description}
+
+\section{Incumbents running v.\ open seats}
+
+\begin{table}
+\centering
+  \begin{tabular}{lcccclcccc}
+         &   \mc{4}{c}{Incumbent on the ballot}    &&      \mc{4}{c}{Open seat}           \\ \cline{2-5} \cline{7-10}
+In party & \%won   & \%lost   &   sum   &     (N)  && \%won  & \%lost &   sum   &      (N)\\ \hline
+PAN      &   66    &   34     &   100   &   (121)  &&   39   &   61   &   100   &  (1,664)\\
+PRI      &   47    &   53     &   100   &   (220)  &&   50   &   50   &   100   &  (3,548)\\
+PRD      &   57    &   43     &   100   &    (89)  &&   39   &   61   &   100   &  (1,082)\\
+Morena   &  100    &    0     &   100   &     (9)  &&   78   &   22   &   100   &     (18)\\
+Other    &   53    &   47     &   100   &    (97)  &&   25   &   75   &   100   &    (632)\\ \hline
+Overall  &   55    &   45     &   100   &   (536)  &&   44   &   56   &   100   &  (6,944)\\
+  \end{tabular}
+  \caption{Success and failure since 2005 given incumbent ran or not. Excludes governments elected since 2017 whose terms have not concluded.}\label{T:successfail}
+\end{table}
+
+\section{Regression model}
+
+% Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Tue, Nov 03, 2020 - 01:32:26 PM
+% Requires LaTeX packages: dcolumn 
+\begin{sidewaystable}[!htbp] \centering 
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{9}{c}{\textit{Dependent variable:}} \\ 
+\cline{2-10} 
+\\[-1.8ex] & \multicolumn{9}{c}{Residual} \\ 
+ & \multicolumn{3}{c}{PAN} & \multicolumn{3}{c}{PRI} & \multicolumn{3}{c}{Left} \\ 
+\\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)} & \multicolumn{1}{c}{(6)} & \multicolumn{1}{c}{(7)} & \multicolumn{1}{c}{(8)} & \multicolumn{1}{c}{(9)}\\ 
+\hline \\[-1.8ex] 
+ Vote share (lagged) & -0.213^{***} & -0.216^{***} & -0.267^{***} & -0.051^{***} & -0.051^{***} & -0.049^{***} & -0.329^{***} & -0.331^{***} & -0.282^{***} \\ 
+  & (0.011) & (0.011) & (0.013) & (0.013) & (0.013) & (0.014) & (0.012) & (0.012) & (0.013) \\ 
+  & & & & & & & & & \\ 
+ Party incumbent & 0.235^{***} & 0.237^{***} & 0.219^{***} & 0.172^{***} & 0.173^{***} & 0.163^{***} & 0.143^{***} & 0.146^{***} & 0.156^{***} \\ 
+  & (0.013) & (0.013) & (0.013) & (0.014) & (0.014) & (0.013) & (0.016) & (0.016) & (0.015) \\ 
+  & & & & & & & & & \\ 
+ Other-party incumbent & -0.016 & -0.014 & -0.021^{**} & -0.007 & -0.007 & -0.015^{*} & 0.021^{**} & 0.026^{***} & 0.028^{***} \\ 
+  & (0.010) & (0.010) & (0.010) & (0.009) & (0.009) & (0.008) & (0.009) & (0.010) & (0.009) \\ 
+  & & & & & & & & & \\ 
+ Party open seat & 0.177^{***} & 0.176^{***} & 0.184^{***} & 0.123^{***} & 0.123^{***} & 0.121^{***} & 0.160^{***} & 0.157^{***} & 0.169^{***} \\ 
+  & (0.004) & (0.005) & (0.004) & (0.004) & (0.004) & (0.003) & (0.005) & (0.005) & (0.005) \\ 
+  & & & & & & & & & \\ 
+ Concurrent gub. race &  & 0.027^{***} & 0.048^{***} &  & 0.014 & -0.007 &  & 0.055^{***} & 0.065^{***} \\ 
+  &  & (0.010) & (0.012) &  & (0.009) & (0.010) &  & (0.013) & (0.015) \\ 
+  & & & & & & & & & \\ 
+ Governor & -0.015^{***} & -0.017^{***} & 0.031^{***} & 0.027^{***} & 0.027^{***} & 0.025^{***} & -0.022^{***} & -0.025^{***} & -0.028^{***} \\ 
+  & (0.004) & (0.005) & (0.006) & (0.004) & (0.004) & (0.004) & (0.005) & (0.005) & (0.007) \\ 
+  & & & & & & & & & \\ 
+ Population (log, 10k) & -0.006^{***} & -0.005^{***} & -0.001 & -0.005^{***} & -0.004^{***} & -0.001 & 0.006^{***} & 0.006^{***} & 0.001 \\ 
+  & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) \\ 
+  & & & & & & & & & \\ 
+ SD elevation (pop. weighted) & -0.010 & -0.008 & 0.037^{**} & -0.064^{***} & -0.063^{***} & 0.010 & 0.029^{**} & 0.030^{**} & 0.024 \\ 
+  & (0.015) & (0.015) & (0.016) & (0.014) & (0.014) & (0.014) & (0.015) & (0.015) & (0.016) \\ 
+  & & & & & & & & & \\ 
+ Post reform & 0.076^{***} & 0.077^{***} &  & -0.158^{***} & -0.157^{***} &  & 0.044^{***} & 0.038^{***} &  \\ 
+  & (0.005) & (0.005) &  & (0.005) & (0.005) &  & (0.005) & (0.005) &  \\ 
+  & & & & & & & & & \\ 
+ %% as.factor(yr)2006 &  &  & -0.021 &  &  & 0.066^{***} &  &  & -0.018 \\ 
+ %%  &  &  & (0.016) &  &  & (0.015) &  &  & (0.017) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2007 &  &  & 0.083^{***} &  &  & 0.025^{*} &  &  & -0.019 \\ 
+ %%  &  &  & (0.016) &  &  & (0.015) &  &  & (0.016) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2008 &  &  & 0.076^{***} &  &  & 0.011 &  &  & -0.024 \\ 
+ %%  &  &  & (0.020) &  &  & (0.018) &  &  & (0.020) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2009 &  &  & -0.008 &  &  & 0.049^{***} &  &  & -0.036^{**} \\ 
+ %%  &  &  & (0.016) &  &  & (0.015) &  &  & (0.016) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2010 &  &  & 0.081^{***} &  &  & 0.044^{***} &  &  & -0.052^{***} \\ 
+ %%  &  &  & (0.016) &  &  & (0.014) &  &  & (0.016) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2011 &  &  & 0.081^{***} &  &  & 0.027 &  &  & -0.005 \\ 
+ %%  &  &  & (0.020) &  &  & (0.018) &  &  & (0.021) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2012 &  &  & 0.025 &  &  & 0.005 &  &  & 0.002 \\ 
+ %%  &  &  & (0.015) &  &  & (0.014) &  &  & (0.016) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2013 &  &  & 0.081^{***} &  &  & -0.035^{**} &  &  & -0.033^{**} \\ 
+ %%  &  &  & (0.016) &  &  & (0.015) &  &  & (0.017) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2014 &  &  & 0.179^{***} &  &  & -0.025 &  &  & -0.084^{**} \\ 
+ %%  &  &  & (0.037) &  &  & (0.034) &  &  & (0.038) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2015 &  &  & 0.065^{***} &  &  & -0.069^{***} &  &  & -0.027^{*} \\ 
+ %%  &  &  & (0.015) &  &  & (0.014) &  &  & (0.016) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2016 &  &  & 0.049^{***} &  &  & -0.096^{***} &  &  & 0.032^{*} \\ 
+ %%  &  &  & (0.017) &  &  & (0.015) &  &  & (0.018) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2017 &  &  & 0.152^{***} &  &  & -0.177^{***} &  &  & -0.027 \\ 
+ %%  &  &  & (0.025) &  &  & (0.023) &  &  & (0.025) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2018 &  &  & 0.125^{***} &  &  & -0.156^{***} &  &  & 0.010 \\ 
+ %%  &  &  & (0.015) &  &  & (0.014) &  &  & (0.015) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(yr)2019 &  &  & 0.142^{***} &  &  & -0.216^{***} &  &  & 0.103^{***} \\ 
+ %%  &  &  & (0.027) &  &  & (0.025) &  &  & (0.027) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)2 &  &  & 0.075^{**} &  &  & 0.029 &  &  & -0.097^{***} \\ 
+ %%  &  &  & (0.037) &  &  & (0.034) &  &  & (0.037) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)3 &  &  & 0.126^{***} &  &  & 0.053 &  &  & -0.125^{***} \\ 
+ %%  &  &  & (0.038) &  &  & (0.035) &  &  & (0.039) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)4 &  &  & 0.036 &  &  & -0.002 &  &  & 0.040 \\ 
+ %%  &  &  & (0.030) &  &  & (0.028) &  &  & (0.031) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)5 &  &  & 0.164^{***} &  &  & -0.112^{***} &  &  & 0.040 \\ 
+ %%  &  &  & (0.025) &  &  & (0.023) &  &  & (0.025) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)6 &  &  & 0.071^{**} &  &  & -0.081^{***} &  &  & 0.013 \\ 
+ %%  &  &  & (0.031) &  &  & (0.028) &  &  & (0.031) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)7 &  &  & -0.025 &  &  & -0.179^{***} &  &  & -0.010 \\ 
+ %%  &  &  & (0.023) &  &  & (0.021) &  &  & (0.023) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)8 &  &  & 0.150^{***} &  &  & -0.089^{***} &  &  & 0.012 \\ 
+ %%  &  &  & (0.023) &  &  & (0.021) &  &  & (0.023) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)9 &  &  & 0.182^{***} &  &  & -0.019 &  &  & -0.019 \\ 
+ %%  &  &  & (0.028) &  &  & (0.026) &  &  & (0.030) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)10 &  &  & 0.126^{***} &  &  & -0.102^{***} &  &  & -0.052^{**} \\ 
+ %%  &  &  & (0.024) &  &  & (0.021) &  &  & (0.024) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)11 &  &  & 0.018 &  &  & -0.032 &  &  & -0.004 \\ 
+ %%  &  &  & (0.024) &  &  & (0.022) &  &  & (0.025) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)12 &  &  & 0.115^{***} &  &  & -0.053^{**} &  &  & -0.041 \\ 
+ %%  &  &  & (0.024) &  &  & (0.022) &  &  & (0.025) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)14 &  &  & 0.072^{***} &  &  & -0.067^{***} &  &  & -0.022 \\ 
+ %%  &  &  & (0.023) &  &  & (0.021) &  &  & (0.023) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)15 &  &  & 0.144^{***} &  &  & -0.095^{***} &  &  & -0.019 \\ 
+ %%  &  &  & (0.023) &  &  & (0.021) &  &  & (0.023) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)16 &  &  & 0.060^{**} &  &  & -0.047^{**} &  &  & 0.009 \\ 
+ %%  &  &  & (0.023) &  &  & (0.021) &  &  & (0.025) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)17 &  &  & 0.036 &  &  & -0.121^{***} &  &  & -0.033 \\ 
+ %%  &  &  & (0.025) &  &  & (0.023) &  &  & (0.026) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)18 &  &  & 0.046 &  &  & -0.083^{***} &  &  & 0.022 \\ 
+ %%  &  &  & (0.029) &  &  & (0.027) &  &  & (0.030) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)19 &  &  & 0.123^{***} &  &  & -0.066^{***} &  &  & -0.016 \\ 
+ %%  &  &  & (0.024) &  &  & (0.022) &  &  & (0.024) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)20 &  &  & 0.119^{***} &  &  & -0.051^{**} &  &  & -0.108^{***} \\ 
+ %%  &  &  & (0.022) &  &  & (0.020) &  &  & (0.023) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)21 &  &  & 0.084^{***} &  &  & -0.079^{***} &  &  & -0.067^{***} \\ 
+ %%  &  &  & (0.022) &  &  & (0.020) &  &  & (0.022) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)22 &  &  & 0.027 &  &  & -0.039 &  &  & -0.006 \\ 
+ %%  &  &  & (0.027) &  &  & (0.025) &  &  & (0.028) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)23 &  &  & 0.192^{***} &  &  & -0.094^{***} &  &  & -0.005 \\ 
+ %%  &  &  & (0.030) &  &  & (0.028) &  &  & (0.031) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)24 &  &  & 0.083^{***} &  &  & -0.045^{**} &  &  & -0.028 \\ 
+ %%  &  &  & (0.024) &  &  & (0.022) &  &  & (0.024) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)25 &  &  & 0.149^{***} &  &  & -0.068^{***} &  &  & -0.001 \\ 
+ %%  &  &  & (0.027) &  &  & (0.024) &  &  & (0.027) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)26 &  &  & 0.092^{***} &  &  & -0.021 &  &  & 0.039 \\ 
+ %%  &  &  & (0.024) &  &  & (0.021) &  &  & (0.024) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)27 &  &  & 0.201^{***} &  &  & -0.120^{***} &  &  & -0.001 \\ 
+ %%  &  &  & (0.028) &  &  & (0.025) &  &  & (0.029) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)28 &  &  & 0.123^{***} &  &  & -0.034 &  &  & 0.003 \\ 
+ %%  &  &  & (0.024) &  &  & (0.022) &  &  & (0.024) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)29 &  &  & -0.006 &  &  & -0.054^{**} &  &  & -0.159^{***} \\ 
+ %%  &  &  & (0.023) &  &  & (0.021) &  &  & (0.024) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)31 &  &  & 0.079^{***} &  &  & -0.064^{***} &  &  & 0.016 \\ 
+ %%  &  &  & (0.023) &  &  & (0.021) &  &  & (0.023) \\ 
+ %%  & & & & & & & & & \\ 
+ %% as.factor(edon)32 &  &  & 0.121^{***} &  &  & -0.005 &  &  & -0.152^{***} \\ 
+ %%  &  &  & (0.023) &  &  & (0.021) &  &  & (0.024) \\ 
+ %%  & & & & & & & & & \\ 
+ Constant & 0.024^{*} & 0.020 & -0.173^{***} & 0.019 & 0.015 & 0.051^{*} & -0.130^{***} & -0.132^{***} & -0.033 \\ 
+  & (0.013) & (0.013) & (0.031) & (0.014) & (0.014) & (0.029) & (0.012) & (0.012) & (0.031) \\ 
+  & & & & & & & & & \\ 
+\hline \\[-1.8ex] 
+ Fixed state effects & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} \\
+ Fixed time effects  & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} \\
+\hline \\[-1.8ex] 
+Observations & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} \\ 
+R$^{2}$ & \multicolumn{1}{c}{0.220} & \multicolumn{1}{c}{0.221} & \multicolumn{1}{c}{0.312} & \multicolumn{1}{c}{0.294} & \multicolumn{1}{c}{0.294} & \multicolumn{1}{c}{0.408} & \multicolumn{1}{c}{0.176} & \multicolumn{1}{c}{0.178} & \multicolumn{1}{c}{0.265} \\ 
+%Adjusted R$^{2}$ & \multicolumn{1}{c}{0.220} & \multicolumn{1}{c}{0.220} & \multicolumn{1}{c}{0.308} & \multicolumn{1}{c}{0.293} & \multicolumn{1}{c}{0.293} & \multicolumn{1}{c}{0.404} & \multicolumn{1}{c}{0.175} & \multicolumn{1}{c}{0.177} & \multicolumn{1}{c}{0.260} \\ 
+Residual Std. Error & \multicolumn{1}{c}{0.163} & \multicolumn{1}{c}{0.162} & \multicolumn{1}{c}{0.153} & \multicolumn{1}{c}{0.151} & \multicolumn{1}{c}{0.151} & \multicolumn{1}{c}{0.139} & \multicolumn{1}{c}{0.163} & \multicolumn{1}{c}{0.163} & \multicolumn{1}{c}{0.155} \\ 
+F Statistic & \multicolumn{1}{c}{293.5$^{***}$} & \multicolumn{1}{c}{261.9$^{***}$} & \multicolumn{1}{c}{73.5$^{***}$} & \multicolumn{1}{c}{431.7$^{***}$} & \multicolumn{1}{c}{384.1$^{***}$} & \multicolumn{1}{c}{111.5$^{***}$} & \multicolumn{1}{c}{221.9$^{***}$} & \multicolumn{1}{c}{199.6$^{***}$} & \multicolumn{1}{c}{58.3$^{***}$} \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{9}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+}
+  \caption{Models} 
+  \label{} 
+\end{sidewaystable}
+
+
+%% % Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+%% % Date and time: Wed, Oct 21, 2020 - 12:28:13 AM
+%% % Requires LaTeX packages: dcolumn 
+%% \begin{sidewaystable}[!htbp] \centering 
+%% \resizebox{\textwidth}{!}{
+%% \begin{tabular}{@{\extracolsep{5pt}}lD{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} D{.}{.}{-3} } 
+%% \\[-1.8ex]\hline 
+%% \hline \\[-1.8ex] 
+%%  & \multicolumn{6}{c}{\emph{Dependent variable:} vote share - E(vote share)} \\ 
+%% \cline{2-7} 
+%% %\\[-1.8ex] & \multicolumn{6}{c}{Residual} \\ 
+%%  & \multicolumn{1}{c}{PAN} & \multicolumn{1}{c}{PRI} & \multicolumn{1}{c}{Left} & \multicolumn{1}{c}{PAN} & \multicolumn{1}{c}{PRI} & \multicolumn{1}{c}{Left} \\ 
+%% \\[-1.8ex] & \multicolumn{1}{c}{(1)} & \multicolumn{1}{c}{(2)} & \multicolumn{1}{c}{(3)} & \multicolumn{1}{c}{(4)} & \multicolumn{1}{c}{(5)} & \multicolumn{1}{c}{(6)}\\ 
+%% \hline \\[-1.8ex] 
+%%  vote share (lagged) & -0.216^{***} & -0.051^{***} & -0.303^{***} & -0.260^{***} & -0.049^{***} & -0.210^{***} \\ 
+%%   & (0.011) & (0.013) & (0.013) & (0.013) & (0.014) & (0.014) \\ 
+%%   & & & & & & \\ 
+%%  party incumbent & 0.237^{***} & 0.173^{***} & -0.077^{***} & 0.217^{***} & 0.171^{***} & -0.033^{*} \\ 
+%%   & (0.013) & (0.014) & (0.019) & (0.013) & (0.013) & (0.017) \\ 
+%%   & & & & & & \\ 
+%%  other-party incumbent & -0.014 & -0.007 & 0.062^{***} & -0.021^{**} & -0.009 & 0.072^{***} \\ 
+%%   & (0.010) & (0.009) & (0.010) & (0.010) & (0.009) & (0.009) \\ 
+%%   & & & & & & \\ 
+%%  party open seat & 0.176^{***} & 0.123^{***} & 0.087^{***} & 0.182^{***} & 0.125^{***} & 0.118^{***} \\ 
+%%   & (0.005) & (0.004) & (0.006) & (0.004) & (0.003) & (0.005) \\ 
+%%   & & & & & & \\ 
+%%  concurrent gub. race & 0.027^{***} & 0.013 & 0.068^{***} & 0.031^{***} & -0.002 & 0.133^{***} \\ 
+%%   & (0.010) & (0.009) & (0.014) & (0.010) & (0.009) & (0.014) \\ 
+%%   & & & & & & \\ 
+%%  governor & -0.017^{***} & 0.027^{***} & 0.010 & 0.012^{**} & 0.024^{***} & 0.040^{***} \\ 
+%%   & (0.005) & (0.004) & (0.006) & (0.005) & (0.004) & (0.007) \\ 
+%%   & & & & & & \\ 
+%%  population (log, 10k) & -0.005^{***} & -0.004^{***} & -0.003^{***} & -0.001 & -0.001 & -0.009^{***} \\ 
+%%   & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) \\ 
+%%   & & & & & & \\ 
+%%  sd elevation (pop. weigthed) & -0.008 & -0.063^{***} & 0.041^{***} & 0.036^{**} & 0.010 & 0.045^{***} \\ 
+%%   & (0.015) & (0.014) & (0.016) & (0.016) & (0.015) & (0.016) \\ 
+%%   & & & & & & \\ 
+%%  post reform & 0.077^{***} & -0.157^{***} & -0.114^{***} & 0.075^{***} & -0.159^{***} & -0.114^{***} \\ 
+%%   & (0.005) & (0.005) & (0.006) & (0.005) & (0.005) & (0.006) \\ 
+%%   & & & & & & \\ 
+%%  Constant & 0.020 & 0.015 & -0.051^{***} & -0.088^{***} & 0.022 & 0.066^{**} \\ 
+%%   & (0.013) & (0.014) & (0.013) & (0.026) & (0.025) & (0.026) \\ 
+%%   & & & & & & \\ 
+%% \hline \\[-1.8ex] 
+%%  Fixed state effects & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{No} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} & \multicolumn{1}{c}{Yes} \\
+%% \hline \\[-1.8ex] 
+%% Observations & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} & \multicolumn{1}{c}{8,310} \\ 
+%% R$^{2}$ & \multicolumn{1}{c}{0.221} & \multicolumn{1}{c}{0.294} & \multicolumn{1}{c}{0.112} & \multicolumn{1}{c}{0.293} & \multicolumn{1}{c}{0.344} & \multicolumn{1}{c}{0.241} \\ 
+%% %Adjusted R$^{2}$ & \multicolumn{1}{c}{0.221} & \multicolumn{1}{c}{0.294} & \multicolumn{1}{c}{0.111} & \multicolumn{1}{c}{0.290} & \multicolumn{1}{c}{0.341} & \multicolumn{1}{c}{0.238} \\ 
+%% Residual Std. Error & \multicolumn{1}{c}{0.162} & \multicolumn{1}{c}{0.151} & \multicolumn{1}{c}{0.171} & \multicolumn{1}{c}{0.155} & \multicolumn{1}{c}{0.146} & \multicolumn{1}{c}{0.159} \\ 
+%% F Statistic & \multicolumn{1}{c}{262.2$^{***}$} & \multicolumn{1}{c}{384.9$^{***}$} & \multicolumn{1}{c}{116.3$^{***}$} & \multicolumn{1}{c}{90.3$^{***}$} & \multicolumn{1}{c}{114.4$^{***}$} & \multicolumn{1}{c}{69.1$^{***}$} \\ 
+%% \hline 
+%% \hline \\[-1.8ex] 
+%% \textit{Note:}  & \multicolumn{6}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+%% \end{tabular} 
+%% }
+%%   \caption{Models} 
+%%   \label{} 
+%% \end{sidewaystable}
+
+
+\section{Lucardi-Rosas replication}
+
+the top-two candidates of equal appeal in the electorate, campaign skills, and capacity to get out the vote from their supporters and with identical receiving the exactly same vote counts, 
+
+equal appeal in the electorate, 
+
+The key in the regression discontinuity design are election ties. When the top-two candidates in a race each receive exactly the same votes, they are of equal strength: their differential appeal to the electorate, campaigning skill, and capacity to mobilize supporters to the polling stations is essencially zero. In such scenario, who wins and who loses becomes a 50-50 random draw.
+
+Focusing on close elections only 
+
+\begin{equation}
+  \begin{split}
+  logit(\text{win})_{t+1} ~=~ & \text{neg}_t (\alpha_0 + \alpha_1 \text{inc}_{t+1} + \alpha_2 \text{margin}_t + \alpha_3 \text{inc}_{t+1} \times \text{margin}_t) + \\
+                             & (1 - \text{neg}_t) (\beta_0 + \beta_1 \text{inc}_{t+1} + \beta_2 \text{margin}_t + \beta_3 \text{inc}_{t+1} \times \text{margin}_t) + \text{error}_{t+1}
+  \end{split}
+\end{equation}
+
+\begin{figure}
+  \centering
+    \caption{Incumbent party's reelection probability with and without an incumbent mayor on the ballot, marginal races. MCMC estimations of model xx. Points are the posterior sample of $\text{Pr(win)}_{t+1}$, circles for open-seat simulations, triangles otherwise. Lines report the mean posterior simulation.}\label{F:luro}
+    \begin{tabular}{cc}
+    \includegraphics[width=.45\columnwidth]{../plots/pan-97-23-mcmc.pdf} &
+    \includegraphics[width=.45\columnwidth]{../plots/pri-97-23-mcmc.pdf} \\
+    \includegraphics[width=.45\columnwidth]{../plots/left-97-23-mcmc.pdf} &
+    \includegraphics[width=.45\columnwidth]{../plots/left-18-23-mcmc.pdf} \\
+    \end{tabular}
+  \end{figure}
+
+The model relies on non-informative priors and estimates the joint posterior distribution with the Gibbs sampling algorithm in R2Bugs. For each three chains, we ran 100,000 iterations of the Gibbs sampler, discarding the first half as burn-in and thinning the remainer so as to keep 500 draws from the posterior distribution for inference purposes. We monitored convergence through Geweke's statistics. Samples and convergence results are reported in the appendix. 
+
+Adrián:
+- paper magalhaes 2015 pa (perdedores que se repostulan)
+- comparar con perdedores que se repostulan (outcome = repostularse)
+- ver t+2: comparar panistas que perdieron por poco y panistas que ganaron por poco
+- titiunik tiene otro paper sobre bounds para revertir el curse
+- separar pre y post reforma para cada estado
+- caso portugal
+- paper lucardi peyeferd en su pág web sobre municipios de BsAs --- resumen de lit
+- participacion: compararla en t (y en historia) vs t+1 con/sin incumbent
+- idem en secciones (dónde moviliza)
+- retomar nayarit
+
+
+
+\begin{table}
+\centering
+  \caption{The vanishing discontinuity with incumbent mayors on the ballot. Cells report the share of the posterior sample fulfilling the hypothesis stated in greek letters in party-by-party estimations of model xx. }
+  \begin{tabular}{@{\extracolsep{5pt}}lccr}
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+      & \mc{2}{c}{Incumbency curse}         & \\
+\cline{2-3} 
+      & open seat & incumbent mayor running &  \\
+Party \footnotesize{(period)}    & $\alpha_0 > \beta_0$ & $(\alpha_0 + \alpha_1) > (\beta_0 + \beta_1)$ & $N$ \\ \hline \\[-1.8ex]  
+PAN \footnotesize{(1997--2023)}  & 1.000 & 0.197 & 4,758 \\
+PRI \footnotesize{(1997--2023)}  & 1.000 & 0.146 & 7,293 \\
+Left \footnotesize{(1997--2023)} & 1.000 & 0.199 & 2,889 \\
+Left \footnotesize{(2018--2023)} & 1.000 & 0.203 &   394 \\[.8ex]   \hline 
+\hline \\[-1.8ex] 
+
+\end{tabular}
+\end{table}
+
+
+\subsection{For the appendix}
+% \begin{table}
+%   \caption{Regression discontinuity analysis. Method of estimation: MCMC.}
+\resizebox{.5\textwidth}{!}{
+\begin{tabular}{@{\extracolsep{5pt}}clD{.}{.}{2}D{,}{,}{-3}}
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+$\vn{neg}$ & Coefficient         & \mc{1}{r}{\text{Estimate}} & \mc{1}{c}{95\%~interval} \\ \hline \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{PAN 1997--2023} ($N=4,758$)}  \\ \\[-2.5ex]  
+1          & intercept                     &   -0.15 & [-0.31,~0.02]   \\
+0          & intercept                     &   -1.02 & [-1.20,~-0.85]  \\
+1          & $\vn{inc}$                    &   -0.38 & [-0.98,~0.18]   \\
+0          & $\vn{inc}$                    &    0.86 & [0.27,~1.48]    \\
+1          & $\vn{margin}$                 &    4.49 & [1.44,~7.47]    \\
+0          & $\vn{margin}$                 &    3.23 & [0.12,~6.49]    \\
+1          & $\vn{inc} \times \vn{margin}$ &    0.01 & [-12.02,~11.19] \\
+0          & $\vn{inc} \times \vn{margin}$ &   -0.93 & [-12.56,~10.15] \\ \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{PRI 1997--2023} ($N=7,293$)} \\ \\[-2.5ex]  
+1          & intercept                     &   0.26  &  [0.13,~0.39]   \\
+0          & intercept                     &  -0.64  &  [-0.78,~-0.51] \\
+1          & $\vn{inc}$                    &  -1.12  &  [-1.68,~-0.58] \\
+0          & $\vn{inc}$                    &   0.16  &  [-0.39,~0.70]  \\
+1          & $\vn{margin}$                 &   3.00  &  [0.69,~5.56]   \\
+0          & $\vn{margin}$                 &   6.74  &  [4.39,~9.19]   \\
+1          & $\vn{inc} \times \vn{margin}$ &   4.03  &  [-6.07,~14.59] \\
+0          & $\vn{inc} \times \vn{margin}$ &  -3.93  &  [-13.58,~5.88] \\ \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{Left 1997--2023} ($N=2,889$)} \\ \\[-2.5ex]  
+1          & intercept                     &   -0.13 & [-0.35,~0.09]   \\
+0          & intercept                     &   -1.15 & [-1.37,~-0.92]  \\
+1          & $\vn{inc}$                    &   -1.17 & [-2.47,~-0.01]  \\
+0          & $\vn{inc}$                    &    0.48 & [-0.37,~1.30]   \\
+1          & $\vn{margin}$                 &    6.94 & [3.12,~10.96]   \\
+0          & $\vn{margin}$                 &    6.33 & [2.27,~10.32]   \\
+1          & $\vn{inc} \times \vn{margin}$ &   -2.84 & [-24.72,~19.27] \\
+0          & $\vn{inc} \times \vn{margin}$ &   -0.72 & [-16.08,~14.30] \\ \\[-1.8ex]  
+& \multicolumn{3}{c}{\textbf{Left 2018--2023} ($N=394$)} \\ \\[-2.5ex]  
+1          & intercept                     &    0.33 & [-0.26,~0.99]   \\
+0          & intercept                     &   -1.63 & [-2.56,~-0.79]  \\
+1          & $\vn{inc}$                    &   -1.61 & [-2.97,~-0.32]  \\
+0          & $\vn{inc}$                    &    0.95 & [-0.25,~2.14]   \\
+1          & $\vn{margin}$                 &   11.81 & [-0.23,~24.16]  \\
+0          & $\vn{margin}$                 &   19.22 & [3.62,~35.37]   \\
+1          & $\vn{inc} \times \vn{margin}$ &   -7.71 & [-33.00,~17.63] \\
+0          & $\vn{inc} \times \vn{margin}$ &  -13.35 & [-35.51,~9.15]  \\[.8ex]   \hline 
+\hline \\[-1.8ex] 
+\end{tabular}
+}
+
+
+
+\section{Discussion}
+
+\begin{figure}
+  \centering
+    \caption{Population-weigthed altitude deviations in municipalities}\label{F:avgMg}
+    \includegraphics[width=.8\columnwidth]{../plots/map.png}
+\end{figure}
+
+
+\section*{Acknowledgements}
+The author received financial support from the Asociaci\'on Mexicana de Cultura \textsc{a.c.}. He is responsible for mistakes and shortcomings in the study.
+
+%% \listofendnotes
+
+\bibliographystyle{apsr}
+%\bibliography{../bib/magar}
+\bibliography{/home/eric/Dropbox/mydocs/magar}
+
+\end{document}
+

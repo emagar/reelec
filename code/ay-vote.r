@@ -49,13 +49,15 @@ vot$dcoalpve <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-
 vot$dcoalpt  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pt|pt-", x)) > 0, 1, 0))
 vot$dcoalmc  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-mc|mc-", x)) > 0, 1, 0))
 ##
-## keep copy with all votes to use in some hard lags below
-tmp.votpre1996 <- vot
-## keep 1997-on
-sel <- which(vot$yr<1996)
-vot <- vot[-sel,]
+## ## keep copy with all votes to use in some hard lags below    31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
+## tmp.votpre1996 <- vot                                         31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
+## ## keep 1997-on                                               31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
+## sel <- which(vot$yr<1996)                                     31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
+## vot <- vot[-sel,]                                             31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
 
-## drop prelim 2024 --- DROP BLOC AFTER FULL DATA
+###########################################################
+## drop prelim 2024 --- DROP BLOC AFTER FINAL DATA IS IN ##
+###########################################################
 table(vot$status)
 sel.r <- which(vot$status=="prelim")
 if (length(sel.r)>0) vot <- vot[-sel.r,]
@@ -65,7 +67,7 @@ if (length(sel.r)>0) vot <- vot[-sel.r,]
 ## Other than two cases that were uyc only in 1995, municipios that became uyc at any time since 1995 are included in this vector of ife codes
 sel.r <- c(20001, 20003, 20004, 20009, 20010, 20013, 20014, 20559, 20018, 20019, 20021, 20022, 20023, 20025, 20027, 20187, 20029, 20033, 20034, 20035, 20040, 20042, 20020, 20068, 20073, 20556, 20045, 20046, 20047, 20049, 20050, 20053, 20054, 20058, 20036, 20060, 20061, 20062, 20063, 20064, 20065, 20070, 20074, 20075, 20079, 20080, 20081, 20082, 20083, 20084, 20085, 20088, 20089, 20090, 20091, 20092, 20093, 20094, 20095, 20096, 20097, 20098, 20101, 20102, 20103, 20104, 20105, 20106, 20107, 20108, 20110, 20111, 20112, 20113, 20114, 20116, 20117, 20118, 20119, 20120, 20122, 20123, 20124, 20125, 20126, 20128, 20129, 20130, 20132, 20134, 20135, 20136, 20137, 20139, 20141, 20142, 20143, 20144, 20145, 20146, 20148, 20149, 20150, 20151, 20152, 20153, 20155, 20156, 20158, 20159, 20160, 20161, 20162, 20163, 20165, 20169, 20168, 20171, 20172, 20173, 20174, 20176, 20177, 20180, 20188, 20191, 20192, 20185, 20186, 20193, 20194, 20195, 20196, 20197, 20198, 20201, 20202, 20203, 20204, 20205, 20206, 20207, 20209, 20208, 20210, 20211, 20212, 20213, 20214, 20215, 20216, 20217, 20218, 20219, 20220, 20221, 20222, 20223, 20224, 20226, 20227, 20228, 20229, 20230, 20231, 20233, 20234, 20235, 20236, 20238, 20239, 20240, 20241, 20242, 20243, 20244, 20246, 20247, 20248, 20249, 20250, 20251, 20253, 20254, 20255, 20256, 20257, 20259, 20261, 20264, 20262, 20263, 20265, 20266, 20267, 20268, 20269, 20270, 20271, 20272, 20273, 20274, 20275, 20277, 20279, 20280, 20281, 20282, 20284, 20285, 20286, 20287, 20289, 20290, 20291, 20294, 20295, 20297, 20299, 20301, 20302, 20304, 20308, 20309, 20311, 20312, 20313, 20314, 20315, 20316, 20318, 20319, 20320, 20321, 20323, 20324, 20326, 20327, 20328, 20329, 20330, 20331, 20333, 20335, 20336, 20337, 20338, 20339, 20340, 20341, 20343, 20344, 20345, 20346, 20347, 20348, 20349, 20350, 20351, 20352, 20353, 20354, 20355, 20356, 20357, 20358, 20359, 20361, 20362, 20363, 20365, 20366, 20367, 20368, 20369, 20370, 20371, 20372, 20373, 20374, 20375, 20377, 20379, 20380, 20381, 20383, 20384, 20385, 20387, 20391, 20389, 20390, 20393, 20394, 20395, 20396, 20397, 20398, 20400, 20401, 20406, 20408, 20402, 20404, 20405, 20409, 20410, 20411, 20412, 20413, 20417, 20420, 20399, 20421, 20423, 20424, 20425, 20426, 20428, 20429, 20430, 20431, 20433, 20434, 20436, 20438, 20439, 20441, 20443, 20444, 20445, 20446, 20447, 20449, 20450, 20451, 20452, 20453, 20454, 20455, 20458, 20461, 20460, 20462, 20464, 20465, 20466, 20467, 20469, 20471, 20472, 20474, 20476, 20477, 20478, 20479, 20480, 20482, 20483, 20488, 20489, 20491, 20492, 20493, 20494, 20495, 20496, 20497, 20498, 20499, 20500, 20501, 20502, 20503, 20504, 20505, 20508, 20510, 20511, 20512, 20514, 20516, 20517, 20518, 20519, 20521, 20522, 20523, 20524, 20526, 20527, 20528, 20529, 20530, 20531, 20532, 20533, 20535, 20540, 20541, 20538, 20542, 20544, 20546, 20547, 20548, 20551, 20552, 20554, 20403, 20561, 20562, 20278, 20563, 20564, 20565, 20567, 20569, 7064, 16024, 17034, 17035, 17036)
 sel.r <- which(vot$ife %in% sel.r)
-vot <- vot[-sel.r,] ## drop them
+vot <- vot[-sel.r,]
 ##
 ## clean
 rm(l,vcoa,sel.r)
@@ -480,10 +482,11 @@ vot$ife   <- as.numeric(vot$ife)
 #####################################################################
 inc <- read.csv(paste0(dd, "aymu1989-on.incumbents.csv"), stringsAsFactors = FALSE)
 table(inc$yr)
-## drop pre-1995 and unanalyzed cols
-sel.r <- which(inc$yr < 1994)
+## drop pre-1994 and unanalyzed cols   31JUL2024: MOVED FURTHEN DOWN TO AVOID NA WHEN LAGGING 
+## sel.r <- which(inc$yr < 1994)       31JUL2024: MOVED FURTHEN DOWN TO AVOID NA WHEN LAGGING 
+## inc <- inc[-sel.r,]                 31JUL2024: MOVED FURTHEN DOWN TO AVOID NA WHEN LAGGING 
 sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","runnerup","dlegacy","who","drepe","drepg"))
-inc <- inc[-sel.r,-sel.c]
+inc <- inc[,-sel.c]
 
 ## change conve to mc
 inc$part           <- sub("conve|cdppn", "mc", inc$part)
@@ -978,7 +981,6 @@ vot <- within(vot, {
 })
 ## rename accordingly daypan to dincpan etc
 colnames(vot) <- gsub("^day", "dinc", colnames(vot))
-
 
 ## Separate id and non-time varying vars into own data.frame
 vot[1000,]
@@ -2074,17 +2076,20 @@ rm(i,ln,my_fun,p18,path,sel.l,sel.t,t,t2,tmp2)
 
 ##
 ## sort
-ids    <-    ids[order(   ids$ord),]
-votlag <- votlag[order(votlag$ord),]
-vo4lag <- vo4lag[order(vo4lag$ord),]
-lnrlag  <-  lnrlag[order (lnrlag$ord),]
-reslag <- reslag[order(reslag$ord),]
-vot    <-    vot[order   (vot$ord),]
-vo4    <-    vo4[order   (vo4$ord),]
-lnr     <-     lnr[order    (lnr$ord),]
-res    <-    res[order   (res$ord),]
-##
-## Drop pre-1997
+ids    <-    ids[order (   ids$ord) ,]
+votlag <- votlag[order (votlag$ord) ,]
+vo4lag <- vo4lag[order (vo4lag$ord) ,]
+lnrlag <- lnrlag[order (lnrlag$ord) ,]
+reslag <- reslag[order (reslag$ord) ,]
+vot    <-    vot[order (   vot$ord) ,]
+vo4    <-    vo4[order (   vo4$ord) ,]
+lnr    <-    lnr[order (   lnr$ord) ,]
+res    <-    res[order (   res$ord) ,]
+
+
+###################
+## Drop pre-1997 ##
+###################
 sel.r <- which(ids$yr < 1997)
 ids <- ids[-sel.r,]
 vot <- vot[-sel.r,]
@@ -2128,6 +2133,11 @@ reslag <- reslag[-sel.r,]
 ## reslag <- reslag[-sel.r,]
 
 
+######################################################################################################################################
+## ################################################################################################################################ ##
+## ## OJO 31jul2024: esto tira indebidamente casos de sonora 1997... creo que podría deberse a un drop<1997 antes hacer los lags ## ##
+## ################################################################################################################################ ##
+######################################################################################################################################
 
 ## missing periods generan NAs en la serie del municipio donde ocurren
 summary(lnr   $pan)
@@ -2136,15 +2146,15 @@ summary(lnrlag$pan)
 sel.r <- which(is.na(lnrlag$pan)==TRUE)
 table(ids$status[sel.r], useNA = "ifany")
 ## drop them
-ids    <- ids   [-sel.r,]
-vot    <- vot   [-sel.r,]
-vo4    <- vo4   [-sel.r,]
-lnr     <- lnr    [-sel.r,]
-res    <- res   [-sel.r,]
-votlag <- votlag[-sel.r,]
-vo4lag <- vo4lag[-sel.r,]
-lnrlag  <- lnrlag [-sel.r,]
-reslag <- reslag[-sel.r,]
+ids    <- ids    [-sel.r,]
+vot    <- vot    [-sel.r,]
+vo4    <- vo4    [-sel.r,]
+lnr    <- lnr    [-sel.r,]
+res    <- res    [-sel.r,]
+votlag <- votlag [-sel.r,]
+vo4lag <- vo4lag [-sel.r,]
+lnrlag <- lnrlag [-sel.r,]
+reslag <- reslag [-sel.r,]
 
 ################################
 ## deltas for cross-temp regs ##
@@ -2216,12 +2226,13 @@ setwd(wd)
 load(file = "ay-mu-vote-analysis.RData")
 
 ## Describe turnout
+ids$trienio <- as.numeric(as.character(ids$trienio)) ## make not factor
 tapply(X=vot$turn.ln, INDEX=ids$trienio, summary) ## by trienio
 with(vot, aggregate(turn.ln, by = list(ids$trienio), FUN=summary))
 library(vioplot)
 for (i in 1:32){
     pdf(file=paste0("../plots/turn-descrip/",i,".pdf"))
-    vioplot(vot$turn.ln[ids$edon==i] ~ as.numeric(as.character(ids$trienio[ids$edon==i])), xlim=c(0.5,9.5), ylim = c(0,1), xlab="", ylab="", main="")
+    vioplot(vot$turn.ln[ids$edon==i] ~ as.numeric(as.character(ids$trienio[ids$edon==i])), xlim=c(0.5,10.5), ylim = c(0,1), xlab="", ylab="", main="")
     abline(h=mean(vot$turn.ln, na.rm=TRUE), lty=1)
     title(main=edon2estado(i), cex.main = 2)
     dev.off()

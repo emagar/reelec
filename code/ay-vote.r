@@ -482,9 +482,9 @@ vot$ife   <- as.numeric(vot$ife)
 #####################################################################
 inc <- read.csv(paste0(dd, "aymu1989-on.incumbents.csv"), stringsAsFactors = FALSE)
 table(inc$yr)
-## drop pre-1994 and unanalyzed cols   31JUL2024: MOVED FURTHEN DOWN TO AVOID NA WHEN LAGGING 
-## sel.r <- which(inc$yr < 1994)       31JUL2024: MOVED FURTHEN DOWN TO AVOID NA WHEN LAGGING 
-## inc <- inc[-sel.r,]                 31JUL2024: MOVED FURTHEN DOWN TO AVOID NA WHEN LAGGING 
+## drop pre-1988 and unanalyzed cols   31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
+sel.r <- which(inc$yr < 1988)
+inc <- inc[-sel.r,]
 sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","runnerup","dlegacy","who","drepe","drepg"))
 inc <- inc[,-sel.c]
 
@@ -2215,7 +2215,12 @@ save.image(file = "ay-mu-vote-analysis.RData")
 ######################
 ## read saved image ##
 ######################
-#source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/ay.r") ## slow!!
+source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/ay.r") ## slow!!
+## check two warnings
+## Warning messages:
+## 1: In eval(ei, envir) : NAs introduced by coercion
+## 2: In `[<-.data.frame`(`*tmp*`, sel7, , value = list(V1 = c("prd",  :
+##   provided 9 variables to replace 7 variables
 
 library(DataCombine) # easy lags
 rm(list = ls())
@@ -2232,7 +2237,9 @@ with(vot, aggregate(turn.ln, by = list(ids$trienio), FUN=summary))
 library(vioplot)
 for (i in 1:32){
     pdf(file=paste0("../plots/turn-descrip/",i,".pdf"))
-    vioplot(vot$turn.ln[ids$edon==i] ~ as.numeric(as.character(ids$trienio[ids$edon==i])), xlim=c(0.5,10.5), ylim = c(0,1), xlab="", ylab="", main="")
+    plot(c(0,10), c(0,1), xlim=c(0.5,10.5), type = "n", xlab = "", ylab = "", axes = FALSE)
+    axis(1, at=1:10, labels=seq(1997,2024,3)); axis(2)
+    vioplot(vot$turn.ln[ids$edon==i] ~ as.numeric(as.character(ids$trienio[ids$edon==i])), add = TRUE)
     abline(h=mean(vot$turn.ln, na.rm=TRUE), lty=1)
     title(main=edon2estado(i), cex.main = 2)
     dev.off()

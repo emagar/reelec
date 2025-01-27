@@ -1,4 +1,4 @@
-#########################################
+########################################
 ## Code for ayuntamiento vote analysis ##
 ## Date started: 26nov2023             ##
 ## By emagar                           ##
@@ -49,11 +49,11 @@ vot$dcoalpve <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-
 vot$dcoalpt  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pt|pt-", x)) > 0, 1, 0))
 vot$dcoalmc  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-mc|mc-", x)) > 0, 1, 0))
 ##
-## ## keep copy with all votes to use in some hard lags below    31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
-## tmp.votpre1996 <- vot                                         31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
-## ## keep 1997-on                                               31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
-## sel <- which(vot$yr<1996)                                     31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
-## vot <- vot[-sel,]                                             31JUL2024: MOVED FURTHER DOWN TO AVOID NA WHEN LAGGING 
+## keep copy with all votes to use in some hard lags below
+tmp.votpre1988 <- vot                                     
+## keep 1997-on                                           
+sel <- which(vot$yr<1988)                                 
+vot <- vot[-sel,]                                         
 
 ###########################################################
 ## drop prelim 2024 --- DROP BLOC AFTER FINAL DATA IS IN ##
@@ -63,9 +63,28 @@ sel.r <- which(vot$status=="prelim")
 if (length(sel.r)>0) vot <- vot[-sel.r,]
 
 
-## drop municipios that had any usos y costumbres vote
-## Other than two cases that were uyc only in 1995, municipios that became uyc at any time since 1995 are included in this vector of ife codes
-sel.r <- c(20001, 20003, 20004, 20009, 20010, 20013, 20014, 20559, 20018, 20019, 20021, 20022, 20023, 20025, 20027, 20187, 20029, 20033, 20034, 20035, 20040, 20042, 20020, 20068, 20073, 20556, 20045, 20046, 20047, 20049, 20050, 20053, 20054, 20058, 20036, 20060, 20061, 20062, 20063, 20064, 20065, 20070, 20074, 20075, 20079, 20080, 20081, 20082, 20083, 20084, 20085, 20088, 20089, 20090, 20091, 20092, 20093, 20094, 20095, 20096, 20097, 20098, 20101, 20102, 20103, 20104, 20105, 20106, 20107, 20108, 20110, 20111, 20112, 20113, 20114, 20116, 20117, 20118, 20119, 20120, 20122, 20123, 20124, 20125, 20126, 20128, 20129, 20130, 20132, 20134, 20135, 20136, 20137, 20139, 20141, 20142, 20143, 20144, 20145, 20146, 20148, 20149, 20150, 20151, 20152, 20153, 20155, 20156, 20158, 20159, 20160, 20161, 20162, 20163, 20165, 20169, 20168, 20171, 20172, 20173, 20174, 20176, 20177, 20180, 20188, 20191, 20192, 20185, 20186, 20193, 20194, 20195, 20196, 20197, 20198, 20201, 20202, 20203, 20204, 20205, 20206, 20207, 20209, 20208, 20210, 20211, 20212, 20213, 20214, 20215, 20216, 20217, 20218, 20219, 20220, 20221, 20222, 20223, 20224, 20226, 20227, 20228, 20229, 20230, 20231, 20233, 20234, 20235, 20236, 20238, 20239, 20240, 20241, 20242, 20243, 20244, 20246, 20247, 20248, 20249, 20250, 20251, 20253, 20254, 20255, 20256, 20257, 20259, 20261, 20264, 20262, 20263, 20265, 20266, 20267, 20268, 20269, 20270, 20271, 20272, 20273, 20274, 20275, 20277, 20279, 20280, 20281, 20282, 20284, 20285, 20286, 20287, 20289, 20290, 20291, 20294, 20295, 20297, 20299, 20301, 20302, 20304, 20308, 20309, 20311, 20312, 20313, 20314, 20315, 20316, 20318, 20319, 20320, 20321, 20323, 20324, 20326, 20327, 20328, 20329, 20330, 20331, 20333, 20335, 20336, 20337, 20338, 20339, 20340, 20341, 20343, 20344, 20345, 20346, 20347, 20348, 20349, 20350, 20351, 20352, 20353, 20354, 20355, 20356, 20357, 20358, 20359, 20361, 20362, 20363, 20365, 20366, 20367, 20368, 20369, 20370, 20371, 20372, 20373, 20374, 20375, 20377, 20379, 20380, 20381, 20383, 20384, 20385, 20387, 20391, 20389, 20390, 20393, 20394, 20395, 20396, 20397, 20398, 20400, 20401, 20406, 20408, 20402, 20404, 20405, 20409, 20410, 20411, 20412, 20413, 20417, 20420, 20399, 20421, 20423, 20424, 20425, 20426, 20428, 20429, 20430, 20431, 20433, 20434, 20436, 20438, 20439, 20441, 20443, 20444, 20445, 20446, 20447, 20449, 20450, 20451, 20452, 20453, 20454, 20455, 20458, 20461, 20460, 20462, 20464, 20465, 20466, 20467, 20469, 20471, 20472, 20474, 20476, 20477, 20478, 20479, 20480, 20482, 20483, 20488, 20489, 20491, 20492, 20493, 20494, 20495, 20496, 20497, 20498, 20499, 20500, 20501, 20502, 20503, 20504, 20505, 20508, 20510, 20511, 20512, 20514, 20516, 20517, 20518, 20519, 20521, 20522, 20523, 20524, 20526, 20527, 20528, 20529, 20530, 20531, 20532, 20533, 20535, 20540, 20541, 20538, 20542, 20544, 20546, 20547, 20548, 20551, 20552, 20554, 20403, 20561, 20562, 20278, 20563, 20564, 20565, 20567, 20569, 7064, 16024, 17034, 17035, 17036)
+#########################################################
+## drop municipios that had any usos y costumbres vote ##
+#########################################################
+## Other than 2 cases that were uyc only in 1995, municipios that became uyc in 1995 are included in this vector of ife codes
+sel.r <- c(20001, 20003, 20004, 20009, 20010, 20013, 20014, 20018, 20019, 20020, 20021, 20022, 20023, 20025, 20027, 20029, 20033, 20034, 20035, 20036, 20040, 20042, 20045, 20046, 20047, 20049, 20050, 20053, 20054, 20058, 20060, 20061, 20062, 20063, 20064, 20065, 20068, 20070, 20073, 20074, 20075, 20080, 20081, 20082, 20083, 20084, 20088, 20089, 20090, 20091, 20092, 20093, 20094, 20095, 20096, 20097, 20098, 20101, 20102, 20103, 20104, 20105, 20106, 20107, 20108, 20110, 20111, 20112, 20113, 20114, 20116, 20117, 20118, 20119, 20120, 20122, 20123, 20124, 20125, 20126, 20128, 20129, 20130, 20132, 20134, 20135, 20136, 20137, 20139, 20141, 20142, 20143, 20144, 20145, 20146, 20148, 20149, 20150, 20151, 20152, 20153, 20155, 20156, 20158, 20159, 20160, 20161, 20162, 20163, 20165, 20168, 20169, 20171, 20172, 20173, 20174, 20176, 20177, 20180, 20185, 20186, 20187, 20188, 20191, 20192, 20193, 20194, 20195, 20196, 20197, 20198, 20201, 20202, 20203, 20204, 20205, 20206, 20207, 20208, 20209, 20210, 20211, 20212, 20213, 20214, 20215, 20216, 20217, 20218, 20219, 20220, 20221, 20222, 20223, 20224, 20226, 20227, 20228, 20229, 20230, 20231, 20233, 20234, 20235, 20236, 20238, 20239, 20240, 20241, 20242, 20243, 20244, 20246, 20247, 20248, 20249, 20250, 20251, 20253, 20254, 20255, 20256, 20257, 20259, 20261, 20262, 20263, 20264, 20265, 20266, 20267, 20268, 20269, 20270, 20271, 20272, 20273, 20274, 20275, 20277, 20278, 20279, 20280, 20281, 20282, 20284, 20285, 20286, 20287, 20289, 20290, 20291, 20294, 20295, 20297, 20299, 20301, 20302, 20304, 20309, 20311, 20312, 20313, 20314, 20315, 20316, 20318, 20319, 20320, 20321, 20323, 20324, 20326, 20327, 20328, 20329, 20330, 20331, 20333, 20335, 20336, 20337, 20338, 20339, 20340, 20341, 20343, 20344, 20346, 20347, 20348, 20349, 20350, 20351, 20352, 20353, 20354, 20355, 20356, 20357, 20358, 20359, 20361, 20362, 20363, 20365, 20366, 20368, 20369, 20370, 20371, 20372, 20373, 20374, 20375, 20377, 20379, 20380, 20381, 20383, 20384, 20385, 20387, 20389, 20390, 20391, 20393, 20394, 20395, 20396, 20397, 20398, 20399, 20400, 20402, 20403, 20404, 20405, 20406, 20408, 20409, 20410, 20411, 20412, 20413, 20417, 20420, 20421, 20423, 20424, 20425, 20426, 20428, 20429, 20430, 20431, 20433, 20434, 20436, 20438, 20439, 20441, 20443, 20444, 20445, 20446, 20447, 20449, 20450, 20451, 20452, 20453, 20454, 20455, 20458, 20460, 20461, 20462, 20464, 20465, 20466, 20467, 20469, 20471, 20472, 20474, 20476, 20477, 20478, 20479, 20480, 20482, 20483, 20488, 20489, 20491, 20492, 20493, 20494, 20495, 20496, 20497, 20498, 20499, 20500, 20501, 20502, 20503, 20504, 20505, 20508, 20510, 20511, 20512, 20514, 20516, 20517, 20518, 20519, 20521, 20522, 20523, 20524, 20526, 20527, 20528, 20529, 20530, 20531, 20532, 20533, 20535, 20538, 20540, 20541, 20542, 20544, 20546, 20547, 20548, 20551, 20552, 20554, 20556, 20559, 20561, 20562, 20563, 20564, 20565, 20567, 20569)
+## Oaxaca ifes that entered uyc in 1998
+sel.r <- c(sel.r, c(20079, 20308, 20345, 20367, 20401))
+## Oaxaca ifes that left uyc in 2013
+sel.r <- c(sel.r, 20085)
+## Oaxaca ifes in and out of uyc 
+sel.r <- c(sel.r, 20473)
+## Chiapas ife that entered uyc in 2018
+sel.r <- c(sel.r, 7064)
+## Guerrero ife that entered uyc in 2018 
+sel.r <- c(sel.r, 12012)
+## Guerrero ife that entered uyc upon creation in 2021
+sel.r <- c(sel.r, 12082)
+## Michoacán ife that entered uyc in 2011
+sel.r <- c(sel.r, 16024)
+## Morelos ifes that entered uyc upon creation in 2021
+sel.r <- c(sel.r, c(17034, 17035, 17036))
+##
 sel.r <- which(vot$ife %in% sel.r)
 vot <- vot[-sel.r,]
 ##
@@ -79,8 +98,9 @@ rm(drop.r)
 table(vot$status)
 ## drop these obs from analysis
 ##drop.r <- grep("cancelled|litigio", vot$status)
-drop.r <- grep("cancelled|litigio|missing|pending|appoint", vot$status)
+drop.r <- grep("cancelled|voided|litigio|missing|pending|appoint", vot$status)
 vot <- vot[-drop.r,]
+table(vot$status)
 rm(drop.r)
 ##
 ## drop runoffs held in san luis potosí (win/mg retain eventual winner/margin)
@@ -92,17 +112,6 @@ vot$win[sel] <- vot$win[sel2] ## replace 1st round winners with runoff winners
 vot$mg[sel]  <- vot$mg[sel2]  ## replace 1st round margin with runoff margin
 vot <- vot[-sel2,] ## and drop runoffs
 rm(sel,sel2,tmp)
-##
-## ## drop oaxaca cases that eventually became usos y costumbres
-## tmp <- c(1, 3, 8, 11, 12, 15, 17:20, 22, 24, 27, 29, 31, 33, 35:38, 42, 45:48, 50, 51, 54, 58, 60:65, 69, 71, 72, 74, 76:78, 83:87, 91:93, 94:98, 99:101, 104:111, 113:115, 117:123, 125:129, 131:133, 135, 137, 138:140, 142, 144:149, 151:156, 158, 159, 161:165, 167, 170, 172:176, 178, 179, 183, 186, 189:197, 200:224, 226:231, 233:236, 238:244, 246:253, 255:258, 260, 262:276, 279:281, 282:284, 286:289, 291:293, 296, 297, 299, 301, 303, 304, 306, 311, 313, 314:318, 320:323, 325, 326, 328:333, 335:337, 340:344, 346, 347, 349:359, 361:363, 365, 366, 368:374, 376, 378:380, 382:384, 386, 388, 389, 391:396, 398, 399, 401, 403:412, 416, 419, 420, 422:426, 428:430, 432, 433, 435, 437, 438, 440, 442:446, 448:454, 457, 458, 460, 461, 463:466, 468, 470, 471, 473, 475:481, 487, 488, 490:504, 506, 509:512, 514, 516:519, 521:524, 526:536, 538, 541:544, 546:548, 550, 552:554, 556, 560:564, 566, 568, 569, 16, 82, 310, 348, 367, 400, 88)
-## ## ojo: 88 returned from uyc in 2013
-## tmp <- tmp + 20000
-## tmp1 <- as.numeric(vot$inegi)
-## sel <- which(tmp1 %in% tmp)
-## vot$emm[sel]
-## ## tmp <- vot$emm[sel]
-## ## tmp[order(tmp)]
-## if (length(sel)>0) vot <- vot[-sel,]
 
 ## # lo usé para detectar casos en aymu.incumbents con info que no correspondía con aymu.coalAgg
 ## sel <- c("emm", "edon", "mun", "munn", "ife", "inegi", "yr", "dy", "mo", "win")
@@ -229,35 +238,54 @@ v7$v01 <- v7$v02 <- v7$v03 <- v7$v04 <- v7$v05 <- v7$v06 <- v7$v07 <- v7$v08 <- 
 v7$l01 <- v7$l02 <- v7$l03 <- v7$l04 <- v7$l05 <- v7$l06 <- v7$l07 <- v7$l08 <- v7$l09 <- v7$l10 <- v7$l11 <- v7$l12 <- v7$l13 <- v7$l14 <- v7$l15 <- v7$l16 <- v7$l17 <- v7$l18 <- v7$l19 <- v7$l20 <- v7$l21 <- v7$l22 <- v7$l23 <- v7$l24 <- v7$l25 <- NULL
 ##
 ## rebrand conve to mc etc
-table(v7$l)
+v7$l[grep("indep_", v7$l)] <- "indep"
 v7$l[v7$l %in% c("conve","cdppn")] <- "mc"
 v7$l[v7$l %in% c("pt1","ptc")] <- "pt"
 v7$l[v7$l %in% c("pesm","pest")] <- "pes"
-##v7$l[grep("indep|ci_", v7$l)] <- "indep"
+table(v7$l)
+##
+## fdn to prd
+v7$l[grep("prd-fdn", v7$l)] <- "prd"
+v7$l[grep("prd-pps-pfcrn", v7$l)] <- "prd"
+## pcdp-pt to pcdp
+v7$l[grep("pcdp-pt", v7$l)] <- "pcdp"
+## mc-psdc to mc
+v7$l[grep("mc-psdc", v7$l)] <- "mc"
 ## prepare object with pan pri prd pvem pt mc morena oth votes ##
 v7$oth <- v7$morena <- v7$mc <- v7$pt <- v7$pvem <- v7$prd <- v7$pri <- v7$pan <- 0
+## control major party coals
+v7$dmajcoal <- 0
 ## check if unbroken coalitions left
 paste("No unbroken coalitions remaining?", length(v7$emm[grep("-", v7$l)])==0)
 #
 rm(tmp, tmp.orig)
 #
-## # change prd/morena to left
-## sel <- which(v7$yr<=2015)
-## v7$l[sel] <- sub("prd","left",v7$l[sel])
-## sel <- which(v7$yr>=2015)
-## v7$l[sel] <- sub("morena","left",v7$l[sel])
-#
+
+## #########################################################################################################################################
+## ## 26jan2025: breaking coalitions in coalSplit is no longer needed. Script ay.r in elecRtrns does it prior to saving aymucoalSplit.csv ##
+## #########################################################################################################################################
+## ## # change prd/morena to left
+## ## sel <- which(v7$yr<=2015)
+## ## v7$l[sel] <- sub("prd","left",v7$l[sel])
+## ## sel <- which(v7$yr>=2015)
+## ## v7$l[sel] <- sub("morena","left",v7$l[sel])
+##
 ## # deal with major-party coalition below
 ## sel <- grep("(?=.*pan)(?=.*prd)", v7$l, perl = TRUE)
 ## v7$status[sel] <- "majors"
+## v7$dmajcoal[sel] <- 1
 ## ## sel <- grep("(?=.*pan)(?=.*left)", v7$l, perl = TRUE)
 ## ## v7$status[sel] <- "majors"
+## ## v7$dmajcoal[sel] <- 1
 ## sel <- grep("(?=.*pan)(?=.*pri)", v7$l, perl = TRUE)
 ## v7$status[sel] <- "majors"
+## v7$dmajcoal[sel] <- 1
 ## sel <- grep("(?=.*pri)(?=.*prd)", v7$l, perl = TRUE)
 ## v7$status[sel] <- "majors"
+## v7$dmajcoal[sel] <- 1
 ## ## sel <- grep("(?=.*pri)(?=.*left)", v7$l, perl = TRUE)
 ## ## v7$status[sel] <- "majors"
+## ## v7$dmajcoal[sel] <- 1
 ## #
 ## sel1 <- which(is.na(v7$status))
 ## sel <- grep("pan-|-pan|^pan$", v7$l[sel1])
@@ -294,7 +322,7 @@ rm(tmp, tmp.orig)
 ## sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", v7$l[sel], perl = TRUE) # 
 ## v7$pan[sel][sel1] <- v7$v[sel][sel1] / 3; v7$pri[sel][sel1] <- v7$v[sel][sel1] / 3; v7$prd[sel][sel1] <- v7$v[sel][sel1] / 3; v7$v[sel][sel1] <- 0; v7$l[sel][sel1] <- "0"; v7$status[sel][sel1] <- "done"
 ## v7$dmajcoal[sel][sel1] <- 1
-## #
+## ##
 ## sel <- which(v7$status=="majors") 
 ## sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", v7$l[sel], perl = TRUE) # 
 ## v7$pan[sel][sel1] <- v7$v[sel][sel1] / 3; v7$pri[sel][sel1] <- v7$v[sel][sel1] / 3; v7$prd[sel][sel1] <- v7$v[sel][sel1] / 3; v7$v[sel][sel1] <- 0; v7$l[sel][sel1] <- "0"; v7$status[sel][sel1] <- "done"
@@ -424,6 +452,7 @@ for (i in 1:max(v7$n)){
 }
 v7 <- tmp
 ## clean
+table(v7$status)
 v7$n <- v7$status <- NULL
 ##
 rm(tmp,i,sel.r,sel.c,tmp2)
@@ -2212,10 +2241,11 @@ rm(deltas)
 ## Save data
 save.image(file = "ay-mu-vote-analysis.RData")
 
+
 ######################
 ## read saved image ##
 ######################
-source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/ay.r") ## slow!!
+#source("/home/eric/Desktop/MXelsCalendGovt/elecReturns/code/ay.r") ## slow!!
 ## check two warnings
 ## Warning messages:
 ## 1: In eval(ei, envir) : NAs introduced by coercion
@@ -2237,13 +2267,21 @@ with(vot, aggregate(turn.ln, by = list(ids$trienio), FUN=summary))
 library(vioplot)
 for (i in 1:32){
     pdf(file=paste0("../plots/turn-descrip/",i,".pdf"))
-    plot(c(0,10), c(0,1), xlim=c(0.5,10.5), type = "n", xlab = "", ylab = "", axes = FALSE)
-    axis(1, at=1:10, labels=seq(1997,2024,3)); axis(2)
-    vioplot(vot$turn.ln[ids$edon==i] ~ as.numeric(as.character(ids$trienio[ids$edon==i])), add = TRUE)
+    vioplot(vot$turn.ln[ids$edon==i] ~ as.numeric(as.character(ids$trienio[ids$edon==i])), xlab = "", ylab = "", ylim = c(0,1))
     abline(h=mean(vot$turn.ln, na.rm=TRUE), lty=1)
     title(main=edon2estado(i), cex.main = 2)
+    ## plot(c(0,10), c(0,1), xlim=c(0.5,10.5), type = "n", xlab = "", ylab = "", axes = FALSE)
+    ## axis(1, at=1:10, labels=seq(1997,2024,3)); axis(2)
+    ## vioplot(vot$turn.ln[ids$edon==i] ~ as.numeric(as.character(ids$trienio[ids$edon==i])), add = TRUE)
+    ## abline(h=mean(vot$turn.ln, na.rm=TRUE), lty=1)
+    ## title(main=edon2estado(i), cex.main = 2)
     dev.off()
 }
+
+sel.r <- grep("jal-19", vot$emm)
+vot$turn.ln[sel.r]
+vot$emm[sel.r[20]]
+x
 
 ## Data for error correction model: L stands for lags, D stands for deltas
 table(lnrlag $emm == lnrdelta $emm) ## check order

@@ -55,14 +55,6 @@ tmp.votpre1988 <- vot
 sel <- which(vot$yr<1988)                                 
 vot <- vot[-sel,]                                         
 
-###########################################################
-## drop prelim 2024 --- DROP BLOC AFTER FINAL DATA IS IN ##
-###########################################################
-table(vot$status)
-sel.r <- which(vot$status=="prelim")
-if (length(sel.r)>0) vot <- vot[-sel.r,]
-
-
 #########################################################
 ## drop municipios that had any usos y costumbres vote ##
 #########################################################
@@ -119,6 +111,10 @@ rm(sel,sel2,tmp)
 ##            by = c("emm", "edon", "mun", "munn", "ife", "inegi", "yr", "mo", "dy", "win"),
 ##            all = TRUE)
 ## write.csv(i, file = paste(dd, "tmp.csv", sep = ""), row.names = FALSE)
+
+## check efec (ignore small mismatch)
+v <- vot[, grep("v[0-9]{2}", colnames(vot))] ## extract votes only
+table(rowSums(v) - vot$efec)
 
 #################################################################
 ## prepare object with pan pri prd pvem pt mc morena oth votes ##
@@ -256,7 +252,7 @@ v7$oth <- v7$morena <- v7$mc <- v7$pt <- v7$pvem <- v7$prd <- v7$pri <- v7$pan <
 ## control major party coals
 v7$dmajcoal <- 0
 ## check if unbroken coalitions left
-paste("No unbroken coalitions remaining?", length(v7$emm[grep("-", v7$l)])==0)
+paste("True or false: No unbroken coalitions remaining?", length(v7$emm[grep("-", v7$l)])==0)
 #
 rm(tmp, tmp.orig)
 #
@@ -474,7 +470,6 @@ vot[1,]
 rm(efec,sel.c,v)
 
 ## return to vot
-vot[1,]
 vot <- cbind(vot, v7[,c("pan","pri","prd","pvem","pt","mc","morena","oth")])
 summary(vot$efec - v7$efec)
 ##vot$efec <- v7$efec # commenting this line keeps rounded efec
@@ -495,14 +490,18 @@ tmp <- sub(pattern = "(san-[0-9]+)b([.0-9]+$)", replacement = "\\1\\2", tmp)
 vot$emm[sel] <- tmp
 rm(tmp,sel)
 
-
-
 ## Fill missing NAs
 sel.r <- which(vot$efec==0)
 vot[sel.r,c("pan","pri","prd","pvem","pt","mc","morena","oth","efec")] <- NA
 ## inegi to num
 vot$inegi <- as.numeric(vot$inegi)
 vot$ife   <- as.numeric(vot$ife)
+
+###########################################################################
+## v7 is now cbinded to vot, export the object for use in other analysis ##
+###########################################################################
+getwd()
+write.csv(vot, file = "aymu1988-on-v7-coalSplit.csv", row.names = FALSE)
 
 
 #####################################################################

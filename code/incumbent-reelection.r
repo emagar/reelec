@@ -12,6 +12,7 @@ setwd(dd)
 
 # get useful functions
 source("~/Dropbox/data/useful-functions/myxtab.r")
+source("~/Dropbox/data/useful-functions/inegi2ife.r")
 #
 ###########################################
 ## ##################################### ##
@@ -26,11 +27,24 @@ source("~/Dropbox/data/useful-functions/myxtab.r")
 ###################
 ## read alcaldes ##
 ###################
+
 inc <- read.csv(file = "aymu1989-on.incumbents.csv", stringsAsFactors = FALSE)
 inc <- inc[order(inc$ord),]
 library(plyr)
 inc$edo <- mapvalues(inc$edon, from = 1:32, to = c("ags", "bc", "bcs", "cam", "coa", "col", "cps", "cua", "df", "dgo", "gua", "gue", "hgo", "jal", "mex", "mic", "mor", "nay", "nl", "oax", "pue", "que", "qui", "san", "sin", "son", "tab", "tam", "tla", "ver", "yuc", "zac"))
-#
+##
+####################################################
+## rename part win for compatibility w code below ##
+####################################################
+colnames(inc)[grep("^part$", colnames(inc))]    <- "win"
+colnames(inc)[grep("^part2nd$", colnames(inc))] <- "pty2nd"
+##
+#########################
+## Drop pre-1970 in bc ##
+#########################
+sel <- which(inc$yr < 1970)
+if (length(sel)>0) inc <- inc[-sel,]
+##
 ##############################
 ## keep dead incumbent info ##
 ##############################
@@ -38,13 +52,28 @@ table(inc$race.after)
 sel <- grep("Dead", inc$race.after, ignore.case = TRUE)
 inc$ddead <- 0
 inc$ddead[sel] <- 1
-#
-# recode race.after
-inc$race.after[sel] <- gsub("Dead-term-limited", "Term-limited", inc$race.after[sel])
-inc$race.after[sel] <- gsub("Dead-reran-"      , "Out-", inc$race.after[sel])
-inc$race.after[sel] <- gsub("Dead-2024|Dead-$" , "Out-?", inc$race.after[sel])
-inc$race.after[sel] <- gsub("Dead-"            , "Out-", inc$race.after[sel])
-#
+##
+## recode race.after to simplify
+inc$race.after <- gsub("Dead-term-limited", "Term-limited"        , inc$race.after)
+inc$race.after <- gsub("Dead-reran-"      , "Out-"                , inc$race.after)
+inc$race.after <- gsub("Dead-202.|Dead-$" , "Pending"             , inc$race.after)
+inc$race.after <- gsub("Dead-p-"          , "Out-p-"              , inc$race.after)
+inc$race.after <- gsub("Reran-dead-p-"    , "Out-p-"              , inc$race.after)
+inc$race.after <- gsub("Impeached-p-"     , "Out-p-"              , inc$race.after)
+inc$race.after <- gsub("Term-limited-202.", "Term-limited-pending", inc$race.after)
+inc$race.after <- gsub("^202.$"           , "Pending"             , inc$race.after)
+sel <- which(inc$race.after==""); inc$race.after[sel] <- "Pending"
+sel <- which(inc$race.after=="Reran-2025"); inc$race.after[sel] <- "Pending"
+##
+table(inc$race.after)
+## ##
+## ## explore
+## sel <- which(inc$race.after=="")
+## sel <- grep("uyc", inc$race.after)
+## inc[sel,]
+## inc$emm[sel]
+## x
+##
 #############################################
 ## verify time series' structure (for lags) ##
 #############################################
@@ -55,7 +84,10 @@ tmp <- tmp[order(tmp$ord),] # verify sorted before lags
 tmp <- slide(tmp, Var = "cycle", NewVar = "cycle.lag", TimeVar = "cycle", GroupVar = "inegi", slideBy = -1)
 tmp$verif <- tmp$cycle - tmp$cycle.lag
 table(tmp$verif) # verify: all should be 1 then ok to lag
-# 
+## ## inspect
+## sel <- which(tmp$verif==0)
+## tmp[sel,]
+## 
 full.xsts <- tmp # keep as list of all observations (to recover them after they were drop to ease code/analysis)
 # 
 ###################
@@ -63,18 +95,18 @@ full.xsts <- tmp # keep as list of all observations (to recover them after they 
 ###################
 sel <- grep("^[0-9]+$", inc$race.after)
 table(pending=inc$race.after[sel])
-inc$race.after[sel] <- "Pending"
+if (length(sel)>0) inc$race.after[sel] <- "Pending"
 # code missing race.after as pending (drop this bit of code once all case are known)
 #inc[inc$ife==20442, c("mun","yr","ife","inegi","win","incumbent","race.after")] # used to debug
 sel <- grep("[?]", inc$race.after)
 inc[sel,]
-inc$race.after[sel] <- "Pending"
+if (length(sel)>0) inc$race.after[sel] <- "Pending"
 #
-################################################################
-## recode race after of munic that turned usos in next round  ##
-################################################################
+#################################################################
+## recode race after for munic that turned usos in next round  ##
+#################################################################
 sel <- grep("uyc", inc$race.after)
-inc$race.after[sel] <- "Out-p-lost"
+if (length(sel)>0) inc$race.after[sel] <- "Out-p-lost"
 ########################################################
 ## drop observations that became to usos y costumbres ##
 ########################################################
@@ -83,14 +115,14 @@ if (length(sel)>0) inc <- inc[-sel,]
 ################################################
 ## drop consejos municipales (void elections) ##
 ################################################
-sel <- grep("consejo", inc$win, ignore.case = TRUE)
+sel <- grep("con[sc]ejo", inc$win, ignore.case = TRUE)
 if (length(sel)>0) inc <- inc[-sel,]
 ##########################################
 ## drop new municipio in border dispute ##
 ##########################################
 sel <- grep("7xxx", inc$inegi)
 if (length(sel)>0) inc <- inc[-sel,]
-
+##
 ##############################################################################################
 ## manipulate cases where incumbent switched parties so coded as party won/lost accordingly ##
 ##############################################################################################
@@ -104,13 +136,16 @@ tmp2 <- as.numeric(sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\2", tmp, perl 
 tmp3 <-            sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\3", tmp, perl = TRUE)
 tmp4 <- paste(tmp1, tmp2+1, tmp3, sep = "")
 sel2 <- which(inc$emm %in% tmp4)       # round t+1
-#
+##
 # fish switched-to party from note
 #data.frame(emm=inc$emm[sel1], note=inc$note[sel1])
 tmp <- sub("only ", "", inc$note[sel1]) # remove "only"
-tmp1 <- sub("^(?:re)?ran under ([a-z-]+) .*", "\\1", tmp, perl = TRUE)
-#
+tmp <- sub("extraordinaria ", "", inc$note[sel1]) # remove "only"
+tmp1 <- sub("^(?:re)?ran as ([a-z-]+).*", "\\1", tmp, perl = TRUE)
+table(tmp1)
+##
 # paste switched-to party as the original
+##inc$emm[sel1]
 inc$win[sel1] <- tmp1
 # 
 # recode race.after given swithed-to party
@@ -143,7 +178,7 @@ rm(tmp,tmp1,tmp2,tmp3,tmp4,sel,sel1,sel2)
 ## simplify parties ##
 ######################
 inc$win2 <- inc$win
-inc$win2 <- sub("conve", "mc",   inc$win2, ignore.case = TRUE)
+inc$win2 <- sub("conve|^cp$", "mc",   inc$win2, ignore.case = TRUE)
 inc$win2 <- sub("panal", "pna", inc$win2, ignore.case = TRUE)
 inc$win2 <- sub("pucd", "pudc", inc$win2, ignore.case = TRUE) # typo
 ## sel <- grep("ci_|^ci$|c-i-|ind_|eduardo|luis|oscar|indep", inc$win2, ignore.case = TRUE) # deprecated
@@ -152,22 +187,26 @@ inc$win <- inc$win2 # register changes above in original win to remove false neg
 #
 # assign panc to pan, then pric to pri, then prdc to prd; major party coalitions dealt as exceptions below
 sel <- grep("pan-", inc$win2, ignore.case = TRUE)
-inc$win2[sel] <- "pan"
+if (length(sel)>0) inc$win2[sel] <- "pan"
 sel <- grep("pri-", inc$win2, ignore.case = TRUE)
-inc$win2[sel] <- "pri"
+if (length(sel)>0) inc$win2[sel] <- "pri"
 sel <- grep("prd-|-prd", inc$win2, ignore.case = TRUE)
-inc$win2[sel] <- "prd"
+if (length(sel)>0) inc$win2[sel] <- "prd"
 sel <- grep("morena-|-morena", inc$win2, ignore.case = TRUE)
-inc$win2[sel] <- "morena"
+if (length(sel)>0) inc$win2[sel] <- "morena"
 sel <- grep("pvem-|-pvem", inc$win2, ignore.case = TRUE)
-inc$win2[sel] <- "pvem"
+if (length(sel)>0) inc$win2[sel] <- "pvem"
 sel <- grep("mc-|-mc", inc$win2, ignore.case = TRUE)
-inc$win2[sel] <- "mc"
+if (length(sel)>0) inc$win2[sel] <- "mc"
+sel <- grep("pt-", inc$win2, ignore.case = TRUE)
+if (length(sel)>0) inc$win2[sel] <- "pt"
 sel <- grep("-pes", inc$win2, ignore.case = TRUE)
-inc$win2[sel] <- "pes"
-sel <- grep("mas|paz|pcp|phm|pmr|ppg|psd1|psi|pudc|pup|via_|pchu|pmch|pver|prs|prv|ps1|poc|pjs|pd1|pec|pasd|pac1|npp|pcu|pcdt|pmac|pcm2|pdm|pps|ppt|ph|pmp|fc1|pcd1|psn|ave|hagamos|rsp|somos|indep", inc$win2, ignore.case = TRUE)
-inc$win2[sel] <- "loc/oth"
-#
+if (length(sel)>0) inc$win2[sel] <- "pes"
+sel <- grep("cardenista|eso|fuerciud|futuro|fxm|hag|mas|mexa|mexpos|ml|mujer|pac|parm|pas|paz|pbg|pcd|pcp|pd|pes|pfcrn|phm|pmm|pmt|pmr|pna|podemos|pp1|ppg|prt|ps|psd1|psd|psg|psi|pst|pudc|pueblo|pup|via_|pchu|pmch|pver|prs|prv|ps1|poc|pjs|pd1|pec|pasd|pac1|npp|pcu|pcdt|pmac|pcm2|pdm|pps|ppt|ph|pmp|rhr|txver|uc|fc1|psn|ave|hagamos|rsp|somos|indep", inc$win2, ignore.case = TRUE)
+if (length(sel)>0) inc$win2[sel] <- "loc/oth"
+table(inc$win2)
+##
+
 #####################################
 ## deal with major-party coalition ## OJO 11mar21: 2021 will have many pan-pri-prd coalitions, need a decisions on how to code those!!!
 #####################################
@@ -178,7 +217,6 @@ inc$win2[sel] <- "loc/oth"
 # explore
 table(inc$race.after, useNA = "always")
 
-
 #OLD WAY OF DEALING WITH MAJOR PTY COALS SPLIT CASE-BY-CASE
 #DIFT METHOD IMMEDIATELY BELOW
 inc$status <- NA
@@ -188,11 +226,12 @@ sel <- grep("(?=.*pan)(?=.*pri)", inc$win, perl = TRUE)
 inc$status[sel] <- "majors"
 sel <- grep("(?=.*pri)(?=.*prd)", inc$win, perl = TRUE)
 inc$status[sel] <- "majors"
-#
+table(inc$status)
+##
 # 3-majors coalition in mun split in thirds
 sel <- which(inc$status=="majors") 
 sel1 <- grep("(?=.*pan)(?=.*pri)(?=.*prd)", inc$win[sel], perl = TRUE) # 
-table(inc$edon[sel][sel1])
+table(inc$edo[sel][sel1])
 data.frame(inegi = inc$inegi[sel][sel1], mun=inc$mun[sel][sel1], yr=inc$yr[sel][sel1]) # which?
 # assign to strong party (coal vs narco it seems)
 inc$win2[which(inc$inegi==16056 & inc$yr==2015)] <- "pri"  # Nahuatzén to pri
@@ -250,8 +289,18 @@ inc$status[sel] <- "done"
 sel <- which(inc$status=="majors" & (inc$edon==2 | inc$edon==5 | inc$edon==6 | inc$edon==8 | inc$edon==10 | inc$edon==14 | inc$edon==22 | inc$edon==24 | inc$edon==25 | inc$edon==26 | inc$edon==28  | inc$edon==31)) 
 inc$win2[sel] <- "pan"
 inc$status[sel] <- "done"
-#
-# pan-prd in 2018 to pan (bcs cps df gue mex mic oax pue qui tab zac)
+##
+# pan-prd in 2024 to prd (oax)
+sel <- which(inc$status=="majors" & inc$edon==20 & inc$yr==2024) 
+inc$win2[sel] <- "prd"
+inc$status[sel] <- "done"
+##
+# pan-prd in 2024 to pan (mic)
+sel <- which(inc$status=="majors" & inc$edon==16 & inc$yr==2024) 
+inc$win2[sel] <- "prd"
+inc$status[sel] <- "done"
+##
+## pan-prd in 2018 to pan (bcs cps df gue mex mic oax pue qui tab zac)
 sel <- which(inc$status=="majors" & inc$yr==2018) 
 inc$win2[sel] <- "pan"
 inc$status[sel] <- "done"
@@ -293,9 +342,9 @@ inc$status[sel] <- "done"
 #
 # verify
 table(inc$status)
-#inc$edon[which(inc$status=="majors")]
-#
-# clean
+inc$emm[which(inc$status=="majors")]
+##
+## clean
 inc$status <- NULL
 
 ## #THIS IS ANOTHER WAY: GIVES VOTE TO PAN WHEN PAN IS MEMBER, TO PRI WHEN PAN ABSENT
@@ -341,15 +390,18 @@ inc$status <- NULL
 inc$win <- inc$win2; inc$win2 <- NULL # keep manipulated version only
 #table(inc$win)
 #
+table(inc$race.after)
+
 
 #########################################
 ## this block inspects reelection 2021 ##
 #########################################
+inc[1,]
 tmp <- inc[inc$sel==1,]
 # drop litigios uyc anuladas
 sel <- grep("uyc|litigio|anulada", tmp$race.after)
 if (length(sel)>0) tmp <- tmp[-sel,] # drop one uyc munic 
-sel <- grep("consejo", tmp$win, ignore.case=TRUE)
+sel <- grep("con[cs]ejo", tmp$win, ignore.case=TRUE)
 if (length(sel)>0) tmp <- tmp[-sel,] # drop consejos municipales
 # 10 and 13 had no els in 2021, 18 29 and 30 had term limits still in place
 tmp <- tmp[tmp$edon %in% c(1:9,11:12,14:17,19:28,31:32),] # keep states with race.after coded only

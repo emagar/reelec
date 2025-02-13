@@ -1,9 +1,8 @@
 d <- read.table(file = "clipboard", sep = "\t", header=TRUE)
 head(d)
+d$inegi <- ife2inegi(d$ife)
 colnames(d)
-sel.c <- which(colnames(d) %in% c("munn","pan", "pri", "prd", "pt", "pvem", "mc", "morena", "pes", "pmm", "mich1", "txm", "indep1", "indep2", "pvem.pt.morena", "pvem.pt", "pt.morena", "pvem.morena", "pan.pri.prd", "pan.pri", "pan.prd", "pri.prd", "prd.pes", "pt.pes", "nr", "nul", "lisnom"))
-
-sel.c <- which(colnames(d) %in% c("pan", "pri", "prd", "pvem", "pt", "mc", "morena", "indep", "pan.pri.prd", "pan.pri", "pan.prd", "pri.prd", "pvem.pt.morena", "pt.morena", "pvem.morena", "pvem.pt"))
+sel.c <- which(colnames(d) %in% c("pan", "pri", "prd", "pvem", "pt", "mc", "morena", "pna", "pan.pri.prd.pna", "pan.pri.prd", "pan.pri.pna", "pan.prd.pna", "pri.prd.pna", "pan.pri", "pan.prd", "pan.naem", "pri.prd", "pri.naem", "prd.naem", "pvem.pt.morena", "pvem.pt", "pvem.morena", "pt.morena", "pan.pri.prd.naem.cc", "pvem.pt.morena.cc", "LUIS_FERNANDO_AMBROCIO_FLORES", "JORGE_MARTINEZ_SANTIAGO", "BEATRIZ_CHAVARRIA_COBOS", "ARMANDO_TRUJILLO_VALDIN", "DANIEL_JUAREZ_JUAREZ", "JOSE_LUIS_OROZPE_LOPEZ", "JUAN_ALVARADO_SOLIS", "XOCHITL_AMERICA_VARILLER_RAMIREZ", "MONICA_COREY_MORALES_TRUJILLO", "nr", "nul", "tot", "lisnom"))
 
 str(d)#[,sel.c])
 for (i in sel.c){
@@ -11,6 +10,10 @@ for (i in sel.c){
 }
 d2 <- d
 d2 -> d
+
+for (i in sel.c){
+    d[,i] <- ave(d[,i], as.factor(d$inegi), FUN=function(x) sum(x, na.rm=TRUE))
+}
 
 d$pan             <- ave(d$pan             , as.factor(d$mun), FUN=function(x) sum(x, na.rm=TRUE))
 d$pri             <- ave(d$pri             , as.factor(d$mun), FUN=function(x) sum(x, na.rm=TRUE))
@@ -65,10 +68,10 @@ d$nr              <- ave(d$nr              , as.factor(d$mun), FUN=function(x) s
 d$nul             <- ave(d$nul             , as.factor(d$mun), FUN=function(x) sum(x, na.rm=TRUE))
 d$tot             <- ave(d$tot             , as.factor(d$mun), FUN=function(x) sum(x, na.rm=TRUE))
 d$lisnom          <- ave(d$lisnom          , as.factor(d$mun), FUN=function(x) sum(x, na.rm=TRUE))
-d <- d[duplicated(d$mun)==FALSE,]
+d <- d[duplicated(d$inegi)==FALSE,]
 dim(d)
 setwd("~/Downloads")
-write.csv(d, file = "tmp.csv", row.names=FALSE)
+write.csv(d, file = "~/Downloads/tmp.csv", row.names=FALSE)
 
 
 Parece que, finalmente, quedó funcional el desagüe de la tarja de mi departamento. Fue por lo buenos oficios de Valentina. Narro sucesos para la bitácora. 

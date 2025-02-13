@@ -48,12 +48,10 @@ vot$dcoalmor <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-
 vot$dcoalpve <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pvem|pvem-", x)) > 0, 1, 0))
 vot$dcoalpt  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-pt|pt-", x)) > 0, 1, 0))
 vot$dcoalmc  <- apply(X = l, MARGIN = 1, FUN = function(x) ifelse(length(grep("-mc|mc-", x)) > 0, 1, 0))
-##
-## keep copy with all votes to use in some hard lags below
-tmp.votpre1988 <- vot                                     
-## keep 1997-on                                           
-sel <- which(vot$yr<1988)                                 
-vot <- vot[-sel,]                                         
+
+###################################
+## 28jan2025: drop 1988 was here ##
+###################################
 
 #########################################################
 ## drop municipios that had any usos y costumbres vote ##
@@ -253,7 +251,10 @@ v7$oth <- v7$morena <- v7$mc <- v7$pt <- v7$pvem <- v7$prd <- v7$pri <- v7$pan <
 v7$dmajcoal <- 0
 ## check if unbroken coalitions left
 paste("True or false: No unbroken coalitions remaining?", length(v7$emm[grep("-", v7$l)])==0)
-#
+## ##If so, which remain?
+## v7$emm[grep("-", v7$l)]
+## v7[grep("-", v7$l),]
+##
 rm(tmp, tmp.orig)
 #
 
@@ -503,6 +504,14 @@ vot$ife   <- as.numeric(vot$ife)
 getwd()
 write.csv(vot, file = "aymu1988-on-v7-coalSplit.csv", row.names = FALSE)
 
+##############################################################
+## 28jan2025: drop 1988 moved here, might affect code below ##
+##############################################################
+## keep copy with all votes to use in some hard lags below
+tmp.votpre1988 <- vot                                     
+## keep 1997-on                                           
+sel <- which(vot$yr<1988)                                 
+vot <- vot[-sel,]                                         
 
 #####################################################################
 ## Get incumbency data                                             ##

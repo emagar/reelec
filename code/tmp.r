@@ -2,7 +2,7 @@ d <- read.table(file = "clipboard", sep = "\t", header=TRUE)
 head(d)
 d$inegi <- ife2inegi(d$ife)
 colnames(d)
-sel.c <- which(colnames(d) %in% c("pan", "pri", "prd", "pvem", "pt", "mc", "morena", "pna", "pan.pri.prd.pna", "pan.pri.prd", "pan.pri.pna", "pan.prd.pna", "pri.prd.pna", "pan.pri", "pan.prd", "pan.naem", "pri.prd", "pri.naem", "prd.naem", "pvem.pt.morena", "pvem.pt", "pvem.morena", "pt.morena", "pan.pri.prd.naem.cc", "pvem.pt.morena.cc", "LUIS_FERNANDO_AMBROCIO_FLORES", "JORGE_MARTINEZ_SANTIAGO", "BEATRIZ_CHAVARRIA_COBOS", "ARMANDO_TRUJILLO_VALDIN", "DANIEL_JUAREZ_JUAREZ", "JOSE_LUIS_OROZPE_LOPEZ", "JUAN_ALVARADO_SOLIS", "XOCHITL_AMERICA_VARILLER_RAMIREZ", "MONICA_COREY_MORALES_TRUJILLO", "nr", "nul", "tot", "lisnom"))
+sel.c <- which(colnames(d) %in% c("pan", "pri", "prd", "pvem", "pt", "pcp", "morena", "pna", "ml", "mc", "pes", "indep", "pan.pri.prd", "pvem.pt.morena", "nr", "nul"))
 
 str(d)#[,sel.c])
 for (i in sel.c){
@@ -70,8 +70,34 @@ d$tot             <- ave(d$tot             , as.factor(d$mun), FUN=function(x) s
 d$lisnom          <- ave(d$lisnom          , as.factor(d$mun), FUN=function(x) sum(x, na.rm=TRUE))
 d <- d[duplicated(d$inegi)==FALSE,]
 dim(d)
-setwd("~/Downloads")
 write.csv(d, file = "~/Downloads/tmp.csv", row.names=FALSE)
+
+
+
+
+
+
+## get v7 for margin analysis
+setwd(dd)
+va <- read.csv(file = "aymu1970-on.coalAgg.csv", stringsAsFactors = FALSE)
+va$ord <- NULL ## drop ord to import inc$ord below
+setwd(wd)
+v7 <- read.csv("aymu1988-on-v7-coalSplit.csv", stringsAsFactors = FALSE)
+v7$ord <- NULL ## drop ord to import inc$ord below
+## keep only obs in inc too
+tmp <- inc[,c("ord","emm")]
+v7 <- merge(x = tmp, y = v7, by = "emm", all.x = TRUE, all.y = FALSE)
+va <- merge(x = tmp, y = va, by = "emm", all.x = TRUE, all.y = FALSE)
+## sort
+v7  <- v7 [order(v7 $ord),]
+va  <- va [order(va $ord),]
+inc <- inc[order(inc$ord),]
+## check
+table(va=va$win[which(va$win=="fxm")], inc=inc$win[which(va$win=="fxm")]) ### OJO 18feb2025 error in manip above, fxm became mc pri (& more) 
+
+table(va=va$win,                       inc=inc$win)
+
+
 
 
 Parece que, finalmente, quedó funcional el desagüe de la tarja de mi departamento. Fue por lo buenos oficios de Valentina. Narro sucesos para la bitácora. 

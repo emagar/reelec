@@ -1,4 +1,4 @@
-######################################################################
+#####################################################################
 ## ################################################################ ##
 ## ## SCRIPT FROM ../elecReturns/code/incumbents.r *STARTS* HERE ## ##
 ## ## 1aug2020                                                   ## ##
@@ -13,7 +13,8 @@ setwd(dd)
 # get useful functions
 source("~/Dropbox/data/useful-functions/myxtab.r")
 source("~/Dropbox/data/useful-functions/inegi2ife.r")
-#
+source("~/Dropbox/data/useful-functions/sortBy.r") ## winner (sorts data to have largest vote-winning party in column 1)
+##
 ###########################################
 ## ##################################### ##
 ## ##                                 ## ##
@@ -44,6 +45,31 @@ colnames(inc)[grep("^part2nd$", colnames(inc))] <- "pty2nd"
 #########################
 sel <- which(inc$yr < 1970)
 if (length(sel)>0) inc <- inc[-sel,]
+##
+###########################################################################
+## Add federal cycle based on yr (OJO: extras might shift to next cycle) ##
+###########################################################################
+##inc$cyclef <- cut(inc$yr, breaks = seq(1970,2027, by=3), right = FALSE)
+inc$cyclef <- inc$yr
+inc$cyclef[inc$cyclef==1970 | inc$cyclef==1971 | inc$cyclef==1972] <- 1970
+inc$cyclef[inc$cyclef==1973 | inc$cyclef==1974 | inc$cyclef==1975] <- 1973
+inc$cyclef[inc$cyclef==1976 | inc$cyclef==1977 | inc$cyclef==1978] <- 1976
+inc$cyclef[inc$cyclef==1979 | inc$cyclef==1980 | inc$cyclef==1981] <- 1979
+inc$cyclef[inc$cyclef==1982 | inc$cyclef==1983 | inc$cyclef==1984] <- 1982
+inc$cyclef[inc$cyclef==1985 | inc$cyclef==1986 | inc$cyclef==1987] <- 1985
+inc$cyclef[inc$cyclef==1988 | inc$cyclef==1989 | inc$cyclef==1990] <- 1988
+inc$cyclef[inc$cyclef==1991 | inc$cyclef==1992 | inc$cyclef==1993] <- 1991
+inc$cyclef[inc$cyclef==1994 | inc$cyclef==1995 | inc$cyclef==1996] <- 1994
+inc$cyclef[inc$cyclef==1997 | inc$cyclef==1998 | inc$cyclef==1999] <- 1997
+inc$cyclef[inc$cyclef==2000 | inc$cyclef==2001 | inc$cyclef==2002] <- 2000
+inc$cyclef[inc$cyclef==2003 | inc$cyclef==2004 | inc$cyclef==2005] <- 2003
+inc$cyclef[inc$cyclef==2006 | inc$cyclef==2007 | inc$cyclef==2008] <- 2006
+inc$cyclef[inc$cyclef==2009 | inc$cyclef==2010 | inc$cyclef==2011] <- 2009
+inc$cyclef[inc$cyclef==2012 | inc$cyclef==2013 | inc$cyclef==2014] <- 2012
+inc$cyclef[inc$cyclef==2015 | inc$cyclef==2016 | inc$cyclef==2017] <- 2015
+inc$cyclef[inc$cyclef==2018 | inc$cyclef==2019 | inc$cyclef==2020] <- 2018
+inc$cyclef[inc$cyclef==2021 | inc$cyclef==2022 | inc$cyclef==2023] <- 2021
+inc$cyclef[inc$cyclef==2024 | inc$cyclef==2025 | inc$cyclef==2026] <- 2024
 ##
 ##############################
 ## keep dead incumbent info ##
@@ -137,8 +163,9 @@ tmp3 <-            sub("^([a-z]+[-])([0-9]{2})([.][0-9]{3})$", "\\3", tmp, perl 
 tmp4 <- paste(tmp1, tmp2+1, tmp3, sep = "")
 sel2 <- which(inc$emm %in% tmp4)       # round t+1
 ##
-# fish switched-to party from note
+## fish switched-to party from note
 #data.frame(emm=inc$emm[sel1], note=inc$note[sel1])
+
 tmp <- sub("only ", "", inc$note[sel1]) # remove "only"
 tmp <- sub("extraordinaria ", "", inc$note[sel1]) # remove "only"
 tmp1 <- sub("^(?:re)?ran as ([a-z-]+).*", "\\1", tmp, perl = TRUE)
@@ -146,6 +173,7 @@ table(tmp1)
 ##
 # paste switched-to party as the original
 ##inc$emm[sel1]
+##data.frame(inc$win[sel1], tmp1) ## check
 inc$win[sel1] <- tmp1
 # 
 # recode race.after given swithed-to party
@@ -158,7 +186,7 @@ colnames(inc)
 table(inc$yr, inc$race.after)
 # clean
 rm(tmp,tmp1,tmp2,tmp3,tmp4,sel,sel1,sel2)
-
+##
 ## # merge a new coalAgg into incumbents
 ## cagg <- read.csv(file = "aymu1997-present.coalAgg.csv", stringsAsFactors = FALSE)
 ## colnames(cagg)
@@ -173,19 +201,17 @@ rm(tmp,tmp1,tmp2,tmp3,tmp4,sel,sel1,sel2)
 ## sel <- grep("[a-z]+[-][0-9]{2}[ab].*", inc$emm) # find anuladas/ballotage
 ## inc <- inc[-sel,] # drop them
 ## write.csv(inc, file = "tmp.csv", row.names = FALSE) # verify what tmp.csv looks like
-#
+##
 ######################
 ## simplify parties ##
 ######################
+inc$win <- sub("conve", "mc",  inc$win, ignore.case = TRUE)
+inc$win <- sub("panal", "pna", inc$win, ignore.case = TRUE)
+##
+## duplicate for manipulation
 inc$win2 <- inc$win
-inc$win2 <- sub("conve|^cp$", "mc",   inc$win2, ignore.case = TRUE)
-inc$win2 <- sub("panal", "pna", inc$win2, ignore.case = TRUE)
-inc$win2 <- sub("pucd", "pudc", inc$win2, ignore.case = TRUE) # typo
-## sel <- grep("ci_|^ci$|c-i-|ind_|eduardo|luis|oscar|indep", inc$win2, ignore.case = TRUE) # deprecated
-## inc$win2[sel] <- "indep"                                                                 # deprecated
-inc$win <- inc$win2 # register changes above in original win to remove false negatives
-#
-# assign panc to pan, then pric to pri, then prdc to prd; major party coalitions dealt as exceptions below
+##
+## assign panc to pan, then pric to pri, then prdc to prd; major party coalitions dealt as exceptions below
 sel <- grep("pan-", inc$win2, ignore.case = TRUE)
 if (length(sel)>0) inc$win2[sel] <- "pan"
 sel <- grep("pri-", inc$win2, ignore.case = TRUE)
@@ -206,14 +232,12 @@ sel <- grep("cardenista|eso|fuerciud|futuro|fxm|hag|mas|mexa|mexpos|ml|mujer|pac
 if (length(sel)>0) inc$win2[sel] <- "loc/oth"
 table(inc$win2)
 ##
-
 #####################################
 ## deal with major-party coalition ## OJO 11mar21: 2021 will have many pan-pri-prd coalitions, need a decisions on how to code those!!!
 #####################################
 #############
 ## winners ##
 #############
-
 # explore
 table(inc$race.after, useNA = "always")
 
@@ -346,7 +370,7 @@ inc$emm[which(inc$status=="majors")]
 ##
 ## clean
 inc$status <- NULL
-
+##
 ## #THIS IS ANOTHER WAY: GIVES VOTE TO PAN WHEN PAN IS MEMBER, TO PRI WHEN PAN ABSENT
 ## inc$status <- NA
 ## sel <- grep("(?=.*pan)(?=.*prd)", inc$win, perl = TRUE)
@@ -385,143 +409,165 @@ inc$status <- NULL
 ## # pan-prd in 2018 to pan (bcs cps df gue mex mic oax pue qui tab zac)
 ## # clean
 ## inc$status <- NULL
-
+##
 #inc$win.long <- inc$win # retain unsimplified version
 inc$win <- inc$win2; inc$win2 <- NULL # keep manipulated version only
-#table(inc$win)
-#
-table(inc$race.after)
+table(inc$win)
 
-
-#########################################
-## this block inspects reelection 2021 ##
-#########################################
-inc[1,]
-tmp <- inc[inc$sel==1,]
+####################################
+## this block inspects reelection ##
+####################################
+tmp <- inc ## duplicates data for manipulation
 # drop litigios uyc anuladas
 sel <- grep("uyc|litigio|anulada", tmp$race.after)
 if (length(sel)>0) tmp <- tmp[-sel,] # drop one uyc munic 
 sel <- grep("con[cs]ejo", tmp$win, ignore.case=TRUE)
 if (length(sel)>0) tmp <- tmp[-sel,] # drop consejos municipales
-# 10 and 13 had no els in 2021, 18 29 and 30 had term limits still in place
-tmp <- tmp[tmp$edon %in% c(1:9,11:12,14:17,19:28,31:32),] # keep states with race.after coded only
+## # 10 and 13 had no els in 2021, 18 29 and 30 had term limits still in place
+## tmp <- tmp[tmp$edon %in% c(1:9,11:12,14:17,19:28,31:32),] # keep states with race.after coded only
 
 # recode race.after categories
 library(plyr)
 table(tmp$race.after)
 sel <- grep("pending", tmp$race.after, ignore.case = TRUE) # drop cases pending after election
-tmp$emm[sel] # which?
+##tmp$emm[sel] # which?
 tmp <- tmp[-sel,] 
 tmp$race.after <- mapvalues(tmp$race.after, from = c("Reelected","Reran-beaten","Term-limited-p-won","Term-limited-p-lost","Out-p-won","Out-p-lost"), to = c("1Reel","2Beaten","3Term-pwon","4Term-plost","5Out-pwon","6Out-plost"))
 table(tmp$race.after, useNA = "always")
 #
+tmp[1,]
 table(tmp$win, useNA = "always")
-sel <- which(tmp$win %in% c("hagamos", "indep","loc/oth","pes","pna","pt","rsp"))
+sel <- which(tmp$win=="loc/oth")
 tmp$win[sel] <- "other"
 #tmp$win <- factor(tmp$win, levels=    c("pan","pri","prd","morena","pvem","mc","other"))
-tmp$win <- factor(tmp$win, levels=rev(c("pan","pri","prd","morena","pvem","mc","other")), labels=rev(c("PAN","PRI","PRD","MORENA","PVEM","MC","Otros")))
+tmp$win <- factor(tmp$win, levels=rev(c("pan","pri","prd","morena","pvem","pt","mc","other")), labels=rev(c("PAN","PRI","PRD","MORENA","PVEM","PT","MC","Otros")))
 
-tmp2 <- myxtab(tmp$win, tmp$race.after, pct=TRUE, rel=TRUE, digits=2, marginals = 1)
-tmp2
-#
-tmp3 <- myxtab(tmp$win,tmp$race.after, pct=FALSE, rel=FALSE, digits=0, marginals = 1)
+tmp2 <- myxtab(tmp$cyclef, tmp$race.after, pct=TRUE, rel=TRUE, digits=2, marginals = 1)
+sel <- which(tmp$cyclef==2021)
+tmp2 <- myxtab(tmp$win[sel], tmp$race.after[sel], pct=TRUE, rel=TRUE, digits=1, marginals = 1)
+tmp3 <- myxtab(tmp$win[sel], tmp$race.after[sel], pct=FALSE, rel=FALSE, digits=0, marginals = 1)
 colSums(tmp3)
-tmp4 <- c(round(colSums(tmp3)*100/colSums(tmp3)[7]), colSums(tmp3)[7])
+tmp4 <- c(round(colSums(tmp3)*100/colSums(tmp3)[7]), colSums(tmp3)[7]); names(tmp4)[8] <- "N"
 tmp2 <- rbind(Todos=tmp4, tmp2)
 tmp2
-
+##
 tmp2 <- tmp2[order(-tmp2[,1]),] # sort by reelected
+tmp2
 
-library(RColorBrewer)
-#pdf(file =     "../graph/reel-munic2021.pdf", width = 7, height = 6)
-#png(filename = "../graph/reel-munic2021.png", width = 700, height = 480)
-clr <- brewer.pal(n=6, name = 'Paired'); clr <- clr[c(4,3,6,5,2,1)]
-par(mar = c(2,0,1.2,0)+.1) # bottom, left, top, right 
-plot(x = c(-9,105), y = c(0.4,nrow(tmp2)+1), type = "n", main = "Municipios con reelección 2021", axes = FALSE)
-axis(1, at=seq(0,100,10),label=FALSE)
-axis(1, at=seq(0,100,20),labels=c(seq(0,80,20),"100%"),cex.axis=.9)
-polygon(x=c(-20,-20,120,120), y=c(5,6,6,5),col="gray85",border="gray85")
-abline(h=1:(nrow(tmp2)+1), lty = 3)
-#abline(h=5:6)
-for (i in 1:nrow(tmp2)){
-    #i <- 1
-    l <- c(0,0); r <- rep(tmp2[i,1],2)
-    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[1], border = clr[1])
-    if (tmp2[i,1]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,1]),"%"), cex = .67, col = "white")
-    l <- r; r <- r+rep(tmp2[i,2],2)
-    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[2], border = clr[2])
-    if (tmp2[i,2]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,2]),"%"), cex = .67, col = "gray50")
-    l <- r; r <- r+rep(tmp2[i,3],2)
-    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[3], border = clr[3])
-    if (tmp2[i,3]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,3]),"%"), cex = .67, col = "white")
-    l <- r; r <- r+rep(tmp2[i,4],2)
-    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[4], border = clr[4])
-    if (tmp2[i,4]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,4]),"%"), cex = .67, col = "gray50")
-    l <- r; r <- r+rep(tmp2[i,5],2)
-    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[5], border = clr[5])
-    if (tmp2[i,5]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,5]),"%"), cex = .67, col = "white")
-    l <- r; r <- r+rep(tmp2[i,6],2)
-    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[6], border = clr[6])
-    if (tmp2[i,6]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,6]),"%"), cex = .67, col = "gray50")
-}
-text(x=-7 , y=c(1:nrow(tmp2))+.5, labels = rownames(tmp2), cex = .85)#, srt = 90)
-text(x=105, y=c(1:nrow(tmp2))+.5, labels = paste0("N=", tmp2[,8]), cex = .75)
-#legend(x = 0, y = 0.75, legend = c("Ocupante reelecto","derrotado","Silla vacía ganó","perdió","Term limit ganó","perdió"), fill = clr, cex = .67, border = clr, bty = "n", horiz = TRUE)
-legend(x = -2,  y = 0.85, legend = c("reelecto","derrotado"), title = "Ocupante contendió"  , fill = clr[1:2], cex = .85, border = clr[1:2], bty = "n", horiz = TRUE)
-legend(x = 40, y = 0.85, legend = c("ganó","perdió")       , title = "Term limit, partido", fill = clr[3:4], cex = .85, border = clr[3:4], bty = "n", horiz = TRUE)
-legend(x = 72, y = 0.85, legend = c("ganó","perdió")       , title = "Silla vacía, partido" , fill = clr[5:6], cex = .85, border = clr[5:6], bty = "n", horiz = TRUE)
-text(x = 105, y = .9, "@emagar", col = "gray", cex = .7)
-#dev.off()
+## this will become part of the 2024--2026 breakdown 
+sel <- which(inc$yr>2023 & inc$edon!=10 & inc$edon!=30 & inc$win!=0  & inc$win!="") # ver and dgo incumbent defined in 2025 (not yet)
+tmp2 <- myxtab(inc$win[sel], inc$race.after[sel], pct=TRUE,  rel=TRUE,  digits=1, marginals = 1)
+tmp3 <- myxtab(inc$win[sel], inc$race.after[sel], pct=FALSE, rel=FALSE, digits=0, marginals = 1)
+tmp4 <- c(round(colSums(tmp3)*100/colSums(tmp3)[3]), colSums(tmp3)[3]); names(tmp4)[4] <- "N"
+tmp2 <- rbind(Todos=tmp4, tmp2)
+tmp2
+table(inc$win[sel], inc$race.after[sel], useNA = "ifany")
+
+## clean
+rm(sel,sel1,tmp,tmp2,tmp3,tmp4)
+
+##############################################
+## get/merge v7, vs, va for margin analysis ##
+##############################################
+setwd(wd)
+v7 <- read.csv("aymu1988-on-v7-coalSplit.csv", stringsAsFactors = FALSE)
+v7$ord <- NULL ## drop ord to import inc$ord below
+setwd(dd)
+va <- read.csv(file = "aymu1970-on.coalAgg.csv", stringsAsFactors = FALSE)
+va$ord <- NULL ## drop ord to import inc$ord below
+vs <- read.csv(file = "aymu1970-on.coalSplit.csv", stringsAsFactors = FALSE)
+vs$ord <- NULL ## drop ord to import inc$ord below
 
 ##########################################
-## Get municipality electoral histories ##
+## sort coalition-split data columnwise ##
 ##########################################
-hd <- "/home/eric/Downloads/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/" # where histories are stored
-#
-# function to translate ife to inegi
-ife2inegi <- function(x){
-    tmp <- inc[,c("inegi","ife")]
-    tmp <- tmp[duplicated(tmp$ife)==FALSE,]
-    tmp1 <- mapvalues(x, from = tmp$ife, to = tmp$inegi, warn_missing = FALSE)
-    return(tmp1)
-}
-# wrap reading in a function
-tmp <- function(y){
-    v <- read.csv(file = paste0(hd,"dipfed-municipio-vhat-",y,".csv"), stringsAsFactors = FALSE)
-    v$inegi <- ife2inegi(v$ife)
-    v$yr <- y
-    return(v)
-}
-vhis <- data.frame()
-vhis <- rbind(vhis, tmp(2006))
-vhis <- rbind(vhis, tmp(2009))
-vhis <- rbind(vhis, tmp(2012))
-vhis <- rbind(vhis, tmp(2015))
-vhis <- rbind(vhis, tmp(2018))
-vhis <- rbind(vhis, tmp(2021))
-tail(vhis)
-
-#####################
-## add emm to vhis ##
-#####################
-tmp <- inc[,c("emm","ife","yr")]
-tmp <- tmp[tmp$yr>=2005,] # will use dipfed2006 hat for ay els 2005:2007, etc so drop prior to 2005
-tmp$dfyr <-   ifelse(tmp$yr>=2005 & tmp$yr<=2007, 2006 # which dipfed closest to ayuntamiento election?
-            , ifelse(tmp$yr>=2008 & tmp$yr<=2010, 2009
-            , ifelse(tmp$yr>=2011 & tmp$yr<=2013, 2012
-            , ifelse(tmp$yr>=2014 & tmp$yr<=2016, 2015
-            , ifelse(tmp$yr>=2017 & tmp$yr<=2019, 2018
-            , ifelse(tmp$yr>=2020 & tmp$yr<=2022, 2021, 0
-                     ))))))
-tmp1 <- vhis
-tmp1$ife.yr <-            tmp1$ife + tmp1$yr/10000
-tmp$ife.yr  <- as.numeric(tmp$ife) +  tmp$dfyr/10000
-tmp1 <- merge(x = tmp1, y = tmp[,c("ife.yr","emm")], by = "ife.yr", all.x = TRUE, all.y = FALSE)
-# verify
-sel <- which(tmp1$inegi==29001)grep("tla-...001", tmp1$emm)
-tmp1[sel,] # NA in emm is correct, that row will not be used given ayun elec in 2004 2007 2010 2013 2016 2021
-vhis <- tmp1
-vhis$ife.yr <- NULL
+## Extract vote and label objects for manip
+sel.l <- grep("^l[0-9]{2}", colnames(vs))
+sl <- vs[,sel.l] # subset label columns
+sel.v <- grep("^v[0-9]{2}", colnames(vs))
+sv <- vs[,sel.v] # subset vote columns
+#########################################
+tail(sv)
+tail(sl)
+###########################################
+sv.sorted <- sortBy(target = sv, By = sv) # slow! better wait for process end before continuing  
+###########################################
+sl.sorted <- sortBy(target = sl, By = sv) # slow! better wait for process end before continuing
+###########################################
+sv.sorted <- as.data.frame(sv.sorted, stringsAsFactors = FALSE) # return matrix to dataframe
+sl.sorted <- as.data.frame(sl.sorted, stringsAsFactors = FALSE) # return matrix to dataframe
+colnames(sv.sorted) <- colnames(sv); colnames(sl.sorted) <- colnames(sl)
+sv.sorted <- transform(sv.sorted, v01 = as.numeric(v01), v02 = as.numeric(v02), v03 = as.numeric(v03), v04 = as.numeric(v04), v05 = as.numeric(v05), v06 = as.numeric(v06), v07 = as.numeric(v07), v08 = as.numeric(v08), v09 = as.numeric(v09), v10 = as.numeric(v10), v11 = as.numeric(v11), v12 = as.numeric(v12), v13 = as.numeric(v13), v14 = as.numeric(v14), v15 = as.numeric(v15), v16 = as.numeric(v16), v17 = as.numeric(v17), v18 = as.numeric(v18), v19 = as.numeric(v19) , v20 = as.numeric(v20) , v21 = as.numeric(v21) , v22 = as.numeric(v22) , v23 = as.numeric(v23) , v24 = as.numeric(v24) , v25 = as.numeric(v25)) # return to numeric format
+tail(sv.sorted)
+tail(sl.sorted)
+## Return manipulated columns to data
+#sel.l <- grep("^l[0-9]{2}", colnames(vs))
+sl.sorted -> vs[,sel.l] # subset label columns
+#sel.v <- grep("^v[0-9]{2}", colnames(vs))
+sv.sorted -> vs[,sel.v] # subset vote columns
+rm(sl, sv, sl.sorted, sv.sorted)
+##
+#################
+## vote shares ##
+#################
+sel.v <- grep("^v[0-9]{2}", colnames(vs))
+v <- vs[,sel.v] # subset vote columns
+v <- v / rowSums(v, na.rm = TRUE)
+v -> vs[,sel.v] # return manipulation
+##
+## keep only obs in inc too
+tmp <- inc[,c("ord","emm")]
+v7 <- merge(x = tmp, y = v7, by = "emm", all.x = TRUE, all.y = FALSE)
+va <- merge(x = tmp, y = va, by = "emm", all.x = TRUE, all.y = FALSE)
+vs <- merge(x = tmp, y = vs, by = "emm", all.x = TRUE, all.y = FALSE)
+## sort
+v7  <- v7 [order(v7 $ord),]
+va  <- va [order(va $ord),]
+vs  <- vs [order(vs $ord),]
+inc <- inc[order(inc$ord),]
+## check: these are cases where incumbent switched parties, which is recorded in inc but not in coalAgg, so margins need to be recomputed.
+## Plus, margins computed with coalSplit. 
+table(va=va$win[which(va$win=="fxm")], inc=inc$win[which(va$win=="fxm")]) ### OJO 18feb2025 check how to compute margin for these cases
+table(va=va$win,                       inc=inc$win)
+##
+## compute party margins (vs 2nd when pty won, vs 1st when it didn't)
+v7$mg.pan <- NA
+v7$mg.pan[inc$win=="pan"]       <- vs$v01   [inc$win=="pan"]    - vs$v02[inc$win=="pan"]
+v7$mg.pan[inc$win!="pan"]       <- v7$pan   [inc$win!="pan"]    - vs$v01[inc$win!="pan"]
+v7$mg.pan[v7$pan==0] <- NA ## make margin NA when party did not enter the race
+v7$mg.pri <- NA
+v7$mg.pri[inc$win=="pri"]       <- vs$v01   [inc$win=="pri"]    - vs$v02[inc$win=="pri"]
+v7$mg.pri[inc$win!="pri"]       <- v7$pri   [inc$win!="pri"]    - vs$v01[inc$win!="pri"]
+v7$mg.pri[v7$pri==0] <- NA ## make margin NA when party did not enter the race
+v7$mg.prd <- NA
+v7$mg.prd[inc$win=="prd"]       <- vs$v01   [inc$win=="prd"]    - vs$v02[inc$win=="prd"]
+v7$mg.prd[inc$win!="prd"]       <- v7$prd   [inc$win!="prd"]    - vs$v01[inc$win!="prd"]
+v7$mg.prd[v7$prd==0] <- NA ## make margin NA when party did not enter the race
+v7$mg.morena <- NA
+v7$mg.morena[inc$win=="morena"] <- vs$v01   [inc$win=="morena"] - vs$v02[inc$win=="morena"]
+v7$mg.morena[inc$win!="morena"] <- v7$morena[inc$win!="morena"] - vs$v01[inc$win!="morena"]
+v7$mg.morena[v7$morena==0] <- NA ## make margin NA when party did not enter the race
+v7$mg.pt <- NA
+v7$mg.pt[inc$win=="pt"]        <- vs$v01    [inc$win=="pt"]     - vs$v02[inc$win=="pt"]
+v7$mg.pt[inc$win!="pt"]        <- v7$pt     [inc$win!="pt"]     - vs$v01[inc$win!="pt"]
+v7$mg.pt[v7$pt==0] <- NA ## make margin NA when party did not enter the race
+v7$mg.pvem <- NA
+v7$mg.pvem[inc$win=="pvem"]    <- vs$v01    [inc$win=="pvem"]   - vs$v02[inc$win=="pvem"]
+v7$mg.pvem[inc$win!="pvem"]    <- v7$pvem   [inc$win!="pvem"]   - vs$v01[inc$win!="pvem"]
+v7$mg.pvem[v7$pvem==0] <- NA ## make margin NA when party did not enter the race
+v7$mg.mc <- NA
+v7$mg.mc[inc$win=="mc"]        <- vs$v01    [inc$win=="mc"]     - vs$v02[inc$win=="mc"]
+v7$mg.mc[inc$win!="mc"]        <- v7$mc     [inc$win!="mc"]     - vs$v01[inc$win!="mc"]
+v7$mg.mc[v7$mc==0] <- NA ## make margin NA when party did not enter the race
+## import margins to inc
+inc$mg.pan    <- v7$mg.pan
+inc$mg.pri    <- v7$mg.pri
+inc$mg.prd    <- v7$mg.prd
+inc$mg.morena <- v7$mg.morena
+inc$mg.pvem   <- v7$mg.pvem
+inc$mg.pt     <- v7$mg.pt
+inc$mg.mc     <- v7$mg.mc
+inc[1,]
 
 ########################################
 ## lag to create race-prior variables ##
@@ -529,6 +575,8 @@ vhis$ife.yr <- NULL
 tmp <- inc
 # add dropped observations
 tmp <- merge(x = tmp, y = full.xsts[,c("ord","emm","cycle","inegi")], by = "emm", all = TRUE)
+dim(inc)
+dim(tmp)
 tmp$ddrop <- as.numeric(is.na(tmp$inegi.x)) # will drop these obs after lag to retain dimensionality
 tmp$ord.x[is.na(tmp$inegi.x)] <- tmp$ord.y[is.na(tmp$inegi.x)] # get missing ords for sorting
 tmp$inegi.x[is.na(tmp$inegi.x)] <- tmp$inegi.y[is.na(tmp$inegi.x)] # get missing inegi codes for grouping
@@ -549,7 +597,6 @@ tmp <- tmp[-which(tmp$ddrop==1), -which(colnames(tmp)=="ddrop")] # drop added ob
 #tmp[which(tmp$inegi==9004), c("emm","mun","win.prior","win","incumbent","race.prior","race.after")] # verify
 inc <- tmp # replace manipulated object
 
-
 ##########################################################################################
 ## MANIPULATE WIN.PRIOR IN NEW MUNICS... looked at win in parent municipio and used it  ##
 ##########################################################################################
@@ -564,8 +611,10 @@ sel <- which(inc$emm=="ags-08.011");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pri"
 sel <- which(inc$emm=="bc-10.005");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pan"
-#sel <- which(inc$emm=="bc-19.006"); # san quintin might be ready for 2024
-#inc$race.prior[sel] <- "new mun"; inc$win.long.prior[sel] <- "morena" ; inc$win.prior[sel] <- "new mun morena"
+sel <- which(inc$emm=="bc-19.006");
+inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun morena"
+sel <- which(inc$emm=="bc-19.007");
+inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun morena"
 sel <- which(inc$emm=="bcs-08.009");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pri"
 sel <- which(inc$emm=="cam-08.009");
@@ -574,7 +623,7 @@ sel <- which(inc$emm=="cam-10.010");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pri"
 sel <- which(inc$emm=="cam-11.011");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pri"
-sel <- which(inc$emm=="cam-18.xxx"); # ojo: need codigo inegi
+sel <- which(inc$emm=="cam-18.013");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pri"
 sel <- which(inc$emm=="cam-18.012");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pan"
@@ -654,6 +703,12 @@ sel <- which(inc$emm=="gue-13.080");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pri"
 sel <- which(inc$emm=="gue-13.081"); # pri en san luis acatlan
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="gue-18.082"); # prd san marcos
+inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun prd"
+sel <- which(inc$emm=="gue-18.084"); # pes en malinaltepec
+inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pes"
+sel <- which(inc$emm=="gue-18.085"); # pvem en cuajinicuilapa
+inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pvem"
 sel <- which(inc$emm=="jal-13.125");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pan"
 #sel <- which(inc$emm=="jal-xx.xxx"); # capilla de guadalupe might eventually appear
@@ -680,6 +735,10 @@ sel <- which(inc$emm=="san-10.057");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pri"
 sel <- which(inc$emm=="san-10.058");
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pan"
+sel <- which(inc$emm=="sin-19.019"); ## morena in culiacán
+inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun morena"
+sel <- which(inc$emm=="sin-19.020"); ## morena in guasave
+inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun morena"
 sel <- which(inc$emm=="son-08.070"); # usé puerto peñasco
 inc$race.prior[sel] <- "new mun"; inc$win.prior[sel] <- "new mun pri"
 sel <- which(inc$emm=="son-10.071");
@@ -753,6 +812,333 @@ sel <- which(inc$emm=="cps-17.058"|inc$emm=="cps-09.072"|inc$emm=="cps-09.107"|i
 inc$win.prior[sel] <- inc$race.after[sel] <- "consejoMunic"
 sel <- which(inc$emm=="oax-15.088")
 inc$win.prior[sel] <- inc$race.after[sel] <- "was-uyc"
+
+## code incumbent running, open seat or term limit in current race
+inc$inc.current <- inc$race.prior
+inc$inc.current [grep("out", inc$inc.current, ignore.case = TRUE)]           <- "open" ## Open seat
+inc$inc.current [grep("term", inc$inc.current, ignore.case = TRUE)]          <- "term" ## Term limit
+inc$inc.current [grep("reran|reelect", inc$inc.current, ignore.case = TRUE)] <- "ran"  ## Incumbent running
+inc$inc.current [grep("pending", inc$inc.current, ignore.case = TRUE)]       <- NA
+inc$inc.current [inc$yr < 2018]                                              <- "term"
+inc$inc.current [inc$inc.current=="new mun" & inc$yr >= 2018] <- "open"
+table(inc$inc.current, useNA = "ifany")
+## code party currently defends the seat 
+table(inc$win.prior)
+inc$dpanin    <- 0; inc$dpanin   [grep("pan"   , inc$win.prior)] <- 1
+inc$dpriin    <- 0; inc$dpriin   [grep("pri"   , inc$win.prior)] <- 1
+inc$dprdin    <- 0; inc$dprdin   [grep("prd"   , inc$win.prior)] <- 1
+inc$dmorenain <- 0; inc$dmorenain[grep("morena", inc$win.prior)] <- 1
+inc$dpvemin   <- 0; inc$dpvemin  [grep("pvem"  , inc$win.prior)] <- 1
+inc$dptin     <- 0; inc$dptin    [grep("pt"    , inc$win.prior)] <- 1
+inc$dmcin     <- 0; inc$dmcin    [grep("mc"    , inc$win.prior)] <- 1
+
+## dummy concurred with gubernatorial race since 1996
+inc$dgub <- 0
+inc$dgub[inc$yr==2024 & inc$edon %in% c(7, 9, 11, 14, 17, 21, 27, 30, 31)] <- 1
+inc$dgub[inc$yr==2023 & inc$edon %in% c(5, 15)] <- 1
+inc$dgub[inc$yr==2022 & inc$edon %in% c(1, 10, 13, 20, 23, 28)] <- 1
+inc$dgub[inc$yr==2021 & inc$edon %in% c(2, 3, 4, 6, 8, 12, 16, 18, 19, 22, 24, 25, 26, 29, 32)] <- 1
+inc$dgub[inc$yr==2019 & inc$edon %in% c(2, 21)] <- 1
+inc$dgub[inc$yr==2018 & inc$edon %in% c(7, 9, 11, 14, 17, 21, 27, 30, 31)] <- 1
+inc$dgub[inc$yr==2017 & inc$edon %in% c(5, 15, 18)] <- 1
+inc$dgub[inc$yr==2016 & inc$edon %in% c(1, 6, 8, 10, 13, 20, 21, 23, 25, 28, 29, 30, 32)] <- 1
+inc$dgub[inc$yr==2015 & inc$edon %in% c(3, 4, 6, 12, 16, 19, 22, 24, 26)] <- 1
+inc$dgub[inc$yr==2013 & inc$edon %in% c(2)] <- 1
+inc$dgub[inc$yr==2012 & inc$edon %in% c(7, 9, 11, 14, 17, 27, 31)] <- 1
+inc$dgub[inc$yr==2011 & inc$edon %in% c(3, 5, 12, 15, 16, 18)] <- 1
+inc$dgub[inc$yr==2010 & inc$edon %in% c(1, 8, 10, 13, 20, 21, 23, 25, 28, 29, 30, 32)] <- 1
+inc$dgub[inc$yr==2009 & inc$edon %in% c(4, 6, 19, 22, 24, 26)] <- 1
+inc$dgub[inc$yr==2007 & inc$edon %in% c(2, 16, 31)] <- 1
+inc$dgub[inc$yr==2006 & inc$edon %in% c(7, 9, 11, 14, 17, 27)] <- 1
+inc$dgub[inc$yr==2005 & inc$edon %in% c(3, 5, 6, 12, 13, 15, 18, 23)] <- 1
+inc$dgub[inc$yr==2004 & inc$edon %in% c(1, 8, 10, 20, 21, 25, 28, 29, 30, 32)] <- 1
+inc$dgub[inc$yr==2003 & inc$edon %in% c(4, 6, 19, 22, 24, 26)] <- 1
+inc$dgub[inc$yr==2001 & inc$edon %in% c(16, 31, 27, 2)] <- 1
+inc$dgub[inc$yr==2000 & inc$edon %in% c(7, 9, 11, 14, 17, 27)] <- 1
+inc$dgub[inc$yr==1999 & inc$edon %in% c(13, 23, 5, 12, 15, 18, 3)] <- 1
+inc$dgub[inc$yr==1998 & inc$edon %in% c(1, 8, 10, 20, 21, 25, 28, 29, 30, 32)] <- 1
+inc$dgub[inc$yr==1997 & inc$edon %in% c(9, 6, 4, 19, 22, 24, 26)] <- 1
+inc$dgub[inc$yr==1995 & inc$edon %in% c(2, 11, 14, 16, 31)] <- 1
+inc$dgub[inc$yr==1994 & inc$edon %in% c(7, 17, 27)] <- 1
+inc$dgub[inc$yr==1993 & inc$edon %in% c(3, 5, 12, 13, 15, 18, 23, 24, 31)] <- 1
+inc$dgub[inc$yr==1992 & inc$edon %in% c(1, 8, 10, 16, 20, 21, 25, 28, 29, 30, 32)] <- 1
+inc$dgub[inc$yr==1991 & inc$edon %in% c(4, 6, 11, 19, 22, 24, 26)] <- 1
+inc$dgub[inc$yr==1991 & inc$edon %in% c(4, 6, 11, 19, 22, 24, 26)] <- 1
+inc$dgub[inc$yr==1989 & inc$edon %in% c(2)] <- 1
+inc$dgub[inc$yr==1988 & inc$edon %in% c(7, 14, 17, 27)] <- 1
+
+## incumbent gov party at election
+inc$gpty <- NA
+inc$gpty[is.na(inc$gpty) & inc$yr<=1989] <- "pri"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1992 & inc$edon!=2] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2019 & inc$edon==2] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2019 & inc$edon==2] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1998 & inc$edon==1] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2010 & inc$edon==1] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2016 & inc$edon==1] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2016 & inc$edon==1] <- "pan"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1999 & inc$edon==3] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2011 & inc$edon==3] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==3] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==3] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==4] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==4] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$edon==5] <- "pri"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==6] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==6] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2000 & inc$edon==7] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2012 & inc$edon==7] <- "prd"   ## salazar madiguchia coded as prd
+inc$gpty[is.na(inc$gpty) & inc$yr<=2018 & inc$edon==7] <- "pvem"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2018 & inc$edon==7] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1992 & inc$edon==8] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=1998 & inc$edon==8] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2016 & inc$edon==8] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2016 & inc$edon==8] <- "pan"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1997 & inc$edon==9] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2018 & inc$edon==9] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2018 & inc$edon==9] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2016 & inc$edon==10] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2022 & inc$edon==10] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2022 & inc$edon==10] <- "pri"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1991 & inc$edon==11] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 1991 & inc$edon==11] <- "pan"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2005 & inc$edon==12] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2015 & inc$edon==12] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==12] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==12] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==13] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==13] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1995 & inc$edon==14] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2013 & inc$edon==14] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2018 & inc$edon==14] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2018 & inc$edon==14] <- "mc"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2023 & inc$edon==15] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2023 & inc$edon==15] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2001 & inc$edon==16] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2012 & inc$edon==16] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2015 & inc$edon==16] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==16] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==16] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2000 & inc$edon==17] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2012 & inc$edon==17] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2018 & inc$edon==17] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2018 & inc$edon==17] <- "morena" ## cuauhtémoc coded morena
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1999 & inc$edon==18] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2005 & inc$edon==18] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2017 & inc$edon==18] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==18] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==18] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1997 & inc$edon==19] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2003 & inc$edon==19] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2015 & inc$edon==19] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==19] <- "indep"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==19] <- "mc"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2010 & inc$edon==20] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2016 & inc$edon==20] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2022 & inc$edon==20] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2022 & inc$edon==20] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2011 & inc$edon==21] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2019 & inc$edon==21] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2019 & inc$edon==21] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1997 & inc$edon==22] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2009 & inc$edon==22] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2015 & inc$edon==22] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2015 & inc$edon==22] <- "pan"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2016 & inc$edon==23] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2022 & inc$edon==23] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2022 & inc$edon==23] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2003 & inc$edon==24] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2009 & inc$edon==24] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==24] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==24] <- "pvem"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2011 & inc$edon==25] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2016 & inc$edon==25] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==25] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==25] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2009 & inc$edon==26] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2015 & inc$edon==26] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==26] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==26] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2013 & inc$edon==27] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2019 & inc$edon==27] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2019 & inc$edon==27] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2015 & inc$edon==28] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==28] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==28] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1999 & inc$edon==29] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2005 & inc$edon==29] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2011 & inc$edon==29] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==29] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==29] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2016 & inc$edon==30] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2018 & inc$edon==30] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2018 & inc$edon==30] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=2001 & inc$edon==31] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2007 & inc$edon==31] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2018 & inc$edon==31] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2024 & inc$edon==31] <- "pan"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2024 & inc$edon==31] <- "morena"
+##
+inc$gpty[is.na(inc$gpty) & inc$yr<=1998 & inc$edon==32] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2010 & inc$edon==32] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==32] <- "pri"
+inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==32] <- "morena"
+## ## check
+## data.frame(inc$edon, inc$yr, inc$gpty)[inc$edon==30,]
+table(inc$gpty)
+
+## midterm governor
+inc$dmidpan    <- (1 - inc$dgub) * as.numeric(inc$gpty=="pan")
+inc$dmidpri    <- (1 - inc$dgub) * as.numeric(inc$gpty=="pri")
+inc$dmidprd    <- (1 - inc$dgub) * as.numeric(inc$gpty=="prd")
+inc$dmidmorena <- (1 - inc$dgub) * as.numeric(inc$gpty=="morena")
+inc$dmidpvem   <- (1 - inc$dgub) * as.numeric(inc$gpty=="pvem")
+inc$dmidmc     <- (1 - inc$dgub) * as.numeric(inc$gpty=="mc")
+
+aggregate(mg.pan    ~ inc.current * dpanin    * dmidpan,    data = inc, subset = yr>2017, FUN = function(x) round(mean(x, na.rm = TRUE)*100, 1))
+aggregate(mg.pri    ~ inc.current * dpriin    * dmidpri,    data = inc, subset = yr>2017, FUN = function(x) round(mean(x, na.rm = TRUE)*100, 1))
+aggregate(mg.prd    ~ inc.current * dprdin    * dmidprd,    data = inc, subset = yr>2017, FUN = function(x) round(mean(x, na.rm = TRUE)*100, 1))
+aggregate(mg.morena ~ inc.current * dmorenain * dmidmorena, data = inc, subset = yr>2017, FUN = function(x) round(mean(x, na.rm = TRUE)*100, 1))
+aggregate(mg.pvem   ~ inc.current * dpvemin   * dmidpvem,   data = inc, subset = yr>2017, FUN = function(x) round(mean(x, na.rm = TRUE)*100, 1))
+aggregate(mg.mc     ~ inc.current * dmcin     * dmidmc,     data = inc, subset = yr>2017, FUN = function(x) round(mean(x, na.rm = TRUE)*100, 1))
+
+sel <- which(inc$yr>1978)
+print("copy-here")
+sel <- which(inc$inc.current == "term" & inc$dpanin == 1)
+round(tapply(inc$mg.pan[sel], inc$cyclef[sel], FUN = function(x) mean(x, na.rm = TRUE))*100, 1)
+sel <- which(inc$inc.current == "term" & inc$dpanin == 0)
+round(tapply(inc$mg.pan[sel], inc$cyclef[sel], FUN = function(x) mean(x, na.rm = TRUE))*100, 1)
+sel <- which(inc$inc.current == "ran" & inc$dpanin == 1)
+round(tapply(inc$mg.pan[sel], inc$cyclef[sel], FUN = function(x) mean(x, na.rm = TRUE))*100, 1)
+sel <- which(inc$inc.current == "ran" & inc$dpanin == 0)
+round(tapply(inc$mg.pan[sel], inc$cyclef[sel], FUN = function(x) mean(x, na.rm = TRUE))*100, 1)
+sel <- which(inc$inc.current == "open" & inc$dpanin == 1)
+round(tapply(inc$mg.pan[sel], inc$cyclef[sel], FUN = function(x) mean(x, na.rm = TRUE))*100, 1)
+sel <- which(inc$inc.current == "open" & inc$dpanin == 0)
+round(tapply(inc$mg.pan[sel], inc$cyclef[sel], FUN = function(x) mean(x, na.rm = TRUE))*100, 1)
+##
+
+
+compute mean party margin depending on incumbent status
+myxtab
+x
+
+
+
+library(RColorBrewer)
+#pdf(file =     "../graph/reel-munic2021.pdf", width = 7, height = 6)
+#png(filename = "../graph/reel-munic2021.png", width = 700, height = 480)
+clr <- brewer.pal(n=6, name = 'Paired'); clr <- clr[c(4,3,6,5,2,1)]
+par(mar = c(2,0,1.2,0)+.1) # bottom, left, top, right 
+plot(x = c(-9,105), y = c(0.4,nrow(tmp2)+1), type = "n", main = "Municipios con reelección 2021", axes = FALSE)
+axis(1, at=seq(0,100,10),label=FALSE)
+axis(1, at=seq(0,100,20),labels=c(seq(0,80,20),"100%"),cex.axis=.9)
+polygon(x=c(-20,-20,120,120), y=c(5,6,6,5),col="gray85",border="gray85")
+abline(h=1:(nrow(tmp2)+1), lty = 3)
+#abline(h=5:6)
+for (i in 1:nrow(tmp2)){
+    #i <- 1
+    l <- c(0,0); r <- rep(tmp2[i,1],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[1], border = clr[1])
+    if (tmp2[i,1]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,1]),"%"), cex = .67, col = "white")
+    l <- r; r <- r+rep(tmp2[i,2],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[2], border = clr[2])
+    if (tmp2[i,2]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,2]),"%"), cex = .67, col = "gray50")
+    l <- r; r <- r+rep(tmp2[i,3],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[3], border = clr[3])
+    if (tmp2[i,3]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,3]),"%"), cex = .67, col = "white")
+    l <- r; r <- r+rep(tmp2[i,4],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[4], border = clr[4])
+    if (tmp2[i,4]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,4]),"%"), cex = .67, col = "gray50")
+    l <- r; r <- r+rep(tmp2[i,5],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[5], border = clr[5])
+    if (tmp2[i,5]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,5]),"%"), cex = .67, col = "white")
+    l <- r; r <- r+rep(tmp2[i,6],2)
+    polygon(y = c(i+1/6, i+5/6, i+5/6, i+1/6), x = c(l,r), col = clr[6], border = clr[6])
+    if (tmp2[i,6]>.5) text(y = i+1/2, x = (l+r)[1]/2, labels = paste0(round(tmp2[i,6]),"%"), cex = .67, col = "gray50")
+}
+text(x=-7 , y=c(1:nrow(tmp2))+.5, labels = rownames(tmp2), cex = .85)#, srt = 90)
+text(x=105, y=c(1:nrow(tmp2))+.5, labels = paste0("N=", tmp2[,8]), cex = .75)
+#legend(x = 0, y = 0.75, legend = c("Ocupante reelecto","derrotado","Silla vacía ganó","perdió","Term limit ganó","perdió"), fill = clr, cex = .67, border = clr, bty = "n", horiz = TRUE)
+legend(x = -2,  y = 0.85, legend = c("reelecto","derrotado"), title = "Ocupante contendió"  , fill = clr[1:2], cex = .85, border = clr[1:2], bty = "n", horiz = TRUE)
+legend(x = 40, y = 0.85, legend = c("ganó","perdió")       , title = "Term limit, partido", fill = clr[3:4], cex = .85, border = clr[3:4], bty = "n", horiz = TRUE)
+legend(x = 72, y = 0.85, legend = c("ganó","perdió")       , title = "Silla vacía, partido" , fill = clr[5:6], cex = .85, border = clr[5:6], bty = "n", horiz = TRUE)
+text(x = 105, y = .9, "@emagar", col = "gray", cex = .7)
+#dev.off()
+
+##########################################
+## Get municipality electoral histories ##
+##########################################
+hd <- "/home/eric/Downloads/Desktop/MXelsCalendGovt/redistrict/ife.ine/data/" # where histories are stored
+#
+# wrap reading in a function
+tmp <- function(y){
+    v <- read.csv(file = paste0(hd,"dipfed-municipio-vhat-",y,".csv"), stringsAsFactors = FALSE)
+    v$inegi <- ife2inegi(v$ife)
+    v$yr <- y
+    return(v)
+}
+vhis <- data.frame()
+vhis <- rbind(vhis, tmp(2006))
+vhis <- rbind(vhis, tmp(2009))
+vhis <- rbind(vhis, tmp(2012))
+vhis <- rbind(vhis, tmp(2015))
+vhis <- rbind(vhis, tmp(2018))
+vhis <- rbind(vhis, tmp(2021))
+tail(vhis)
+
+#####################
+## add emm to vhis ##
+#####################
+tmp <- inc[,c("emm","ife","yr")]
+tmp <- tmp[tmp$yr>=2005,] # will use dipfed2006 hat for ay els 2005:2007, etc so drop prior to 2005
+tmp$dfyr <-   ifelse(tmp$yr>=2005 & tmp$yr<=2007, 2006 # which dipfed closest to ayuntamiento election?
+            , ifelse(tmp$yr>=2008 & tmp$yr<=2010, 2009
+            , ifelse(tmp$yr>=2011 & tmp$yr<=2013, 2012
+            , ifelse(tmp$yr>=2014 & tmp$yr<=2016, 2015
+            , ifelse(tmp$yr>=2017 & tmp$yr<=2019, 2018
+            , ifelse(tmp$yr>=2020 & tmp$yr<=2022, 2021, 0
+                     ))))))
+tmp1 <- vhis
+tmp1$ife.yr <-            tmp1$ife + tmp1$yr/10000
+tmp$ife.yr  <- as.numeric(tmp$ife) +  tmp$dfyr/10000
+tmp1 <- merge(x = tmp1, y = tmp[,c("ife.yr","emm")], by = "ife.yr", all.x = TRUE, all.y = FALSE)
+# verify
+sel <- which(tmp1$inegi==29001)grep("tla-...001", tmp1$emm)
+tmp1[sel,] # NA in emm is correct, that row will not be used given ayun elec in 2004 2007 2010 2013 2016 2021
+vhis <- tmp1
+vhis$ife.yr <- NULL
 
 inc[1,]
 vhis[1,]

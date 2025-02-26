@@ -939,7 +939,7 @@ inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==16] <- "morena"
 inc$gpty[is.na(inc$gpty) & inc$yr<=2000 & inc$edon==17] <- "pri"
 inc$gpty[is.na(inc$gpty) & inc$yr<=2012 & inc$edon==17] <- "pan"
 inc$gpty[is.na(inc$gpty) & inc$yr<=2018 & inc$edon==17] <- "prd"
-inc$gpty[is.na(inc$gpty) & inc$yr> 2018 & inc$edon==17] <- "morena" ## cuauhtémoc coded morena
+inc$gpty[is.na(inc$gpty) & inc$yr> 2018 & inc$edon==17] <- "morena" ## cuauhtémoc blanco coded morena
 ##
 inc$gpty[is.na(inc$gpty) & inc$yr<=1999 & inc$edon==18] <- "pri"
 inc$gpty[is.na(inc$gpty) & inc$yr<=2005 & inc$edon==18] <- "pan"
@@ -954,7 +954,7 @@ inc$gpty[is.na(inc$gpty) & inc$yr<=2021 & inc$edon==19] <- "indep"
 inc$gpty[is.na(inc$gpty) & inc$yr> 2021 & inc$edon==19] <- "mc"
 ##
 inc$gpty[is.na(inc$gpty) & inc$yr<=2010 & inc$edon==20] <- "pri"
-inc$gpty[is.na(inc$gpty) & inc$yr<=2016 & inc$edon==20] <- "prd"
+inc$gpty[is.na(inc$gpty) & inc$yr<=2016 & inc$edon==20] <- "prd" ## gabino cue coded prd
 inc$gpty[is.na(inc$gpty) & inc$yr<=2022 & inc$edon==20] <- "pri"
 inc$gpty[is.na(inc$gpty) & inc$yr> 2022 & inc$edon==20] <- "morena"
 ##

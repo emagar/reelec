@@ -1,7 +1,8 @@
-########################################
+#########################################
 ## Code for ayuntamiento vote analysis ##
 ## Date started: 26nov2023             ##
-## By emagar                           ##
+## Revised/updated: 26feb2025          ##
+## By emagar at itam dot mx            ##
 #########################################
 
 rm(list = ls())
@@ -123,7 +124,7 @@ v7 <- v7[,sel.c]
 v7$status <- NA ## may be used to record manip progress
 v7[1,]
 dim(v7)
-## narrow v01..v25 into single column pair
+## narrow v01..v25 into single column v l pair for manipulation
 v7$n <- 1:nrow(v7) # obs no
 v7$r <- 1          # round
 v7$v <- v7$v01     # vote
@@ -227,14 +228,14 @@ tmp$r <- 25
 tmp$v <- tmp$v25; tmp$l <- tmp$l25;
 v7 <- rbind(v7,tmp)
 v7[1,]
-## make sure all v and l columns have been added before next commands
+## make sure all v and l columns have been added before next pair of commands
 v7$v01 <- v7$v02 <- v7$v03 <- v7$v04 <- v7$v05 <- v7$v06 <- v7$v07 <- v7$v08 <- v7$v09 <- v7$v10 <- v7$v11 <- v7$v12 <- v7$v13 <- v7$v14 <- v7$v15 <- v7$v16 <- v7$v17 <- v7$v18 <- v7$v19 <- v7$v20 <- v7$v21 <- v7$v22 <- v7$v23 <- v7$v24 <- v7$v25 <- NULL
 v7$l01 <- v7$l02 <- v7$l03 <- v7$l04 <- v7$l05 <- v7$l06 <- v7$l07 <- v7$l08 <- v7$l09 <- v7$l10 <- v7$l11 <- v7$l12 <- v7$l13 <- v7$l14 <- v7$l15 <- v7$l16 <- v7$l17 <- v7$l18 <- v7$l19 <- v7$l20 <- v7$l21 <- v7$l22 <- v7$l23 <- v7$l24 <- v7$l25 <- NULL
 ##
 ## rebrand conve to mc etc
 v7$l[grep("indep_", v7$l)] <- "indep"
 v7$l[v7$l %in% c("conve","cdppn")] <- "mc"
-v7$l[v7$l %in% c("pt1","ptc")] <- "pt"
+v7$l[v7$l %in% c("pt1","ptc")] <- "pt" ## pt-conve to pt
 v7$l[v7$l %in% c("pesm","pest")] <- "pes"
 table(v7$l)
 ##
@@ -250,17 +251,19 @@ v7$oth <- v7$morena <- v7$mc <- v7$pt <- v7$pvem <- v7$prd <- v7$pri <- v7$pan <
 ## control major party coals
 v7$dmajcoal <- 0
 ## check if unbroken coalitions left
-paste("True or false: No unbroken coalitions remaining?", length(v7$emm[grep("-", v7$l)])==0)
-## ##If so, which remain?
+paste("If true: No unbroken coalitions remaining", length(v7$emm[grep("-", v7$l)])==0)
+## ##If false, which remain?
 ## v7$emm[grep("-", v7$l)]
 ## v7[grep("-", v7$l),]
 ##
 rm(tmp, tmp.orig)
 #
 
-## #########################################################################################################################################
-## ## 26jan2025: breaking coalitions in coalSplit is no longer needed. Script ay.r in elecRtrns does it prior to saving aymucoalSplit.csv ##
-## #########################################################################################################################################
+## #################################################################################################
+## ## 26jan2025: breaking coalitions in coalSplit is no longer needed.                            ##
+## ## Script ay.r in elecRtrns does it prior to saving aymucoalSplit.csv.                         ##
+## ## Keeping this commented, redundant block in case same sort of manipulation needed elsewhere. ##
+## #################################################################################################
 ## ## # change prd/morena to left
 ## ## sel <- which(v7$yr<=2015)
 ## ## v7$l[sel] <- sub("prd","left",v7$l[sel])
@@ -389,7 +392,6 @@ rm(tmp, tmp.orig)
 ## ## table(v7$yr[sel])
 ## ## table(v7$emm[sel][sel1], v7$l[sel][sel1])
 ## ## table(v7$emm[sel][sel1], v7$yr[sel][sel1])
-## ## x
 
 ## move vote to proper column
 sel.r <- which(v7$l=="pan")
@@ -423,7 +425,6 @@ v7$v[sel.r] <- 0 # to zero, has been moved
 ## remainder non-zero vs are other
 v7$oth <- v7$v
 ##
-
 tail(v7[v7$r==1,])
 tail(v7[v7$r==2,])
 tail(v7[v7$r==3,])
@@ -479,6 +480,10 @@ vot <- within(vot, v01 <- v02 <- v03 <- v04 <- v05 <- v06 <- v07 <- v08 <- v09 <
 vot <- within(vot, l01 <- l02 <- l03 <- l04 <- l05 <- l06 <- l07 <- l08 <- l09 <- l10 <- l11 <- l12 <- l13 <- l14 <- l15 <- l16 <- l17 <- l18 <- l19 <- l20 <- l21 <- l22 <- l23 <- l24 <- l25 <- NULL)
 ## inspect
 vot[1,]
+## arrange cols
+vot <- vot[moveme(names(vot), "efec last")]
+vot <- vot[moveme(names(vot), "lisnom last")]
+## verify
 table(vot$status)
 ##
 ## clean
@@ -751,13 +756,13 @@ vot <- within(vot, {
     dgovpan    <- as.numeric(govpty=="pan")
 })
 ## vot <- within(vot, {
-##     dpresmorena <- as.numeric(vote >= ymd("20181201") & vote < ymd("20241001"))
+##     dpresmorena <- as.numeric(vote >= ymd("20181201") & vote < ymd("20301001"))
 ##     dprespri    <- as.numeric( vote <  ymd("20001201") |
 ##                               (vote >= ymd("20121201") & vote < ymd("20181201")))
 ##     dprespan    <- as.numeric(vote >= ymd("20001201") & vote < ymd("20121201"))
 ## })
 vot <- within(vot, {
-    dpresmorena <- as.numeric(date >= 20181201 & date < 20241001)
+    dpresmorena <- as.numeric(date >= 20181201 & date < 20301001)
     dprespri    <- as.numeric(date <  20001201 |
                              (date >= 20121201 & date < 20181201))
     dprespan    <- as.numeric(date >= 20001201 & date < 20121201)
@@ -1245,7 +1250,7 @@ vot[1000,]
 elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")][2,]
 vot <- merge(x = vot, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], by = "emm", all.x = TRUE, all.y = FALSE)
 
-
+26feb2025: add gubernatorial midterm dummy
 
 ## Save data
 getwd()

@@ -531,6 +531,7 @@ sel.c <- which(colnames(inc) %in% c("ord","dextra","edon","source","dmujer","run
 inc <- inc[,-sel.c]
 
 ## change conve to mc
+table(inc$part)
 inc$part           <- sub("conve|cdppn", "mc", inc$part)
 inc$prior.inc.part <- sub("conve|cdppn", "mc", inc$prior.inc.part)
 inc$inc.part.after <- sub("conve|cdppn", "mc", inc$inc.part.after)
@@ -671,6 +672,8 @@ table( inc $cycle)
 ##
 ## get electoral calendar
 cal <- read.csv(file = paste0(dd, "../../calendariosReelec/data/fechasEleccionesMexicoDesde1994.csv"))
+cal$info <- NULL ## drop citation col
+table(cal$elec)
 sel.r <- which(cal$elec=="gob" | cal$elec=="dip"  | cal$elec=="pres"); cal <- cal[sel.r,] # subset dip and gob
 cal[1:4,]
 ## translate months to english
@@ -718,12 +721,19 @@ cal$yr1st <- as.numeric(cal$yr1st)
 vot <- merge(x = vot, y = cal, by = "edon", all = TRUE)
 rm(cal,sel.r)
 
-## Get governor parties
+##################################################
+## Dates with missing day arbitrarily set to 15 ##
+##################################################
+sel.r <- which(vot$date<10000000)
+vot$date[sel.r] ## inspect
+vot$date[sel.r] <- vot$date[sel.r]*100 + 15
+
+## Get governor parties, code incumbent gov at munic election
 gov <- read.csv(file = paste0(dd, "../../mxBranches/statesBranches/32stategovts.csv"))
-head(gov)
+head(gov[gov$edon==7,])
 sel.r <- which(is.na(gov$govin) | gov$govin < 1000000) ## drop redundant rows
 gov <- gov[-sel.r, c("edon","yr","govin","govpty")]    ## keep selected columns
-gov <- slide(gov, Var = "govin", NewVar = "govout", TimeVar = "govin", GroupVar = "edon", slideBy = 1) ## lag 1
+gov <- slide(gov, Var = "govin", NewVar = "govout", TimeVar = "govin", GroupVar = "edon", slideBy = 1) ## lead 1
 ##gov$govin <- ymd(gov$govin)
 ##gov$govout <- ymd(gov$govout) - days(1) ## end of term
 sel.r <- which(is.na(gov$govout))
@@ -732,21 +742,33 @@ gov$govout[sel.r] <- gov$govin[sel.r] + 60000 ## add future ends of term (6 yrs)
 ## Import gov pty to vot
 vot$govpty <- NA
 for (i in 1:32){ ## loop over states
-    #i <- 1
+    #i <- 7
     gov2 <- gov[gov$edon==i,]
-    vot2 <- vot[vot$edon==i,]
+    vot2 <- vot[vot$edon==i,] ## head(vot2[,1:10])
     for (j in 1:nrow(gov2)){ ## loop over state cycles
-        #j <- 2
+        #j <- 1
         sel.r <- which(vot2$date >= gov2$govin[j] & vot2$date < gov2$govout[j])
         if (length(sel.r) > 0) vot2$govpty[sel.r] <- gov2$govpty[j]
     }
     vot[vot$edon==i,] <- vot2 ## return to vot
 }
 table(vot$govpty, useNA = "ifany")
+table(edon=vot$edon[is.na(vot$govpty)], yr=vot$yr[is.na(vot$govpty)]) ## missing cases in 1988 ignored (due to faulty election/munin dates)
+##
+## Get governor parties again, code midterm elections
+gov <- read.csv(file = paste0(dd, "../../mxBranches/statesBranches/32stategovts.csv"))
+head(gov[gov$edon==7,])
+gov <- gov[, c("edon","yr","govterm","dnewgov")]    ## keep selected columns
+##tmp <- vot ## backup
+vot$ord <- 1:nrow(vot) ## to retain sort order
+vot <- merge(x = vot, y = gov, by = c("edon","yr"), all.x = TRUE, all.y = FALSE)
+vot$dmidterm <- as.numeric(vot$govterm <=4 & vot$dnewgov==0)
+vot <- vot[order(vot$ord),] # sort
+vot$ord <- vot$govterm <- vot$dnewgov <- NULL ## clean
 ## clean
 rm(vot2, gov, gov2, i, j, sel, sel.c, sel.r, year, to.eng, to.num)
 
-## Code gov dummies
+## Code incumbent governor dummies (at municipal election) 
 vot <- within(vot, {
     dgovmorena <- as.numeric(govpty=="morena")
     dgovmc     <- as.numeric(govpty=="mc")
@@ -767,6 +789,14 @@ vot <- within(vot, {
                              (date >= 20121201 & date < 20181201))
     dprespan    <- as.numeric(date >= 20001201 & date < 20121201)
 })
+##
+## code midterm*govparty (these are presidentes municipales that the governor should push to reelect)
+vot$dmidpan    <- vot$dmidterm * vot$dgovpan
+vot$dmidpri    <- vot$dmidterm * vot$dgovpri
+vot$dmidprd    <- vot$dmidterm * vot$dgovprd
+vot$dmidmorena <- vot$dmidterm * vot$dgovmorena
+vot$dmidpvem   <- vot$dmidterm * vot$dgovpvem
+vot$dmidmc     <- vot$dmidterm * vot$dgovmc
 
 ## Incumbent ayuntamiento party
 vot <- vot[order(vot$inegi, vot$cycle),]
@@ -1250,8 +1280,6 @@ vot[1000,]
 elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")][2,]
 vot <- merge(x = vot, y = elhis[, c("emm","vhat.pan","vhat.pri","vhat.left")], by = "emm", all.x = TRUE, all.y = FALSE)
 
-26feb2025: add gubernatorial midterm dummy
-
 ## Save data
 getwd()
 save.image(file = "tmp.RData")
@@ -1546,7 +1574,20 @@ d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
 d <- d[duplicated(d$ife)==FALSE,]
 ## paste to data
 ln <- rbind(ln, d)
+##
+## OJO 28feb2025: need final dip results (shouldn't change lisnom, but file name will)
+y <- 2024; d <- read.csv(paste0("/home/eric/Downloads/Desktop/MXelsCalendGovt/elecReturns/data/casillas/dip",y,"-pre-trife.csv"))
+## assign secciones in fed-unused municipios
+table(d$nota.emm)
+## drop cols
+d <- d[, c("ife","lisnom")]; d$yr <- y
+## agg
+d$lisnom <- ave(d$lisnom, as.factor(d$ife), FUN=function(x) sum(x, na.rm=TRUE))
+d <- d[duplicated(d$ife)==FALSE,]
+## paste to data
+ln <- rbind(ln, d)
 rm(d,y)
+
 ##
 ## merge to vot
 t <- ids[,c("ord","emm","ife","yr")] ## will receive fed lisnom for merge
